@@ -21,13 +21,21 @@ build/test-arithmetic: $(filter-out build/probe.o,$(OBJECTS)) tests/arithmetic.c
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $^ -o $@
 build/test-poker: $(filter-out build/probe.o,$(OBJECTS)) tests/poker.cpp
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $^ -o $@
+build/test-quit: $(filter-out build/probe.o,$(OBJECTS)) tests/quit.cpp
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $^ -o $@
 build/legacy.o: build/generated/image_info.h
-build/ldm-native: $(filter-out build/probe.o,$(OBJECTS)) build/desktop.o | build/LostDutchmanMine.bmp
+build/ldm-native: $(filter-out build/probe.o,$(OBJECTS)) build/desktop.o build/session.o build/display.o build/presentation.o | build/LostDutchmanMine.bmp build/ui-font.bmp
 	$(CXX) $(CXXFLAGS) $^ $(SDL_LIBS) -o $@
 build/LostDutchmanMine.bmp: resources/ldm-icon.bmp
 	cp $< $@
+build/ui-font.bmp: resources/ui-font.bmp
+	cp $< $@
 build/desktop.o: src/desktop.cpp src/legacy.h
 	$(CXX) $(CPPFLAGS) -I$(SDL_INCLUDE) $(CXXFLAGS) -MMD -MP -c $< -o $@
+build/presentation.o: src/presentation.cpp src/presentation.h src/ui-font.h
+	$(CXX) $(CPPFLAGS) -I$(SDL_INCLUDE) $(CXXFLAGS) -MMD -MP -c $< -o $@
+build/test-display: src/display.cpp tests/display.cpp
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $^ -o $@
 build/generated/%.o: build/generated/%.cpp src/legacy.h
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -MMD -MP -c $< -o $@
 build/ymfm_%.o: third_party/ymfm/ymfm_%.cpp

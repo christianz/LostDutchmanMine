@@ -24,7 +24,19 @@ are ignored by Git. Do not publish recovered game code or assets automatically.
 ## Play
 
 Copy the complete Windows bundle to a writable folder and double-click
-`LostDutchmanMine.exe`. VGA starts automatically, without a graphics selector.
+`LostDutchmanMine.exe`. Choose display settings, then Play. **4K comfort** selects
+desktop fullscreen, a centred 85% picture, soft edges, gentle colours and VSync.
+**F11** reopens the menu while pausing the game and music. Preferences are saved
+in `display.ini`; disable **Show at startup** to go straight into the game.
+
+Choose Crisp pixels, Soft pixels or Pixel art smoothing; Original, Warm, Vivid or
+Gentle colour; brightness; window size/fullscreen; and picture size. Fullscreen
+uses the monitor's resolution with the original 4:3 proportions. Original colour
+at 100% brightness preserves the game's palette, and Crisp retains hard edges.
+These filters enlarge the existing artwork; they do not invent detail or new
+animation frames. Monitor presentation is paced separately from the game clock.
+
+VGA starts automatically, without the original graphics selector.
 Hold cursor keys or the numeric keypad to move and release to stop. Use the mouse
 for selections, F1-F6 for the status panel,
 Space for action and Alt+Enter for fullscreen. Align with a doorway and hold Up
@@ -33,7 +45,8 @@ to walk into a building. Save/load is under F6.
 The executable finds `Game/` and `Saves/` alongside itself regardless of the
 working directory. The supplied saved games remain in `Game/`; writes go to
 `Saves/` with copy-on-write for files opened in read/write mode. Keep `Saves/`
-when updating. There is no installer, administrator requirement, Python runtime,
+and `display.ini` when updating. Keep `ui-font.bmp` beside the executable.
+There is no installer, administrator requirement, Python runtime,
 DOS executable, DOSBox, CPU interpreter or VM in the playable bundle.
 
 See [validation and remaining work](docs/VALIDATION.md). Unknown control flow
@@ -57,7 +70,7 @@ disassembly. Control flow through indirect calls needs further recovery; the
 disassembler's instruction count is not a coverage claim. Run all commands from
 the repository root.
 
-With CMake, a C++17 compiler and the SDL2 development package installed:
+With CMake, a C++17 compiler and SDL2 2.26 or newer development files installed:
 
 ```sh
 cmake -S . -B build-cmake -DCMAKE_BUILD_TYPE=Release
@@ -68,10 +81,12 @@ The verified Linux build in this workspace uses the Makefile with local SDL2
 headers and the system SDL2 shared library:
 
 ```sh
-make -j4 build/ldm-native build/test-assets build/test-arithmetic build/test-poker
+make -j4 build/ldm-native build/test-assets build/test-arithmetic build/test-poker build/test-quit build/test-display
 build/test-arithmetic
 build/test-assets /path/to/LDM/LDMG
 build/test-poker
+build/test-quit
+build/test-display
 build/ldm-native --data /path/to/LDM --image recovered/load-image.bin --saves .local/saves
 ```
 
@@ -89,6 +104,8 @@ Packaging requires a fresh output directory so an existing player's saves are
 never removed. Generated game code, original assets and private bundles are
 excluded from Git. The vendored ymfm subset retains its upstream BSD license
 and a pinned commit in `third_party/ymfm/UPSTREAM.json`.
+The settings UI uses a pre-baked DejaVu font bitmap with its license in
+`resources/FONT-LICENSE.txt`; no additional runtime font dependency is needed.
 
 ## Acceptance before calling this a faithful port
 

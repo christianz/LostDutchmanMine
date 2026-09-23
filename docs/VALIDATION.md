@@ -5,6 +5,29 @@ not yet certified. The original DOS program was neither launched nor modified.
 
 ## Verified
 
+- Update 2 reproduces the Quit Game crash at 1613:1c7d using F6 and the original
+  Quit button. It recovers graphics cleanup and the subsequent C file cleanup
+  callback at 13b4:0752, and implements the observed BIOS text scan-line restore.
+  The final scenario exits normally in 21.66 seconds before its 30-second limit,
+  restores mode 3 and the default timer vector, and reaches DOS exit 13b4:02d7.
+- The new display menu previews scaling/colour choices, persists settings,
+  optionally skips itself at startup, and reopens with F11. The scripted test
+  selects Warm/90% brightness, disables startup, moves, cancels a draft filter,
+  then applies Pixel art. Player fields remain unchanged across settings; two
+  snapshots show identical original execution counts while F11 is open, and
+  execution resumes afterward. Movement and the save/load round trip were also
+  rerun after the simulation/presentation thread split and passed.
+- Full 3840x2160 rendering and actual mouse input pass in an SDL/OpenGL X11
+  virtual desktop. At 85%, the 4:3 picture is 2448x1836 at (696,162). An actual
+  F6 key and mouse click at desktop (2264,1117) select the original Quit button
+  and exit normally. Xvfb has no window manager, so the harness explicitly gives
+  the SDL window its requested desktop geometry and focus. This is not a
+  physical monitor, high-DPI Windows scaling, or Windows 11 runtime test.
+- Display unit checks cover configuration replacement and malformed values,
+  4K centring/aspect/mouse geometry, rejection of border clicks, pixel-for-pixel
+  Original/Crisp output, source preservation, Scale2x diagonal behaviour and
+  colour grading. Settings pause play and audio; no new animation frames are
+  generated and no claim is made about resolving motion sickness.
 - VGA starts automatically without loading SELECT.BIN or sending a selection
   key. A one-second capture already shows the original VGA title screen.
 - Held arrows and keypad directions use the original movement cadence. The SDL
@@ -76,15 +99,23 @@ as Windows Server 2025, not Windows 11. No Windows 11 runtime claim is made.
 ## Reproduce focused checks
 
 ```sh
-make -j4 build/ldm-native build/test-assets build/test-arithmetic build/test-poker
+make -j4 build/ldm-native build/test-assets build/test-arithmetic build/test-poker build/test-quit build/test-display
 build/test-arithmetic
 build/test-assets /nas/tmp/LDM/LDMG
 build/test-poker
+build/test-quit
+build/test-display
+python3 tests/verify-quit.py
 SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy build/ldm-native \
   --data /nas/tmp/LDM --image recovered/load-image.bin \
   --saves .local/movement-saves --seconds 23 \
   --script tests/scripts/held-movement.txt
 python3 tests/verify-movement.py
+SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy build/ldm-native \
+  --data /nas/tmp/LDM --image recovered/load-image.bin \
+  --saves .local/display-test/Saves --config .local/display-test/display.ini \
+  --settings --seconds 25 --script tests/scripts/display-menu.txt
+python3 tests/verify-display-menu.py .local/display-test/display.ini
 SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy build/ldm-native \
   --data /nas/tmp/LDM --image recovered/load-image.bin \
   --saves .local/roundtrip-saves --seconds 43 \
@@ -94,6 +125,10 @@ SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy build/ldm-native \
 Scripts write diagnostic BMP frames and selected recovered state fields under
 `captures/`. Normal interactive play does not write those diagnostic captures.
 Arithmetic and asset checks need no SDL window or DOS environment.
+Use a fresh config path for the display-menu script. `screen` script events and
+`--screenshot` capture presented output; `capture` retains the original 320x200
+framebuffer and selected state fields. Timed/scripted runs skip startup settings
+unless explicitly launched with `--settings`.
 
 `tests/scripts/poker.txt` walks to the saloon and selects Play. Its opponent is
 chosen by the original game's random state and is sometimes absent; check the

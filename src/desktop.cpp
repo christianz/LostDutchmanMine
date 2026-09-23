@@ -2,6 +2,8 @@
 #include <SDL.h>
 #include "legacy.h"
 #include "image_info.h"
+#include "session.h"
+#include "presentation.h"
 #include <algorithm>
 #include <chrono>
 #include <fstream>
@@ -87,27 +89,6 @@ uint16_t keycode(const SDL_KeyboardEvent& e) {
     }
     return scan<<8;
 }
-void frame(const ldm::State&s,std::array<uint32_t,64000>& pixels) {
-    if(s.video_mode==0x13) {
-        for(size_t i=0;i<pixels.size();i++)pixels[i]=s.palette[s.memory[0xa0000+i]];
-    } else if(s.video_mode==4 || s.video_mode==5) {
-        const unsigned cga[]={0,11,13,15};
-        const uint32_t canonical[]={0xff000000,0xff0000aa,0xff00aa00,0xff00aaaa,0xffaa0000,0xffaa00aa,0xffaa5500,0xffaaaaaa,0xff555555,0xff5555ff,0xff55ff55,0xff55ffff,0xffff5555,0xffff55ff,0xffffff55,0xffffffff};
-        for(unsigned y=0;y<200;y++)for(unsigned x=0;x<320;x++) {
-            auto v=s.memory[0xb8000+(y%2)*8192+(y/2)*80+x/4];
-            pixels[y*320+x]=canonical[cga[(v>>(6-2*(x%4)))&3]];
-        }
-    } else pixels.fill(0xff000000);
-    if(s.custom_cursor && s.mouse_visibility>=0) {
-        for(int y=0;y<16;y++)for(int x=0;x<16;x++) {
-            int px=s.mouse_x-s.mouse_hot_x+x,py=s.mouse_y-s.mouse_hot_y+y;
-            if(px<0 || px>=320 || py<0 || py>=200)continue;
-            auto& c=pixels[py*320+px];
-            if(!(s.mouse_mask[y]&(0x8000>>x)))c=0xff000000;
-            if(s.mouse_mask[y+16]&(0x8000>>x))c^=0xffffff;
-        }
-    }
-}
 void capture(const std::array<uint32_t,64000>& pixels,const std::filesystem::path& file) {
     std::filesystem::create_directories(file.parent_path());
     auto surface=SDL_CreateRGBSurfaceWithFormatFrom(const_cast<uint32_t*>(pixels.data()),320,200,32,320*4,SDL_PIXELFORMAT_ARGB8888);
@@ -117,126 +98,181 @@ void capture(const std::array<uint32_t,64000>& pixels,const std::filesystem::pat
 }
 int main(int argc,char**argv) {
     char* base=SDL_GetBasePath();
-    auto app_dir=base?std::filesystem::path(base):std::filesystem::absolute(argv[0]).parent_path();
-    SDL_free(base);
+    auto app_dir=base?std::filesystem::path(base):std::filesystem::absolute(argv[0]).parent_path();SDL_free(base);
     std::filesystem::path data=app_dir/"Game",image=data/"port-data.bin",save=app_dir/"Saves",script;
-    uint64_t duration=0;std::string keys;
+    std::filesystem::path config=app_dir/"display.ini",screenshot;
+    uint64_t duration=0;std::string keys;bool force_setup=false,no_setup=false;
     auto s=std::make_unique<ldm::State>();
-    SDL_Window* window=nullptr;SDL_Renderer*renderer=nullptr;SDL_Texture*texture=nullptr;
-    SDL_AudioDeviceID audio=0;
+    SDL_Window* window=nullptr;SDL_Renderer* renderer=nullptr;SDL_AudioDeviceID audio=0;
+    std::unique_ptr<ldm::Session> session;
     try {
-      for(int i=1;i<argc;i++) {
-        std::string arg=argv[i];auto value=[&](){if(i+1>=argc)throw std::runtime_error("Missing argument");return std::string(argv[++i]);};
-        if(arg=="--data")data=value();else if(arg=="--image")image=value();else if(arg=="--saves")save=value();
-        else if(arg=="--seconds")duration=std::stoull(value())*1000;
-        else if(arg=="--keys")keys=value();else if(arg=="--script")script=value();
-        else {std::cerr<<"Unknown argument "<<arg<<"\n";return 2;}
-      }
+        for(int i=1;i<argc;i++) {
+            std::string arg=argv[i];auto value=[&](){if(i+1>=argc)throw std::runtime_error("Missing argument");return std::string(argv[++i]);};
+            if(arg=="--data")data=value();else if(arg=="--image")image=value();else if(arg=="--saves")save=value();
+            else if(arg=="--seconds")duration=std::stoull(value())*1000;
+            else if(arg=="--keys")keys=value();else if(arg=="--script")script=value();
+            else if(arg=="--config")config=value();else if(arg=="--screenshot")screenshot=value();
+            else if(arg=="--settings")force_setup=true;else if(arg=="--no-settings")no_setup=true;
+            else {std::cerr<<"Unknown argument "<<arg<<"\n";return 2;}
+        }
         std::vector<ScriptEvent> events;size_t event_pos=0;
         if(!script.empty()) {
             std::ifstream f(script);if(!f)throw std::runtime_error("Cannot open input script");
             std::string line;while(std::getline(f,line)){if(line.empty()||line[0]=='#')continue;std::istringstream in(line);ScriptEvent e{};in>>e.time>>e.type>>e.a>>e.b;events.push_back(e);}
             if(!std::is_sorted(events.begin(),events.end(),[](auto&a,auto&b){return a.time<b.time;}))throw std::runtime_error("Input script is not time ordered");
         }
+        auto settings=ldm::load_settings(config),draft=settings;
+        bool menu=force_setup || (!no_setup && !duration && script.empty() && settings.startup);
+        bool startup_menu=menu,warmup=menu,quit=false;int selected=2,mouse_buttons=0,last_window=settings.window==3?1:settings.window;
+        std::string message;
         s->data_dir=std::filesystem::absolute(data);s->save_dir=std::filesystem::absolute(save);
         if(std::filesystem::weakly_canonical(s->data_dir)==std::filesystem::weakly_canonical(s->save_dir))throw std::runtime_error("Save directory must differ from the original game directory");
         s->load(image,image_relocations,entry_cs,entry_ip,stack_ss,stack_sp);
         for(unsigned char c:keys){SDL_KeyboardEvent key{};key.keysym.sym=c;s->keys.push_back(keycode(key));}
-        SDL_SetMainReady();
+        SDL_SetMainReady();SDL_SetHint(SDL_HINT_WINDOWS_DPI_AWARENESS,"permonitorv2");
         if(SDL_Init(SDL_INIT_VIDEO|SDL_INIT_TIMER)<0)throw std::runtime_error(SDL_GetError());
         if(SDL_InitSubSystem(SDL_INIT_AUDIO)==0) {
             SDL_AudioSpec wanted{};wanted.freq=48000;wanted.format=AUDIO_F32SYS;wanted.channels=1;wanted.samples=512;wanted.callback=audio_callback;wanted.userdata=&s->audio;
-            audio=SDL_OpenAudioDevice(nullptr,0,&wanted,nullptr,0);if(audio)SDL_PauseAudioDevice(audio,0);
+            audio=SDL_OpenAudioDevice(nullptr,0,&wanted,nullptr,0);
         }
-        window=SDL_CreateWindow("Lost Dutchman Mine — native port (development)",SDL_WINDOWPOS_CENTERED,SDL_WINDOWPOS_CENTERED,960,720,SDL_WINDOW_RESIZABLE|SDL_WINDOW_ALLOW_HIGHDPI);
+        window=SDL_CreateWindow("Lost Dutchman Mine",SDL_WINDOWPOS_CENTERED,SDL_WINDOWPOS_CENTERED,1040,780,
+            SDL_WINDOW_RESIZABLE|SDL_WINDOW_ALLOW_HIGHDPI|(settings.window==3?SDL_WINDOW_FULLSCREEN_DESKTOP:0));
         if(!window)throw std::runtime_error(SDL_GetError());
-        if(auto icon=SDL_LoadBMP((app_dir/"LostDutchmanMine.bmp").string().c_str())) {
-            SDL_SetWindowIcon(window,icon);SDL_FreeSurface(icon);
-        }
-        renderer=SDL_CreateRenderer(window,-1,SDL_RENDERER_SOFTWARE);
+        SDL_SetWindowMinimumSize(window,640,480);
+        if(auto icon=SDL_LoadBMP((app_dir/"LostDutchmanMine.bmp").string().c_str())){SDL_SetWindowIcon(window,icon);SDL_FreeSurface(icon);}
+        renderer=SDL_CreateRenderer(window,-1,SDL_RENDERER_ACCELERATED|(settings.vsync?SDL_RENDERER_PRESENTVSYNC:0));
+        if(!renderer)renderer=SDL_CreateRenderer(window,-1,SDL_RENDERER_ACCELERATED);
+        if(!renderer)renderer=SDL_CreateRenderer(window,-1,SDL_RENDERER_SOFTWARE);
         if(!renderer)throw std::runtime_error(SDL_GetError());
-        SDL_RenderSetLogicalSize(renderer,320,240);
-        SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY,"0");
-        texture=SDL_CreateTexture(renderer,SDL_PIXELFORMAT_ARGB8888,SDL_TEXTUREACCESS_STREAMING,320,200);
-        if(!texture)throw std::runtime_error(SDL_GetError());
-        std::array<uint32_t,64000> pixels{};
+        SDL_RendererInfo info{};SDL_GetRendererInfo(renderer,&info);
+        std::cerr<<"Display renderer: "<<info.name<<"\n";
+        ldm::Presentation view(window,renderer,app_dir);view.apply(settings,true);
+        session=std::make_unique<ldm::Session>(*s);
+        if(audio && !menu)SDL_PauseAudioDevice(audio,0);
         std::array<bool,SDL_NUM_SCANCODES> held{};
-        auto keyboard=[&](const SDL_KeyboardEvent& key,bool pressed) {
-            auto scan=key.keysym.scancode;
-            if(scan>SDL_SCANCODE_UNKNOWN && scan<SDL_NUM_SCANCODES)held[scan]=pressed;
-            auto bios=keycode(key);
-            if(pressed) {
-                if(key.keysym.sym==SDLK_RETURN && (key.keysym.mod&KMOD_ALT)) {
-                    if(!key.repeat)SDL_SetWindowFullscreen(window,SDL_GetWindowFlags(window)&SDL_WINDOW_FULLSCREEN_DESKTOP?0:SDL_WINDOW_FULLSCREEN_DESKTOP);
-                }else if(bios)s->keys.push_back(bios|((key.repeat && direction(scan))?0x10000u:0));
-            }else if(direction(scan)) {
-                s->keys.erase(std::remove_if(s->keys.begin(),s->keys.end(),[&](uint32_t pending){
-                    return (pending&0x10000) && uint16_t(pending)==bios;
-                }),s->keys.end());
+        auto release_input=[&](){held.fill(false);mouse_buttons=0;session->clear_input();};
+        auto open_menu=[&](){
+            release_input();session->pause(true);if(audio)SDL_PauseAudioDevice(audio,1);
+            menu=true;startup_menu=false;warmup=false;draft=settings;selected=2;message.clear();
+        };
+        auto close_menu=[&](){
+            menu=false;warmup=false;release_input();session->pause(false);if(audio)SDL_PauseAudioDevice(audio,0);
+        };
+        auto action=[&](int id,int direction) {
+            if(id>=0 && id<7){ldm::change_setting(draft,id,direction);view.apply(draft,false);message.clear();}
+            else if(id==7){draft=ldm::comfort_settings(draft.startup);view.apply(draft,false);}
+            else if(id==8){draft=ldm::original_settings(draft.startup);view.apply(draft,false);}
+            else if(id==9){if(startup_menu)quit=true;else{view.apply(settings,true);close_menu();}}
+            else if(id==10) {
+                try{ldm::save_settings(config,draft);}
+                catch(const std::exception& e){message="Could not save settings. Check that this game folder is writable.";std::cerr<<e.what()<<"\n";return;}
+                settings=draft;if(settings.window!=3)last_window=settings.window;
+                view.apply(settings,true);close_menu();
             }
         };
-        auto release_input=[&](){held.fill(false);s->set_movement(0);s->keys.clear();s->mouse_buttons=0;};
-        uint64_t start=SDL_GetPerformanceCounter(),last=start,last_frame=0;
-        double frequency=double(SDL_GetPerformanceFrequency()),timer_elapsed=0;
-        while(s->running) {
-            auto now=SDL_GetPerformanceCounter();uint64_t elapsed=uint64_t((now-start)*1000/frequency);
-            if(duration && elapsed>=duration)break;
-            timer_elapsed+=(now-last)/frequency;last=now;
-            while(timer_elapsed>=((s->pit_divisor?s->pit_divisor:65536)/1193182.0)) {
-                timer_elapsed-=(s->pit_divisor?s->pit_divisor:65536)/1193182.0;
-                s->timer_interrupt();
+        auto keyboard=[&](const SDL_KeyboardEvent& key,bool pressed) {
+            if(menu) {
+                if(!pressed)return;
+                switch(key.keysym.sym) {
+                case SDLK_ESCAPE:action(9,1);break;
+                case SDLK_RETURN:case SDLK_KP_ENTER:if(!key.repeat)action(selected>=7?selected:10,1);break;
+                case SDLK_SPACE:if(selected<7 || !key.repeat)action(selected,1);break;
+                case SDLK_TAB:selected=(selected+((key.keysym.mod&KMOD_SHIFT)?10:1))%11;break;
+                case SDLK_UP:selected=(selected+10)%11;break;
+                case SDLK_DOWN:selected=(selected+1)%11;break;
+                case SDLK_LEFT:if(selected<7)action(selected,-1);else selected=selected==7?10:selected-1;break;
+                case SDLK_RIGHT:if(selected<7)action(selected,1);else selected=selected==10?7:selected+1;break;
+                default:break;
+                }
+                return;
             }
+            if(pressed && key.keysym.sym==SDLK_F11){if(!key.repeat)open_menu();return;}
+            auto scan=key.keysym.scancode;
+            if(scan>SDL_SCANCODE_UNKNOWN && scan<SDL_NUM_SCANCODES)held[scan]=pressed;
+            session->directions(movement(held));auto bios=keycode(key);
+            if(pressed) {
+                if(key.keysym.sym==SDLK_RETURN && (key.keysym.mod&KMOD_ALT)) {
+                    if(!key.repeat){settings.window=settings.window==3?last_window:3;view.apply(settings,true);release_input();}
+                }else if(bios)session->key(bios|((key.repeat && direction(scan))?0x10000u:0));
+            }else if(direction(scan))session->release_repeat(bios);
+        };
+        auto pointer=[&](int wx,int wy,bool press,int button,bool motion) {
+            if(menu) {
+                bool left=false;int hit=view.menu_hit(wx,wy,left);
+                if(hit>=0){selected=hit;if(press && button==SDL_BUTTON_LEFT)action(hit,left?-1:1);}
+                return;
+            }
+            int x=0,y=0;bool inside=view.game_point(wx,wy,settings,x,y);
+            if(inside || motion)session->mouse(x,y);
+            int bit=button==SDL_BUTTON_LEFT?1:button==SDL_BUTTON_RIGHT?2:0;
+            if(bit) {
+                if(press && inside)mouse_buttons|=bit;else mouse_buttons&=~bit;
+                session->buttons(mouse_buttons);
+            }
+        };
+        uint64_t start=SDL_GetPerformanceCounter();double frequency=double(SDL_GetPerformanceFrequency());
+        double next_frame=0;auto storage=std::make_unique<ldm::Snapshot>();auto& frame=*storage;
+        while(!quit) {
+            auto now=SDL_GetPerformanceCounter();double elapsed_ms=(now-start)*1000/frequency;
+            uint64_t elapsed=uint64_t(elapsed_ms);
+            session->snapshot(frame); // Also propagates precise native diagnostics.
+            if((duration && elapsed>=duration) || session->finished())break;
+            if(warmup && elapsed>=350 && frame.video_mode==0x13){session->pause(true);warmup=false;}
             SDL_Event e;
             while(SDL_PollEvent(&e)) {
-                if(e.type==SDL_QUIT)s->running=false;
+                if(e.type==SDL_QUIT)quit=true;
                 else if(e.type==SDL_KEYDOWN || e.type==SDL_KEYUP)keyboard(e.key,e.type==SDL_KEYDOWN);
                 else if(e.type==SDL_WINDOWEVENT && e.window.event==SDL_WINDOWEVENT_FOCUS_LOST)release_input();
-                else if(e.type==SDL_MOUSEMOTION){s->mouse_x=std::clamp(e.motion.x,0,319);s->mouse_y=std::clamp(e.motion.y*200/240,0,199);}
-                else if(e.type==SDL_MOUSEBUTTONDOWN || e.type==SDL_MOUSEBUTTONUP){int bit=e.button.button==SDL_BUTTON_LEFT?1:e.button.button==SDL_BUTTON_RIGHT?2:0;if(e.type==SDL_MOUSEBUTTONDOWN)s->mouse_buttons|=bit;else s->mouse_buttons&=~bit;}
+                else if(e.type==SDL_MOUSEMOTION)pointer(e.motion.x,e.motion.y,false,0,true);
+                else if(e.type==SDL_MOUSEBUTTONDOWN || e.type==SDL_MOUSEBUTTONUP)pointer(e.button.x,e.button.y,e.type==SDL_MOUSEBUTTONDOWN,e.button.button,false);
             }
+            std::filesystem::path screen_capture;
             while(event_pos<events.size() && events[event_pos].time<=elapsed) {
                 auto event=events[event_pos++];
-                if(event.type=="key")s->keys.push_back(uint16_t(event.a));
+                if(event.type=="key")session->key(uint16_t(event.a));
                 else if(event.type=="down" || event.type=="up" || event.type=="repeat") {
                     if(event.a<=0 || event.a>=SDL_NUM_SCANCODES)throw std::runtime_error("Invalid scripted scancode");
                     SDL_KeyboardEvent key{};key.keysym.scancode=SDL_Scancode(event.a);
                     key.keysym.sym=SDL_GetKeyFromScancode(key.keysym.scancode);key.repeat=event.type=="repeat";
                     keyboard(key,event.type!="up");
-                }
-                else if(event.type=="focuslost")release_input();
+                }else if(event.type=="focuslost")release_input();
                 else if(event.type=="ascii") {
                     SDL_KeyboardEvent key{};key.keysym.sym=event.a;
                     if(event.a>='A'&&event.a<='Z'){key.keysym.sym+=32;key.keysym.mod=KMOD_SHIFT;}
-                    key.keysym.scancode=SDL_GetScancodeFromKey(key.keysym.sym);s->keys.push_back(keycode(key));
-                }
-                else if(event.type=="mouse"){s->mouse_x=event.a;s->mouse_y=event.b;}
-                else if(event.type=="buttons")s->mouse_buttons=event.a;
-                else if(event.type=="capture"){
-                    frame(*s,pixels);capture(pixels,std::filesystem::path("captures")/(std::to_string(event.a)+".bmp"));
-                    // Recovered game-state fields for reproducible save and movement checks.
+                    session->key(keycode(key));
+                }else if(event.type=="mouse")session->mouse(event.a,event.b);
+                else if(event.type=="buttons")session->buttons(event.a);
+                else if(event.type=="click")pointer(event.a,event.b,true,SDL_BUTTON_LEFT,false);
+                else if(event.type=="screen")screen_capture=std::filesystem::path("captures")/(std::to_string(event.a)+"-display.bmp");
+                else if(event.type=="capture") {
+                    capture(frame.pixels,std::filesystem::path("captures")/(std::to_string(event.a)+".bmp"));
                     std::ofstream meta(std::filesystem::path("captures")/(std::to_string(event.a)+".json"));
-                    meta<<"{\"x\":"<<s->u16(0x82bd,0x5b4a)<<",\"y\":"<<s->u16(0x82bd,0x5b4c)
-                        <<",\"town_page\":"<<s->u16(0x82bd,0x5b5a)<<",\"building\":"<<s->u16(0x82bd,0x5b5e)
-                        <<",\"video_mode\":"<<s->video_mode<<",\"held_directions\":"<<unsigned(movement(held))<<"}\n";
-                }
-                else throw std::runtime_error("Unknown script event");
+                    meta<<"{\"x\":"<<frame.x<<",\"y\":"<<frame.y<<",\"town_page\":"<<frame.town_page<<",\"building\":"<<frame.building
+                        <<",\"video_mode\":"<<frame.video_mode<<",\"held_directions\":"<<unsigned(frame.directions)<<",\"boundaries\":"<<frame.boundaries<<"}\n";
+                }else throw std::runtime_error("Unknown script event");
             }
-            s->set_movement(movement(held));
-            for(int steps=0;steps<4096 && s->running;steps++) {
-                ldm::native_step(*s);
-                if(s->waiting)break;
+            if(elapsed_ms>=next_frame || !screen_capture.empty()) {
+                SDL_ShowCursor(menu || !frame.custom_cursor?SDL_ENABLE:SDL_DISABLE);
+                if(menu)view.menu(frame.pixels,draft,startup_menu,selected,message);else view.game(frame.pixels,settings);
+                if(!screen_capture.empty())view.capture(screen_capture);
+                SDL_RenderPresent(renderer);
+                double interval=1000.0/std::clamp(view.refresh_rate(),30,240);
+                next_frame=std::max(next_frame+interval,elapsed_ms+interval*.1);
             }
-            s->audio.speaker((s->ports[0x61]&3)==3?1193182u/(s->speaker_divisor?s->speaker_divisor:65536):0);
-            SDL_ShowCursor(s->custom_cursor?SDL_DISABLE:SDL_ENABLE);
-            if(elapsed>=last_frame+16){frame(*s,pixels);SDL_UpdateTexture(texture,nullptr,pixels.data(),320*4);SDL_RenderClear(renderer);SDL_RenderCopy(renderer,texture,nullptr,nullptr);SDL_RenderPresent(renderer);last_frame=elapsed;}
             SDL_Delay(1);
         }
-        if(duration || !script.empty()){frame(*s,pixels);capture(pixels,"captures/last-frame.bmp");}
+        session->stop();session->snapshot(frame);
+        if(!screenshot.empty()) {
+            if(menu)view.menu(frame.pixels,draft,startup_menu,selected,message);else view.game(frame.pixels,settings);
+            view.capture(screenshot);
+        }
+        if(duration || !script.empty()){ldm::read_frame(*s,frame.pixels);capture(frame.pixels,"captures/last-frame.bmp");}
         std::cerr<<"Native runtime: "<<s->boundaries<<" boundaries, "<<s->ticks<<" BIOS ticks, mode "<<s->video_mode
                  <<", PIT="<<s->pit_divisor<<", timer="<<std::hex<<s->u16(0,0x22)<<":"<<s->u16(0,0x20)
                  <<", CS:IP="<<s->cs-ldm::LoadSegment<<":"<<s->ip<<", clock="<<s->u16(0x2b14,0xfbc4)<<":"<<s->u16(0x2b14,0xfbc2)<<std::dec
                  <<", FM writes="<<s->audio.writes()<<", audible samples="<<s->audio.audible_samples()<<"\n";
-    } catch(const std::exception&e) {
+    }catch(const std::exception&e) {
+        if(session)session->stop();
         std::cerr<<e.what()<<"\n";
         if(duration || !script.empty()) {
             std::filesystem::create_directories(".local");
@@ -246,10 +282,8 @@ int main(int argc,char**argv) {
         if(audio)SDL_CloseAudioDevice(audio);
         SDL_Quit();return 1;
     }
-    if(texture)SDL_DestroyTexture(texture);
+    if(audio)SDL_CloseAudioDevice(audio);
     if(renderer)SDL_DestroyRenderer(renderer);
     if(window)SDL_DestroyWindow(window);
-    if(audio)SDL_CloseAudioDevice(audio);
-    SDL_Quit();
-    return 0;
+    SDL_Quit();return 0;
 }

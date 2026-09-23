@@ -33,7 +33,7 @@ struct State {
     // Low 16 bits are BIOS AX; bit 16 marks desktop auto-repeat so releasing a
     // direction can discard stale repeats while preserving a quick key tap.
     std::vector<uint32_t> keys;
-    int video_mode=3,mouse_x=160,mouse_y=100,mouse_buttons=0;
+    int video_mode=3,text_scan_lines=400,mouse_x=160,mouse_y=100,mouse_buttons=0;
     int mouse_visibility=-1,mouse_hot_x=0,mouse_hot_y=0;
     bool custom_cursor=false;
     std::array<uint16_t,32> mouse_mask{};

@@ -1,0 +1,125 @@
+#include "display.h"
+#include <algorithm>
+#include <cmath>
+#include <fstream>
+#include <unordered_map>
+#include <sstream>
+#include <stdexcept>
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
+#include <windows.h>
+#endif
+
+namespace ldm {
+namespace {
+bool integer(const std::string& value,int& number) {
+    std::istringstream in(value);if(!(in>>number))return false;in>>std::ws;
+    return in.eof();
+}
+}
+DisplaySettings load_settings(const std::filesystem::path& file) {
+    DisplaySettings s;
+    std::ifstream in(file);std::string line;
+    while(std::getline(in,line)) {
+        auto eq=line.find('=');if(eq==std::string::npos)continue;
+        auto key=line.substr(0,eq),value=line.substr(eq+1);int n=0;
+        if(!integer(value,n))continue;
+        if(key=="window" && n>=0 && n<=3)s.window=n;
+        else if(key=="size" && (n==70 || n==85 || n==100))s.size=n;
+        else if(key=="scaling" && n>=0 && n<=2)s.scaling=Scaling(n);
+        else if(key=="colour" && n>=0 && n<=3)s.colour=Colour(n);
+        else if(key=="brightness" && n>=80 && n<=120 && n%10==0)s.brightness=n;
+        else if(key=="vsync" && (n==0 || n==1))s.vsync=n;
+        else if(key=="startup" && (n==0 || n==1))s.startup=n;
+    }
+    return s;
+}
+void save_settings(const std::filesystem::path& file,const DisplaySettings& s) {
+    if(!file.parent_path().empty())std::filesystem::create_directories(file.parent_path());
+    auto temp=file;temp+=".tmp";
+    {
+        std::ofstream out(temp,std::ios::trunc);
+        out<<"# Lost Dutchman Mine display settings. F11 opens the settings window.\n"
+           <<"window="<<s.window<<"\nsize="<<s.size<<"\nscaling="<<int(s.scaling)
+           <<"\ncolour="<<int(s.colour)<<"\nbrightness="<<s.brightness
+           <<"\nvsync="<<s.vsync<<"\nstartup="<<s.startup<<"\n";
+        out.close();if(!out)throw std::runtime_error("Cannot save display settings to "+file.string());
+    }
+#ifdef _WIN32
+    if(!MoveFileExW(temp.c_str(),file.c_str(),MOVEFILE_REPLACE_EXISTING|MOVEFILE_WRITE_THROUGH))
+        throw std::runtime_error("Cannot replace display settings: "+file.string());
+#else
+    std::filesystem::rename(temp,file);
+#endif
+}
+Rect picture_rect(int width,int height,int percent) {
+    if(width<=0 || height<=0)return {};
+    // VGA's rectangular pixels are presented at their original 4:3 aspect.
+    const double scale=std::min(width/4.0,height/3.0)*std::clamp(percent,1,100)/100.0;
+    int w=std::max(1,int(std::floor(scale*4))),h=std::max(1,int(std::floor(scale*3)));
+    return {(width-w)/2,(height-h)/2,w,h};
+}
+bool picture_point(const Rect& r,int px,int py,int& x,int& y) {
+    if(r.w<=0 || r.h<=0)return false;
+    x=std::clamp(int((int64_t(px)-r.x)*320/r.w),0,319);
+    y=std::clamp(int((int64_t(py)-r.y)*200/r.h),0,199);
+    return px>=r.x && py>=r.y && px<r.x+r.w && py<r.y+r.h;
+}
+uint32_t colour_pixel(uint32_t p,const DisplaySettings& s) {
+    if(s.colour==Colour::Original && s.brightness==100)return p;
+    double r=(p>>16)&255,g=(p>>8)&255,b=p&255;
+    double grey=.2126*r+.7152*g+.0722*b;
+    double saturation=1,contrast=1;
+    switch(s.colour) {
+    case Colour::Original:break;
+    case Colour::Warm:r*=1.035;g*=.985;b*=.90;break;
+    case Colour::Vivid:saturation=1.14;contrast=1.04;break;
+    case Colour::Gentle:saturation=.82;contrast=.90;break;
+    }
+    auto channel=[&](double v) {
+        v=grey+(v-grey)*saturation;v=(v-127.5)*contrast+127.5;
+        return uint32_t(std::clamp(std::lround(v*s.brightness/100.0),0l,255l));
+    };
+    return (p&0xff000000)|(channel(r)<<16)|(channel(g)<<8)|channel(b);
+}
+void display_pixels(const Pixels& input,const DisplaySettings& s,std::vector<uint32_t>& out,int& w,int& h) {
+    // Soft uses a 2x point enlargement followed by linear sampling in SDL. It
+    // softens pixel edges without blurring each original pixel across its width.
+    int factor=s.scaling==Scaling::Crisp?1:2;w=320*factor;h=200*factor;out.resize(w*h);
+    auto index=[](int x,int y){return std::clamp(y,0,199)*320+std::clamp(x,0,319);};
+    // Grade each source pixel once, not each enlarged subpixel. Palette lookup
+    // avoids repeating floating-point colour math for the original 256 colours.
+    std::vector<uint32_t> graded;
+    const uint32_t* rgb=input.data();
+    if(s.colour!=Colour::Original || s.brightness!=100) {
+        std::unordered_map<uint32_t,uint32_t> colours;colours.reserve(512);
+        graded.resize(input.size());
+        for(size_t i=0;i<input.size();i++) {
+            auto [it,inserted]=colours.emplace(input[i],0);
+            if(inserted)it->second=colour_pixel(input[i],s);
+            graded[i]=it->second;
+        }
+        rgb=graded.data();
+    }
+    for(int y=0;y<200;y++)for(int x=0;x<320;x++) {
+        auto e=rgb[y*320+x];
+        if(factor==1){out[y*w+x]=e;continue;}
+        uint32_t a=e,b=e,c=e,d=e;
+        if(s.scaling==Scaling::PixelArt) {
+            // Scale2x neighbourhood rule, independently implemented from the
+            // published algorithm: https://www.scale2x.it/algorithm
+            int u=index(x,y-1),v=index(x,y+1),l=index(x-1,y),r=index(x+1,y);
+            auto up=input[u],down=input[v],left=input[l],right=input[r];
+            if(up!=down && left!=right) {
+                if(left==up)a=rgb[l];
+                if(up==right)b=rgb[r];
+                if(left==down)c=rgb[l];
+                if(down==right)d=rgb[r];
+            }
+        }
+        int at=y*2*w+x*2;out[at]=a;out[at+1]=b;
+        out[at+w]=c;out[at+w+1]=d;
+    }
+}
+}

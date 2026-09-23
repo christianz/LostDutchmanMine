@@ -166,7 +166,10 @@ void State::interrupt(uint8_t number) {
     if(number==0x1a && ah==0){cx=ticks>>16;dx=ticks;ax&=0xff00;return;}
     if(number==0x10) {
         switch(ah) {
-        case 0:video_mode=al&0x7f;w8(0x40,0x49,video_mode);w16(0x40,0x4a,(al==3)?80:40);std::cerr<<"video mode "<<std::hex<<video_mode<<std::dec<<"\n";return;
+        case 0:
+            video_mode=al&0x7f;w8(0x40,0x49,video_mode);w16(0x40,0x4a,(al==3)?80:40);
+            if(video_mode==3){w8(0x40,0x84,24);w16(0x40,0x85,text_scan_lines/25);}
+            std::cerr<<"video mode "<<std::hex<<video_mode<<std::dec<<"\n";return;
         case 1:case 2:case 5:return;
         case 3:cx=0x607;dx=0;return;
         case 0xf:ax=(uint16_t(u16(0x40,0x4a))<<8)|video_mode;bx&=255;return;
@@ -185,6 +188,10 @@ void State::interrupt(uint8_t number) {
         case 0x11:if(al==0x30){es=0xf000;bp=0xfa6e;cx=8;dx=24;return;}break;
         case 0x12:
             if(uint8_t(bx)==0x10){bx=3;cx=0;return;}
+            // IBM PS/2 BIOS reference p. 2-33: select text scan lines for the
+            // next mode set. Quit restores the original 400-line text desktop;
+            // the native window closes instead of switching the host monitor.
+            if(uint8_t(bx)==0x30 && al<=2){text_scan_lines=al==0?200:al==1?350:400;ax=(ax&0xff00)|0x12;return;}
             if(uint8_t(bx)==0x33 && al==1){ax=(ax&0xff00)|0x12;return;} // Disable VGA grayscale summing; palette stays in color.
             break;
         case 0xef:return; // Hercules extension absent; leave DX=ffff for the original detection branch.

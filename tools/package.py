@@ -29,6 +29,7 @@ out.mkdir(parents=True)
 shutil.copy2(executable, out/('LostDutchmanMine.exe' if args.platform == 'windows' else 'LostDutchmanMine'))
 shutil.copy2(root/'resources/ldm-icon.bmp', out/'LostDutchmanMine.bmp')
 shutil.copy2(root/'resources/ldm.ico', out/'LostDutchmanMine.ico')
+shutil.copy2(root/'resources/ui-font.bmp', out/'ui-font.bmp')
 shutil.copy2(root/'recovered/load-image.bin', out/'Game/port-data.bin')
 for name in ('LDMG', 'LDM.CAP', 'LDMSAVE.LDM'):
     source = args.data/name
@@ -43,6 +44,7 @@ if args.platform == 'windows':
     shutil.copy2(sdl/'x86_64-w64-mingw32/bin/SDL2.dll', out/'SDL2.dll')
 shutil.copy2(sdl/'LICENSE.txt', out/'licenses/SDL2.txt')
 shutil.copy2(root/'third_party/ymfm/LICENSE', out/'licenses/ymfm.txt')
+shutil.copy2(root/'resources/FONT-LICENSE.txt', out/'licenses/DejaVu-font.txt')
 shutil.copy2(root/'docs/VALIDATION.md', out/'VALIDATION.md')
 launch = 'Double-click LostDutchmanMine.exe.' if args.platform == 'windows' else 'Install your distribution\'s SDL2 runtime, then run ./LostDutchmanMine.'
 (out/'README.txt').write_text(f'''Lost Dutchman Mine - native development build
@@ -50,6 +52,12 @@ launch = 'Double-click LostDutchmanMine.exe.' if args.platform == 'windows' else
 {launch}
 Keep Game, Saves and the executable together. On Windows, copy the whole folder
 to your PC before running. No installation or administrator access is needed.
+
+Choose your display settings, then Play. The 4K comfort button selects desktop
+fullscreen, an 85% centred picture, soft pixel edges and gentle colours.
+F11 reopens display settings during play, pausing the game and music. Settings
+are saved in display.ini beside the executable; keep this file when updating.
+Turn off Show at startup to skip the menu next time. F11 always remains available.
 
 VGA starts automatically. Allow the original title/credits sequence to finish.
 Hold cursor keys or the numeric keypad to move; release to stop. Use the mouse for choices,
@@ -60,7 +68,7 @@ are read only. Back up Saves when moving or updating this build.
 
 This is a development build of a faithful port, not a fully validated release.
 Windows x64 is cross-compiled; independent Windows 11 testing remains outstanding.
-Linux runtime, original VGA assets, movement, menus and saves have been tested.
+Linux runtime, 4K rendering, display menus, movement and saves have been tested.
 See VALIDATION.md for the exact coverage and remaining work.
 
 The original instructions are translated to C++ at build time and compiled to
@@ -69,7 +77,7 @@ CPU interpreter. Original data layouts and game logic are retained. SDL2 handles
 desktop services; ymfm synthesizes the original AdLib sound chip.
 
 This private bundle includes your original game data. Original game copyright
-remains with its owners. SDL2 and ymfm notices are in licenses.
+remains with its owners. SDL2, ymfm and DejaVu font notices are in licenses.
 ''', encoding='utf-8')
 files = {str(f.relative_to(out)): {'bytes': f.stat().st_size,
          'sha256': hashlib.sha256(f.read_bytes()).hexdigest()}

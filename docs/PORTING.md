@@ -18,8 +18,15 @@ The native state loads data at paragraph 1000; DS is normally 82bd at runtime.
   control transfers and graphics callback tables. Do not seed arbitrary bytes.
 - `src/legacy.*`: retained original data/register representation, exact-width
   arithmetic helpers, native files, keyboard/mouse, palettes and timer boundary.
-- `src/desktop.cpp`: SDL2 presentation, physical input, real clock and diagnostic
-  script runner. 320x200 VGA pixels are displayed with a 4:3 aspect ratio.
+- `src/desktop.cpp`: SDL2 lifecycle, settings/menu input and diagnostic scripts.
+- `src/session.*`: dedicated original-game thread, real PIT clock, queued inputs
+  and synchronized framebuffer snapshots. Pausing the settings menu freezes the
+  game clock; GPU/VSync waits cannot pace the game simulation.
+- `src/display.*`: persisted display preferences, colour grading, Scale2x and
+  4:3 display/mouse geometry. The original 320x200 framebuffer is never altered.
+- `src/presentation.*`: high-DPI SDL2 rendering, monitor frame pacing and settings
+  menu. Coordinates convert from window units through physical output pixels to
+  the actual centred game picture; clicks in black borders are rejected.
 - `src/audio.*`: synchronized YM3812 synthesis using ymfm plus PC speaker tone.
 - `src/assets.*`: readable packed-asset decoder, differentially checked against
   the translated original routine at 1265:1250. The runtime still uses the
@@ -47,6 +54,19 @@ The native state loads data at paragraph 1000; DS is normally 82bd at runtime.
 - Poker passes the far comparator 0106:0000 to qsort at 13b4:227c. This
   address-taken callback must be an explicit recovery entry point; direct-call
   traversal alone misses it. The poker test exercises the real sort and callback.
+- Quit Game calls the graphics shutdown function at 1613:1c7d indirectly. It
+  selects 400-line text mode with BIOS 10h/12h/BL=30h, then restores mode 3 before
+  returning through the original exit path. The C runtime also calls its file
+  cleanup callback at 13b4:0752 indirectly. Both recovery seeds and the native
+  text-mode service are required. The host monitor stays in its desktop mode.
+- Display choices are stored atomically in `display.ini` beside the executable.
+  Apply commits the draft; Cancel restores previous settings. F11 releases held
+  controls and pauses original execution and audio, with no timer catch-up when
+  resuming. `--settings`, `--no-settings` and `--config` support launch control.
+- Soft scaling uses a 2x nearest enlargement followed by GPU linear sampling.
+  Pixel art uses the published Scale2x neighbourhood rule followed by linear
+  sampling. Colour grading is applied only to the presented pixels. There is
+  no temporal interpolation, AI reconstruction or new sprite animation.
 - Original timer handler: 1398:00ce, relocated to 2398:00ce. Timer 0 is driven
   by the real 1,193,182 Hz PIT rate and the divisor requested by the original
   game/music routines. Chaining to the default BIOS timer updates its tick count.

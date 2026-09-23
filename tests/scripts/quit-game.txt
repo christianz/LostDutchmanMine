@@ -1,0 +1,6 @@
+# Open the original game menu, then click Quit Game.
+19000 key 16384
+20500 capture 320
+21000 mouse 205 104
+21100 buttons 1
+21400 buttons 0
