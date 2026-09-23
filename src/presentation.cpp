@@ -163,7 +163,7 @@ void Presentation::menu(const Pixels& pixels,const DisplaySettings& s,bool start
         {"Adjust picture brightness to suit your room.","100% keeps the original brightness."},
         {"Synchronise presentation with the monitor.","The game's clock runs independently."},
         {"Choose whether this menu opens at launch.","You can always open it again with F11."},
-        {"Interactive panning and mouse aiming.","Off restores original panning and aiming."},
+        {"Clearer menus, panning and mouse aiming.","Off restores the original menus and actions."},
         {"Fullscreen, 85% picture size and soft edges.","Gentle colours; adjust any choice to taste."},
         {"Crisp pixels and the original colour palette.","A window with the original 4:3 proportions."},
         {"Settings are saved when you apply them.","F11 pauses play and reopens this menu."}

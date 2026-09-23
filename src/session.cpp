@@ -13,7 +13,9 @@ void read_frame(const State& s,Pixels& pixels) {
             pixels[y*320+x]=cga[(v>>(6-2*(x%4)))&3];
         }
     }else pixels.fill(0xff000000);
-    if(s.custom_cursor && s.mouse_visibility>=0) {
+    if(s.panning.active())s.panning.draw(pixels,&s.game_ui,&s.palette);
+    else s.game_ui.draw(pixels,s);
+    if(s.custom_cursor && (s.mouse_visibility>=0 || s.panning.active())) {
         for(int y=0;y<16;y++)for(int x=0;x<16;x++) {
             int px=s.mouse.current().x-s.mouse_hot_x+x,py=s.mouse.current().y-s.mouse_hot_y+y;
             if(px<0 || px>=320 || py<0 || py>=200)continue;
@@ -87,7 +89,6 @@ void Session::run() {
             if(now-published>=std::chrono::milliseconds(4)) {
                 Snapshot next;
                 read_frame(state_,next.pixels);next.video_mode=state_.video_mode;
-                if(state_.panning.active())state_.panning.draw(next.pixels);
                 next.x=state_.u16(0x82bd,0x5b4a);next.y=state_.u16(0x82bd,0x5b4c);
                 next.town_page=state_.u16(0x82bd,0x5b5a);next.building=state_.u16(0x82bd,0x5b5e);
                 next.directions=directions;next.custom_cursor=state_.custom_cursor;next.boundaries=state_.boundaries;

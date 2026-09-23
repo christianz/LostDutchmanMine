@@ -5,6 +5,24 @@ not yet certified. The original DOS program was neither launched nor modified.
 
 ## Verified
 
+- Update 7 adds optional named toolbar icons, hover outlines and F1-F6 hints,
+  plus larger targets for the toolbar and contextual button bevels. The original
+  selector dispatches all six menus and four context actions in the input tests;
+  gaps, absent choices, scene clicks, far returns and QoL-off behavior are covered.
+- The new panning controls reuse the original panel atlas and eight-pixel font:
+  wood, red plaque, silver buttons, hand cursor, river clock and thermometer.
+  A startup/render check verifies the original 16-colour atlas conversion,
+  confined toolbar drawing, pixel-exact original VGA output with QoL off,
+  preserved clock/thermometer pixels and no writes to game memory from rendering.
+- The 81-second panning desktop scenario passes again with the final artwork,
+  toolbar hover hints and a click on Pan's previously inactive corner. It covers
+  WASD, dragging, numpad, F11 pause, collecting/cancelling, QoL off/on, walking
+  afterward, and the original save/load round trip with two gold bags.
+- At 3840x2160, an 85% picture and Classic CRT, real X11 input hovers the enlarged
+  Game-button corner, selects Pan on its bevel, drags five swings and clicks Wash.
+  Correct pointer coordinates, full loosening and all five retained flakes are
+  verified. The Windows x64 cross-build and eleven native regression checks pass.
+  These are Linux/OpenGL tests; independent Windows 11 runtime remains open.
 - Update 6 adds optional mouse aiming and one shot per left press to the original
   shooting encounters, using the existing QoL checkbox. Original-code checks
   verify pointer-centred aiming, clamping, preserved quick-click positions,

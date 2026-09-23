@@ -2,6 +2,7 @@
 #include "audio.h"
 #include "keyboard_event.h"
 #include "mouse.h"
+#include "game_ui.h"
 #include "panning.h"
 #include <array>
 #include <cstdint>
@@ -38,6 +39,7 @@ struct State {
     std::vector<uint32_t> keys;
     bool movement_key_read=false;
     bool qol_improvements=true;
+    GameUI game_ui;
     Panning panning;
     void pan_action();
     bool combat_active=false,combat_input_read=false,combat_mouse_fire=false;

@@ -92,6 +92,8 @@ void State::load(const std::filesystem::path& image,const std::vector<uint32_t>&
     for(auto byte:b)fingerprint=(fingerprint^byte)*1099511628211ULL;
     if(b.size()!=image_bytes || fingerprint!=image_fingerprint)throw std::runtime_error("Game data does not match this native build");
     std::copy(b.begin(),b.end(),memory.begin()+(LoadSegment<<4));
+    // The original text renderer uses the 256 eight-row glyphs at 1a94:0000.
+    std::copy_n(memory.begin()+((LoadSegment+0x1a94)<<4),game_ui.font.size(),game_ui.font.begin());
     for(auto p:reloc) {p+=LoadSegment<<4;if(p+1>=memory.size())throw std::runtime_error("Bad relocation");uint16_t v=memory[p]|(memory[p+1]<<8);v+=LoadSegment;memory[p]=v;memory[p+1]=v>>8;}
     cs=initial_cs+LoadSegment;ip=initial_ip;ss=initial_ss+LoadSegment;sp=initial_sp;ds=es=LoadSegment-16;
     w16(ds,0,0x20cd);w16(ds,2,0x9fff);w16(ds,0x2c,0x0f00);w8(ds,0x80,0);w8(ds,0x81,13);

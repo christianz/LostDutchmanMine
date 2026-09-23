@@ -8,7 +8,12 @@
 23660 buttons 1
 23720 buttons 0
 24500 capture 700
-25000 mouse 110 147
+# Named toolbar/shortcut hints, then click the formerly inactive Pan bevel.
+24600 mouse 281 196
+24700 capture 950
+24800 mouse 52 162
+24900 capture 951
+25000 mouse 72 138
 25060 buttons 1
 25120 buttons 0
 26000 capture 701

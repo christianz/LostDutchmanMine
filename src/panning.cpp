@@ -7,14 +7,12 @@
 
 namespace ldm {
 namespace {
-constexpr uint32_t black=0xff080808,cream=0xffeee2bb,ochre=0xffab7c2c,brown=0xff563909;
+constexpr uint32_t black=0xff080808,cream=0xffeee2bb,ochre=0xffab7c2c;
 constexpr uint32_t yellow=0xffffd34e,light=0xffc4c4b8,steel=0xff747c7b,dark=0xff343c40;
+constexpr GameButton controls[]={{52,174,56,20},{114,174,56,20},{176,174,76,20},{258,174,48,20}};
+constexpr GameButton collect{118,174,120,20};
 int button_at(int x,int y) {
-    if(y<174 || y>=194)return -1;
-    if(x>=10 && x<68)return 0;
-    if(x>=74 && x<132)return 1;
-    if(x>=140 && x<230)return 2;
-    if(x>=238 && x<310)return 3;
+    for(int i=0;i<4;i++)if(controls[i].contains(x,y))return i;
     return -1;
 }
 }
@@ -61,7 +59,7 @@ void Panning::buttons(int mask) {
     if(!(mask&1))dragging_=false;
     if(!press || !active())return;
     if(phase_==Phase::Result) {
-        if(mouse_x_>=100 && mouse_x_<220 && mouse_y_>=174 && mouse_y_<194)finish(true);
+        if(collect.contains(mouse_x_,mouse_y_))finish(true);
         return;
     }
     int button=button_at(mouse_x_,mouse_y_);
@@ -97,11 +95,15 @@ void Panning::update(double seconds,uint8_t directions) {
         }
     }
 }
-void Panning::draw(Pixels& p) const {
+void Panning::draw(Pixels& p,const GameUI* appearance,const std::array<uint32_t,256>* palette) const {
     using namespace pixel;
     if(!active())return;
+    static const GameUI fallback;
+    static const std::array<uint32_t,256> fallback_palette{};
+    const auto& ui=appearance?*appearance:fallback;
+    const auto& pal=palette?*palette:fallback_palette;
     std::copy(creek_.begin(),creek_.end(),p.begin());
-    rect(p,0,0,320,14,black);text(p,160,4,"PAN FOR GOLD",cream,true);
+    rect(p,0,0,320,11,black);ui.text(p,160,1,"Pan for gold",cream,true);
     // Only the pan moves. The riverbank and camera remain still.
     int cx=160+int(tilt_*7),cy=65;double lean=tilt_;
     ellipse(p,cx,cy+12,88,31,black,lean);
@@ -151,39 +153,29 @@ void Panning::draw(Pixels& p) const {
         rect(p,x,y,13,10,0xffaa7545);rect(p,x+2,y-1,9,8,0xffd6ae79);
         for(int j=0;j<3;j++)line(p,x+3+j*3,y+1,x+3+j*3,y+5,0xffaa7545);
     }
-    rect(p,0,112,320,88,black);rect(p,2,114,316,84,ochre);rect(p,5,117,310,78,brown);
-    line(p,5,117,314,117,cream);line(p,5,117,5,194,cream);line(p,6,194,314,194,0xff382400);
+    ui.panning_panel(p,pal);
     if(phase_==Phase::Result) {
-        text(p,160,123,gold_?"PAY DIRT!":"NO GOLD THIS TIME.",gold_?yellow:cream,true);
-        text(p,160,136,gold_?"A BAG OF GOLD FOR YOUR PACK.":"THE GOLD WASHED OVER THE RIM.",cream,true);
-        text(p,160,150,gold_==5?"A STEADY HAND, PROSPECTOR.":gold_?"NEXT TIME, ROCK BEFORE WASHING.":"ROCK UNTIL THE BAR TURNS GOLD.",cream,true);
-        text(p,160,162,"ENTER TO RETURN TO THE RIVER",light,true);
+        ui.text(p,150,120,gold_?"Pay dirt!":"No gold this time",gold_?yellow:cream,true);
+        ui.text(p,150,132,gold_?"A bag for your pack.":"Washed over the rim.",cream,true);
+        ui.text(p,150,148,gold_==5?"A steady hand!":"Rock before washing.",cream,true);
+        ui.text(p,178,163,"Enter to return",cream,true);
+        bool hover=collect.contains(mouse_x_,mouse_y_);
+        ui.button(p,pal,collect,gold_?"Take gold":"Return",hover,hover && (buttons_&1));
     }else {
-        text(p,12,122,"WASH "+std::to_string(round_+1)+"/3",cream);
-        text(p,237,122,"GOLD "+std::to_string(gold_)+"/5",yellow);
-        text(p,12,135,"LOOSEN",cream);rect(p,56,133,251,10,black);
-        rect(p,58,135,247*loosened_/100,6,loosened_>=80?yellow:ochre);
-        std::string hint=phase_==Phase::Rinse?(lost_last_?"TOO SOON! SOME GOLD WASHED OUT.":"WASHING AWAY THE SAND..."):loosened_>=80?"READY TO WASH. KEEP THE GOLD!":"ROCK SIDE TO SIDE TO LOOSEN SAND.";
-        text(p,160,148,hint,cream,true);
-        text(p,160,160,"A/D OR DRAG PAN. SPACE TO WASH.",light,true);
-    }
-    const int xs[]={10,74,140,238},widths[]={58,58,90,72};
-    const char* labels[]={"< LEFT","RIGHT >",phase_==Phase::Result?(gold_?"TAKE GOLD":"CONTINUE"):"WASH",phase_==Phase::Result?"RETURN":"LEAVE"};
-    for(int i=0;i<4;i++) {
-        if(phase_==Phase::Result) {
-            if(i!=2)continue;
-            rect(p,100,174,120,20,black);rect(p,101,175,118,18,ochre);
-            line(p,101,175,218,175,cream);text(p,160,181,labels[i],cream,true);continue;
+        ui.text(p,77,120,"Wash "+std::to_string(round_+1)+"/3",cream);
+        ui.text(p,170,120,"Gold "+std::to_string(gold_)+"/5",yellow);
+        rect(p,78,132,145,9,black);rect(p,79,133,143,1,0xffaa9966);
+        rect(p,80,134,141*loosened_/100,5,loosened_>=80?yellow:ochre);
+        std::string hint=phase_==Phase::Rinse?(lost_last_?"Some gold washed out!":"Washing the sand..."):loosened_>=80?"Ready to wash!":"Rock to loosen sand";
+        ui.text(p,150,148,hint,cream,true);
+        ui.text(p,178,163,"A/D or drag pan. Space: wash",cream,true);
+        const char* labels[]={"< Left","Right >","Wash","Exit"};
+        for(int i=0;i<4;i++) {
+            bool selected=button_at(mouse_x_,mouse_y_)==i,pressed=selected && (buttons_&1);
+            bool enabled=phase_==Phase::Rock || i==3;
+            ui.button(p,pal,controls[i],labels[i],selected,pressed,enabled);
         }
-        bool selected=button_at(mouse_x_,mouse_y_)==i,pressed=selected && (buttons_&1);
-        rect(p,xs[i],174,widths[i],20,black);rect(p,xs[i]+1,175,widths[i]-2,18,pressed?brown:ochre);
-        line(p,xs[i]+1,175,xs[i]+widths[i]-2,175,selected?yellow:cream);
-        text(p,xs[i]+widths[i]/2,181+(pressed?1:0),labels[i],cream,true);
     }
-    // A small outlined crosshair stays legible on the pan and the buttons.
-    line(p,mouse_x_-3,mouse_y_,mouse_x_+3,mouse_y_,black);
-    line(p,mouse_x_,mouse_y_-3,mouse_x_,mouse_y_+3,black);
-    dot(p,mouse_x_-2,mouse_y_,cream);dot(p,mouse_x_+2,mouse_y_,cream);
-    dot(p,mouse_x_,mouse_y_-2,cream);dot(p,mouse_x_,mouse_y_+2,cream);
+    // The shared frame renderer puts the original hand above this scene too.
 }
 }

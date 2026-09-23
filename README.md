@@ -42,8 +42,12 @@ live preview and is saved with your other preferences. It is off by default;
 Soft is subtle and Classic is stronger. It leaves the settings text sharp and
 keeps the same mouse coordinates. CRT rendering adds GPU work at high resolutions.
 
-**QoL improvements** enables the new panning minigame and mouse aiming in combat,
-and is checked by default.
+**QoL improvements** enables clearer in-game menus, the new panning minigame and
+mouse aiming in combat, and is checked by default. The six original toolbar
+icons gain names, larger click targets and a gold hover outline. With the hand
+active, hovering also shows the relevant F1-F6 shortcut in the empty message
+strip. River and other contextual buttons accept clicks on their bevels too.
+Turning QoL off restores the original panel artwork and click targets.
 At a river, choose Pan while carrying a pan. Rock it left and right using A/D,
 arrows, numpad 4/6, the onscreen buttons, or by dragging the pan. When the loosen
 bar turns gold, press Space/Enter or click Wash. Complete three washes and take
@@ -55,6 +59,9 @@ under the choice it started with. Movement/display improvements remain available
 
 The new creek artwork and animated pan are drawn at the game's 320x200 resolution
 and pass through the same scaling, colour and CRT options. The view stays steady.
+Panning uses the original wooden surround, red-bordered plaque, silver buttons,
+pixel lettering and hand cursor. The river's clock and thermometer remain in
+place while the game is paused for the activity.
 
 During shooting encounters, move the mouse over the scene to aim the original
 crosshair and **left-click** to fire one shot. **Right-click** opens the hand
@@ -117,13 +124,15 @@ The verified Linux build in this workspace uses the Makefile with local SDL2
 headers and the system SDL2 shared library:
 
 ```sh
-make -j4 build/ldm-native build/test-assets build/test-arithmetic build/test-poker build/test-quit build/test-display build/test-mouse build/test-keyboard build/test-console build/test-panning build/test-combat build/test-combat-scene
+make -j4 build/ldm-native build/test-assets build/test-arithmetic build/test-poker build/test-quit build/test-display build/test-mouse build/test-menu build/test-menu-scene build/test-keyboard build/test-console build/test-panning build/test-combat build/test-combat-scene
 build/test-arithmetic
 build/test-assets /path/to/LDM/LDMG
 build/test-poker
 build/test-quit
 build/test-display
 build/test-mouse
+build/test-menu
+build/test-menu-scene /path/to/LDM
 build/test-keyboard
 build/test-console
 build/test-panning

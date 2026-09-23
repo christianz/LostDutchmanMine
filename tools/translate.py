@@ -197,6 +197,19 @@ class Emitter:
             expected,hook=combat_sites[cs,ip]
             if i.bytes.hex()!=expected:raise ValueError('Unexpected combat input layout')
             code.insert(0,hook)
+        menu_sites = {
+            (0x0505,0x096b):('cb','s.game_ui.prepare(s);'),
+            (0x0505,0x032e):('55','s.game_ui.context(s);'),
+            (0x0505,0x0538):('9a65006512','s.game_ui.context_buttons=0;'),
+            (0x0000,0x082e):('55','s.game_ui.choosing=true;'),
+            (0x0000,0x093d):('cb','s.game_ui.choosing=false;'),
+            (0x0000,0x093e):('55','s.game_ui.map_click(s); s.game_ui.choosing=false;'),
+            (0x0000,0x0a83):('cb','s.game_ui.choosing=true;'),
+        }
+        if (cs,ip) in menu_sites:
+            expected,hook=menu_sites[cs,ip]
+            if i.bytes.hex()!=expected:raise ValueError('Unexpected original panel layout')
+            code.insert(0,hook)
         if (cs,ip) in MOVEMENT_READ_SITES:
             # Only movement/command polls use native direction aliases. Clear
             # the context before dispatching commands that open text fields.

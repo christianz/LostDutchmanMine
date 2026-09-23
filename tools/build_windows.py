@@ -10,7 +10,7 @@ sdl=root/'.local/deps/SDL2-2.32.0/x86_64-w64-mingw32'
 out=root/'build-windows';out.mkdir(exist_ok=True)
 env=dict(os.environ,ZIG_GLOBAL_CACHE_DIR=str(root/'.local/zig-cache'))
 common=[str(zig),'c++','-target','x86_64-windows-gnu','-std=c++17','-O1','-Isrc','-Ibuild/generated','-Ithird_party/ymfm','-I'+str(sdl/'include/SDL2')]
-sources=list((root/'build/generated').glob('*.cpp'))+[root/'src'/name for name in ('legacy.cpp','desktop.cpp','audio.cpp','session.cpp','display.cpp','presentation.cpp','panning.cpp')]+[root/'third_party/ymfm'/name for name in ('ymfm_opl.cpp','ymfm_adpcm.cpp','ymfm_pcm.cpp')]
+sources=list((root/'build/generated').glob('*.cpp'))+[root/'src'/name for name in ('legacy.cpp','desktop.cpp','audio.cpp','session.cpp','display.cpp','presentation.cpp','panning.cpp','game_ui.cpp','assets.cpp')]+[root/'third_party/ymfm'/name for name in ('ymfm_opl.cpp','ymfm_adpcm.cpp','ymfm_pcm.cpp')]
 def compile(source):
     dest=out/(source.stem+'.o')
     headers=[root/'src/legacy.h',root/'src/audio.h',root/'src/mouse.h',root/'src/keyboard_event.h',root/'src/panning.h',root/'src/display.h',root/'build/generated/image_info.h']

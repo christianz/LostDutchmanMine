@@ -1,5 +1,6 @@
 #pragma once
 #include "display.h"
+#include "game_ui.h"
 #include <array>
 #include <filesystem>
 
@@ -16,7 +17,7 @@ public:
     void pointer(int x,int y);
     void buttons(int mask);
     void clear_input();
-    void draw(Pixels& pixels) const;
+    void draw(Pixels& pixels,const GameUI* ui=nullptr,const std::array<uint32_t,256>* palette=nullptr) const;
     bool engaged() const{return phase_!=Phase::Idle;}
     bool active() const{return engaged() && phase_!=Phase::Done;}
     bool done() const{return phase_==Phase::Done;}

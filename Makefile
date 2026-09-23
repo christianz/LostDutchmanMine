@@ -4,7 +4,7 @@ CPPFLAGS += -Isrc -Ibuild/generated -Ithird_party/ymfm
 SDL_INCLUDE ?= .local/deps/SDL2-2.32.0/x86_64-w64-mingw32/include/SDL2
 SDL_LIBS ?= -l:libSDL2-2.0.so.0
 GENERATED = $(wildcard build/generated/*.cpp)
-OBJECTS = $(patsubst %.cpp,%.o,$(GENERATED)) build/legacy.o build/panning.o build/audio.o build/ymfm_opl.o build/ymfm_adpcm.o build/ymfm_pcm.o build/probe.o
+OBJECTS = $(patsubst %.cpp,%.o,$(GENERATED)) build/legacy.o build/game_ui.o build/assets.o build/panning.o build/audio.o build/ymfm_opl.o build/ymfm_adpcm.o build/ymfm_pcm.o build/probe.o
 
 .PHONY: all recover clean
 .DELETE_ON_ERROR:
@@ -15,7 +15,7 @@ recover:
 	.venv/bin/python tools/translate.py
 build/ldm-probe: $(OBJECTS)
 	$(CXX) $(CXXFLAGS) $^ -o $@
-build/test-assets: $(filter-out build/probe.o,$(OBJECTS)) build/assets.o tests/assets.cpp
+build/test-assets: $(filter-out build/probe.o,$(OBJECTS)) tests/assets.cpp
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $^ -o $@
 build/test-arithmetic: $(filter-out build/probe.o,$(OBJECTS)) tests/arithmetic.cpp
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $^ -o $@
@@ -24,6 +24,10 @@ build/test-poker: $(filter-out build/probe.o,$(OBJECTS)) tests/poker.cpp
 build/test-quit: $(filter-out build/probe.o,$(OBJECTS)) tests/quit.cpp
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $^ -o $@
 build/test-mouse: $(filter-out build/probe.o,$(OBJECTS)) tests/mouse.cpp
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $^ -o $@
+build/test-menu: $(filter-out build/probe.o,$(OBJECTS)) tests/menu.cpp
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $^ -o $@
+build/test-menu-scene: $(filter-out build/probe.o,$(OBJECTS)) build/session.o tests/menu-scene.cpp
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $^ -o $@
 build/test-keyboard: $(filter-out build/probe.o,$(OBJECTS)) tests/keyboard.cpp src/keyboard.h src/keyboard_event.h
 	$(CXX) $(CPPFLAGS) -I$(SDL_INCLUDE) $(CXXFLAGS) $(filter %.o %.cpp,$^) -o $@
