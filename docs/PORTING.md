@@ -84,6 +84,12 @@ The native state loads data at paragraph 1000; DS is normally 82bd at runtime.
 - Poker passes the far comparator 0106:0000 to qsort at 13b4:227c. This
   address-taken callback must be an explicit recovery entry point; direct-call
   traversal alone misses it. The poker test exercises the real sort and callback.
+- The saloon drinking sound reaches the original `kbhit` helper at 13b4:1872.
+  Its INT 21h/AH=0Bh at 13b4:188e must return AL=FFh for queued input or zero
+  when empty, without consuming a key or waiting. The music loop at 10c9:0088
+  then calls `getch` to detect Escape. The native status service preserves that
+  behavior, and the test also exercises the original C runtime character buffer.
+  See [Microsoft MS-DOS Programmer's Reference, Function 0BH](https://www.pcjs.org/documents/books/mspl13/msdos/dosref33/).
 - Quit Game calls the graphics shutdown function at 1613:1c7d indirectly. It
   selects 400-line text mode with BIOS 10h/12h/BL=30h, then restores mode 3 before
   returning through the original exit path. The C runtime also calls its file

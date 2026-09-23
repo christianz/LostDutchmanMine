@@ -27,6 +27,8 @@ build/test-mouse: $(filter-out build/probe.o,$(OBJECTS)) tests/mouse.cpp
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $^ -o $@
 build/test-keyboard: $(filter-out build/probe.o,$(OBJECTS)) tests/keyboard.cpp src/keyboard.h src/keyboard_event.h
 	$(CXX) $(CPPFLAGS) -I$(SDL_INCLUDE) $(CXXFLAGS) $(filter %.o %.cpp,$^) -o $@
+build/test-console: $(filter-out build/probe.o,$(OBJECTS)) tests/console.cpp
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $^ -o $@
 build/legacy.o: build/generated/image_info.h
 build/ldm-native: $(filter-out build/probe.o,$(OBJECTS)) build/desktop.o build/session.o build/display.o build/presentation.o | build/LostDutchmanMine.bmp build/ui-font.bmp
 	$(CXX) $(CXXFLAGS) $^ $(SDL_LIBS) -o $@

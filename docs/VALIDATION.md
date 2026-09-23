@@ -5,6 +5,17 @@ not yet certified. The original DOS program was neither launched nor modified.
 
 ## Verified
 
+- Update 4 fixes the saloon drink crash: `INT 21h` at `13b4:188e`, AX=`0bff`.
+  The original C `kbhit` helper reproduces the missing-service error before the
+  fix. Its DOS keyboard-status call now returns immediately without consuming
+  input. Original-code tests cover empty/pending input, repeated polling,
+  Escape, non-character keys and the C runtime's buffered character.
+- A native desktop scenario buys whiskey, walks away with D, returns with A,
+  buys sarsaparilla and walks away again. Both choices complete without errors;
+  the F1 cash display reads $248 after the two purchases from $250. Captured
+  positions verify movement after each drink and reopening the bartender menu.
+  The Linux runtime and Windows x64 rebuild pass; independent Windows 11
+  validation of this fix remains outstanding.
 - Update 4 adds WASD and completes keypad input. The original movement/text
   helper test checks all four WASD keys with Shift/Caps Lock, all eight keypad
   directions with Num Lock on/off, digit/slot scan codes and keypad Enter.
@@ -132,7 +143,7 @@ as Windows Server 2025, not Windows 11. No Windows 11 runtime claim is made.
 ## Reproduce focused checks
 
 ```sh
-make -j4 build/ldm-native build/test-assets build/test-arithmetic build/test-poker build/test-quit build/test-display build/test-mouse build/test-keyboard
+make -j4 build/ldm-native build/test-assets build/test-arithmetic build/test-poker build/test-quit build/test-display build/test-mouse build/test-keyboard build/test-console
 build/test-arithmetic
 build/test-assets /nas/tmp/LDM/LDMG
 build/test-poker
@@ -140,8 +151,14 @@ build/test-quit
 build/test-display
 build/test-mouse
 build/test-keyboard
+build/test-console
 python3 tests/verify-quit.py
 python3 tests/verify-mouse.py
+SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy build/ldm-native \
+  --data /nas/tmp/LDM --image recovered/load-image.bin \
+  --saves .local/saloon-drinks/Saves --seconds 69 \
+  --script tests/scripts/saloon-drinks.txt
+python3 tests/verify-saloon.py
 SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy build/ldm-native \
   --data /nas/tmp/LDM --image recovered/load-image.bin \
   --saves .local/movement-saves --seconds 23 \

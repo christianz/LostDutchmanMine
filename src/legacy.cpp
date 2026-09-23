@@ -215,6 +215,9 @@ void State::interrupt(uint8_t number) {
             if(keys.empty()){waiting=true;return;}
             ax=(ax&0xff00)|uint8_t(keys.front());keys.erase(keys.begin());return;
         case 0x09:std::cout<<string_at(ds,dx,'$')<<std::flush;return;
+        // DOS kbhit: report queued input without waiting or consuming it.
+        // The original music wait loop uses this before reading Escape.
+        case 0x0b:ax=(ax&0xff00)|(keys.empty()?0:0xff);return;
         case 0x0e:ax=(ax&0xff00)|3;return;
         case 0x19:ax=(ax&0xff00)|2;return;
         case 0x1a:ok();return;
