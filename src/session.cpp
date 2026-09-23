@@ -15,7 +15,7 @@ void read_frame(const State& s,Pixels& pixels) {
     }else pixels.fill(0xff000000);
     if(s.custom_cursor && s.mouse_visibility>=0) {
         for(int y=0;y<16;y++)for(int x=0;x<16;x++) {
-            int px=s.mouse_x-s.mouse_hot_x+x,py=s.mouse_y-s.mouse_hot_y+y;
+            int px=s.mouse.current().x-s.mouse_hot_x+x,py=s.mouse.current().y-s.mouse_hot_y+y;
             if(px<0 || px>=320 || py<0 || py>=200)continue;
             auto& c=pixels[py*320+px];
             if(!(s.mouse_mask[y]&(0x8000>>x)))c=0xff000000;
@@ -59,9 +59,9 @@ void Session::run() {
                 case Kind::Release:
                     state_.keys.erase(std::remove_if(state_.keys.begin(),state_.keys.end(),[&](uint32_t key){return (key&0x10000) && uint16_t(key)==command.a;}),state_.keys.end());break;
                 case Kind::Directions:directions=uint8_t(command.a);break;
-                case Kind::Mouse:state_.mouse_x=command.a;state_.mouse_y=command.b;break;
-                case Kind::Buttons:state_.mouse_buttons=command.a;break;
-                case Kind::Clear:directions=0;state_.keys.clear();state_.mouse_buttons=0;break;
+                case Kind::Mouse:state_.mouse.move(command.a,command.b);break;
+                case Kind::Buttons:state_.mouse.buttons(command.a);break;
+                case Kind::Clear:directions=0;state_.keys.clear();state_.mouse.clear();break;
             }
             while(timer_elapsed>=((state_.pit_divisor?state_.pit_divisor:65536)/1193182.0)) {
                 timer_elapsed-=(state_.pit_divisor?state_.pit_divisor:65536)/1193182.0;
@@ -78,6 +78,8 @@ void Session::run() {
                 next.x=state_.u16(0x82bd,0x5b4a);next.y=state_.u16(0x82bd,0x5b4c);
                 next.town_page=state_.u16(0x82bd,0x5b5a);next.building=state_.u16(0x82bd,0x5b5e);
                 next.directions=directions;next.custom_cursor=state_.custom_cursor;next.boundaries=state_.boundaries;
+                next.mouse_visibility=state_.mouse_visibility;next.mouse_mode=state_.u16(0x82bd,0x5d62);
+                next.mouse_x=state_.mouse.current().x;next.mouse_y=state_.mouse.current().y;
                 {std::lock_guard<std::mutex> lock(frame_mutex_);next.sequence=frame_.sequence+1;frame_=std::move(next);}
                 published=now;
             }

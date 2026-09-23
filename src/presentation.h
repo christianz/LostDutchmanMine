@@ -5,6 +5,8 @@
 #include <string>
 
 namespace ldm {
+enum MenuItem { Display, PictureSize, ScalingFilter, CrtMonitor, ColourProfile,
+    Brightness, VSync, Startup, Comfort, Original, Cancel, Apply, MenuItemCount };
 class Presentation {
 public:
     Presentation(SDL_Window* window,SDL_Renderer* renderer,const std::filesystem::path& app);
@@ -22,13 +24,18 @@ private:
     SDL_Window* window_;
     SDL_Renderer* renderer_;
     SDL_Texture* texture_=nullptr,*font_=nullptr,*icon_=nullptr;
+    SDL_Texture* glow_=nullptr,*mask_=nullptr;
     int texture_w_=0,texture_h_=0;
+    int mask_w_=0,mask_h_=0;
+    Crt mask_style_=Crt::Off;
     std::vector<uint32_t> processed_;
     std::unique_ptr<Pixels> previous_=std::make_unique<Pixels>();
+    std::unique_ptr<Pixels> glow_pixels_=std::make_unique<Pixels>();
     int previous_style_=-1;
     float ui_scale_=1,ui_x_=0,ui_y_=0;
     bool vsync_available_=true;
     void upload(const Pixels& pixels,const DisplaySettings& settings);
+    void picture(const SDL_Rect& destination,const DisplaySettings& settings);
     SDL_FRect ui_rect(float x,float y,float w,float h) const;
     void box(float x,float y,float w,float h,uint32_t colour,bool outline=false);
     void text(float x,float y,float size,const std::string& value,uint32_t colour,bool centre=false);

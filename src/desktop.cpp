@@ -123,13 +123,14 @@ int main(int argc,char**argv) {
         }
         auto settings=ldm::load_settings(config),draft=settings;
         bool menu=force_setup || (!no_setup && !duration && script.empty() && settings.startup);
-        bool startup_menu=menu,warmup=menu,quit=false;int selected=2,mouse_buttons=0,last_window=settings.window==3?1:settings.window;
+        bool startup_menu=menu,warmup=menu,quit=false;int selected=ldm::ScalingFilter,mouse_buttons=0,last_window=settings.window==3?1:settings.window;
         std::string message;
         s->data_dir=std::filesystem::absolute(data);s->save_dir=std::filesystem::absolute(save);
         if(std::filesystem::weakly_canonical(s->data_dir)==std::filesystem::weakly_canonical(s->save_dir))throw std::runtime_error("Save directory must differ from the original game directory");
         s->load(image,image_relocations,entry_cs,entry_ip,stack_ss,stack_sp);
         for(unsigned char c:keys){SDL_KeyboardEvent key{};key.keysym.sym=c;s->keys.push_back(keycode(key));}
         SDL_SetMainReady();SDL_SetHint(SDL_HINT_WINDOWS_DPI_AWARENESS,"permonitorv2");
+        SDL_SetHint(SDL_HINT_MOUSE_FOCUS_CLICKTHROUGH,"1");
         if(SDL_Init(SDL_INIT_VIDEO|SDL_INIT_TIMER)<0)throw std::runtime_error(SDL_GetError());
         if(SDL_InitSubSystem(SDL_INIT_AUDIO)==0) {
             SDL_AudioSpec wanted{};wanted.freq=48000;wanted.format=AUDIO_F32SYS;wanted.channels=1;wanted.samples=512;wanted.callback=audio_callback;wanted.userdata=&s->audio;
@@ -153,17 +154,17 @@ int main(int argc,char**argv) {
         auto release_input=[&](){held.fill(false);mouse_buttons=0;session->clear_input();};
         auto open_menu=[&](){
             release_input();session->pause(true);if(audio)SDL_PauseAudioDevice(audio,1);
-            menu=true;startup_menu=false;warmup=false;draft=settings;selected=2;message.clear();
+            menu=true;startup_menu=false;warmup=false;draft=settings;selected=ldm::ScalingFilter;message.clear();
         };
         auto close_menu=[&](){
             menu=false;warmup=false;release_input();session->pause(false);if(audio)SDL_PauseAudioDevice(audio,0);
         };
         auto action=[&](int id,int direction) {
-            if(id>=0 && id<7){ldm::change_setting(draft,id,direction);view.apply(draft,false);message.clear();}
-            else if(id==7){draft=ldm::comfort_settings(draft.startup);view.apply(draft,false);}
-            else if(id==8){draft=ldm::original_settings(draft.startup);view.apply(draft,false);}
-            else if(id==9){if(startup_menu)quit=true;else{view.apply(settings,true);close_menu();}}
-            else if(id==10) {
+            if(id>=0 && id<ldm::Comfort){ldm::change_setting(draft,id,direction);view.apply(draft,false);message.clear();}
+            else if(id==ldm::Comfort){draft=ldm::comfort_settings(draft.startup);view.apply(draft,false);}
+            else if(id==ldm::Original){draft=ldm::original_settings(draft.startup);view.apply(draft,false);}
+            else if(id==ldm::Cancel){if(startup_menu)quit=true;else{view.apply(settings,true);close_menu();}}
+            else if(id==ldm::Apply) {
                 try{ldm::save_settings(config,draft);}
                 catch(const std::exception& e){message="Could not save settings. Check that this game folder is writable.";std::cerr<<e.what()<<"\n";return;}
                 settings=draft;if(settings.window!=3)last_window=settings.window;
@@ -174,14 +175,14 @@ int main(int argc,char**argv) {
             if(menu) {
                 if(!pressed)return;
                 switch(key.keysym.sym) {
-                case SDLK_ESCAPE:action(9,1);break;
-                case SDLK_RETURN:case SDLK_KP_ENTER:if(!key.repeat)action(selected>=7?selected:10,1);break;
-                case SDLK_SPACE:if(selected<7 || !key.repeat)action(selected,1);break;
-                case SDLK_TAB:selected=(selected+((key.keysym.mod&KMOD_SHIFT)?10:1))%11;break;
-                case SDLK_UP:selected=(selected+10)%11;break;
-                case SDLK_DOWN:selected=(selected+1)%11;break;
-                case SDLK_LEFT:if(selected<7)action(selected,-1);else selected=selected==7?10:selected-1;break;
-                case SDLK_RIGHT:if(selected<7)action(selected,1);else selected=selected==10?7:selected+1;break;
+                case SDLK_ESCAPE:action(ldm::Cancel,1);break;
+                case SDLK_RETURN:case SDLK_KP_ENTER:if(!key.repeat)action(selected>=ldm::Comfort?selected:ldm::Apply,1);break;
+                case SDLK_SPACE:if(selected<ldm::Comfort || !key.repeat)action(selected,1);break;
+                case SDLK_TAB:selected=(selected+((key.keysym.mod&KMOD_SHIFT)?ldm::MenuItemCount-1:1))%ldm::MenuItemCount;break;
+                case SDLK_UP:selected=(selected+ldm::MenuItemCount-1)%ldm::MenuItemCount;break;
+                case SDLK_DOWN:selected=(selected+1)%ldm::MenuItemCount;break;
+                case SDLK_LEFT:if(selected<ldm::Comfort)action(selected,-1);else selected=selected==ldm::Comfort?ldm::Apply:selected-1;break;
+                case SDLK_RIGHT:if(selected<ldm::Comfort)action(selected,1);else selected=selected==ldm::Apply?ldm::Comfort:selected+1;break;
                 default:break;
                 }
                 return;
@@ -248,7 +249,9 @@ int main(int argc,char**argv) {
                     capture(frame.pixels,std::filesystem::path("captures")/(std::to_string(event.a)+".bmp"));
                     std::ofstream meta(std::filesystem::path("captures")/(std::to_string(event.a)+".json"));
                     meta<<"{\"x\":"<<frame.x<<",\"y\":"<<frame.y<<",\"town_page\":"<<frame.town_page<<",\"building\":"<<frame.building
-                        <<",\"video_mode\":"<<frame.video_mode<<",\"held_directions\":"<<unsigned(frame.directions)<<",\"boundaries\":"<<frame.boundaries<<"}\n";
+                        <<",\"video_mode\":"<<frame.video_mode<<",\"held_directions\":"<<unsigned(frame.directions)<<",\"boundaries\":"<<frame.boundaries
+                        <<",\"mouse_visibility\":"<<frame.mouse_visibility<<",\"mouse_mode\":"<<frame.mouse_mode
+                        <<",\"mouse_x\":"<<frame.mouse_x<<",\"mouse_y\":"<<frame.mouse_y<<"}\n";
                 }else throw std::runtime_error("Unknown script event");
             }
             if(elapsed_ms>=next_frame || !screen_capture.empty()) {

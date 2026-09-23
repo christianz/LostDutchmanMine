@@ -152,13 +152,13 @@ void State::interrupt(uint8_t number) {
     }
     if(number==0x33) {
         switch(ax) {
-        case 0:ax=0xffff;bx=2;mouse_visibility=-1;return;
+        case 0:ax=0xffff;bx=2;mouse_visibility=-1;mouse.clear();return;
         case 1:++mouse_visibility;return;
         case 2:--mouse_visibility;return;
         case 7:case 8:case 0xa:case 0xf:return;
         case 9:mouse_hot_x=int16_t(bx);mouse_hot_y=int16_t(cx);for(unsigned i=0;i<32;i++)mouse_mask[i]=u16(es,uint16_t(dx+i*2));custom_cursor=true;return;
-        case 3:bx=mouse_buttons;cx=uint16_t(mouse_x*2);dx=uint16_t(mouse_y);return;
-        case 4:mouse_x=cx/2;mouse_y=dx;return;
+        case 3:bx=mouse.sample().buttons;cx=uint16_t(mouse.sample().x*2);dx=uint16_t(mouse.sample().y);return;
+        case 4:mouse.warp(cx/2,dx);return;
         case 0xb:cx=dx=0;return;
         default:break;
         }

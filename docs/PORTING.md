@@ -23,11 +23,14 @@ The native state loads data at paragraph 1000; DS is normally 82bd at runtime.
   and synchronized framebuffer snapshots. Pausing the settings menu freezes the
   game clock; GPU/VSync waits cannot pace the game simulation.
 - `src/display.*`: persisted display preferences, colour grading, Scale2x and
-  4:3 display/mouse geometry. The original 320x200 framebuffer is never altered.
+  4:3 display/mouse geometry, CRT phosphor/scanline masks and highlight glow.
+  The original 320x200 framebuffer is never altered.
 - `src/presentation.*`: high-DPI SDL2 rendering, monitor frame pacing and settings
   menu. Coordinates convert from window units through physical output pixels to
   the actual centred game picture; clicks in black borders are rejected.
 - `src/audio.*`: synchronized YM3812 synthesis using ymfm plus PC speaker tone.
+- `src/mouse.h`: desktop button transitions and their coordinates, retained until
+  a complete original mouse poll reads them; current motion remains independent.
 - `src/assets.*`: readable packed-asset decoder, differentially checked against
   the translated original routine at 1265:1250. The runtime still uses the
   translated original decoder.
@@ -48,6 +51,15 @@ The native state loads data at paragraph 1000; DS is normally 82bd at runtime.
   movement cadence without waiting for OS keyboard repeat. Keyboard events still
   reach menus. Releasing a direction removes its pending repeats; losing window
   focus clears all held controls. Opposing directions cancel per axis.
+- The mouse helper at 0fc5:0038 separately reads buttons, Y and X through three
+  INT 33h calls. Its AOT entry latches one coherent desktop sample for those reads.
+  Each button transition is retained: processing down/up in one desktop batch
+  previously collapsed a quick click to zero before the game observed it. This
+  left DS:5d62 in keyboard mode and the hand hidden. Click coordinates also stay
+  attached to the transition if the physical pointer moves before polling.
+  Focus loss/F11 clears pending input; transitions older than one second expire
+  so loading-screen clicks cannot replay later. A currently held button remains
+  held. SDL_MOUSE_FOCUS_CLICKTHROUGH enables the initial window-activation click.
 - The VGA default replaces the selector entry at 1265:0693 with AX=1333 and
   resumes its accepted-choice path at 1265:06f7. SELECT.BIN is never loaded or
   displayed. Original VGA initialization, assets and title sequence still run.
@@ -67,6 +79,12 @@ The native state loads data at paragraph 1000; DS is normally 82bd at runtime.
   Pixel art uses the published Scale2x neighbourhood rule followed by linear
   sampling. Colour grading is applied only to the presented pixels. There is
   no temporal interpolation, AI reconstruction or new sprite animation.
+- CRT is optional and uses standard SDL texture blending on all targets. A
+  display-resolution mask combines 200 scanlines with an RGB phosphor pattern
+  and edge shading. Each output pixel integrates its part of the scanline to
+  reduce aliasing in small previews. The mask is cached by output size/style;
+  a small blurred highlight image adds glow when the source picture changes.
+  There is no animated flicker, image warping or changed mouse hit geometry.
 - Original timer handler: 1398:00ce, relocated to 2398:00ce. Timer 0 is driven
   by the real 1,193,182 Hz PIT rate and the divisor requested by the original
   game/music routines. Chaining to the default BIOS timer updates its tick count.

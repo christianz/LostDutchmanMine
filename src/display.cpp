@@ -29,6 +29,7 @@ DisplaySettings load_settings(const std::filesystem::path& file) {
         else if(key=="size" && (n==70 || n==85 || n==100))s.size=n;
         else if(key=="scaling" && n>=0 && n<=2)s.scaling=Scaling(n);
         else if(key=="colour" && n>=0 && n<=3)s.colour=Colour(n);
+        else if(key=="crt" && n>=0 && n<=2)s.crt=Crt(n);
         else if(key=="brightness" && n>=80 && n<=120 && n%10==0)s.brightness=n;
         else if(key=="vsync" && (n==0 || n==1))s.vsync=n;
         else if(key=="startup" && (n==0 || n==1))s.startup=n;
@@ -42,7 +43,7 @@ void save_settings(const std::filesystem::path& file,const DisplaySettings& s) {
         std::ofstream out(temp,std::ios::trunc);
         out<<"# Lost Dutchman Mine display settings. F11 opens the settings window.\n"
            <<"window="<<s.window<<"\nsize="<<s.size<<"\nscaling="<<int(s.scaling)
-           <<"\ncolour="<<int(s.colour)<<"\nbrightness="<<s.brightness
+           <<"\ncolour="<<int(s.colour)<<"\ncrt="<<int(s.crt)<<"\nbrightness="<<s.brightness
            <<"\nvsync="<<s.vsync<<"\nstartup="<<s.startup<<"\n";
         out.close();if(!out)throw std::runtime_error("Cannot save display settings to "+file.string());
     }
@@ -120,6 +121,56 @@ void display_pixels(const Pixels& input,const DisplaySettings& s,std::vector<uin
         }
         int at=y*2*w+x*2;out[at]=a;out[at+1]=b;
         out[at+w]=c;out[at+w+1]=d;
+    }
+}
+void crt_mask(Crt effect,int width,int height,std::vector<uint32_t>& output) {
+    if(width<=0 || height<=0){output.clear();return;}
+    output.resize(size_t(width)*height);
+    if(effect==Crt::Off){std::fill(output.begin(),output.end(),0xffffffff);return;}
+    constexpr double pi=3.14159265358979323846;
+    bool classic=effect==Crt::Classic;
+    double beam=classic?.28:.15,phosphor=classic?.88:.96,edge=classic?.14:.06;
+    int stripe=std::max(1,int(std::lround(height/1080.0)));
+    std::vector<std::array<double,3>> columns(width);
+    for(int x=0;x<width;x++) {
+        double nx=(x+.5)*2/width-1,vignette=1-edge*.5*nx*nx*nx*nx;
+        for(int c=0;c<3;c++)columns[x][c]=255*vignette*((x/stripe)%3==c?1:phosphor);
+    }
+    // Average each output pixel's slice of the 200-line beam pattern. Small
+    // previews fade towards the average instead of aliasing into dark bands.
+    double span=pi*200/height,average=std::sin(span)/span;
+    for(int y=0;y<height;y++) {
+        double ny=(y+.5)*2/height-1,vignette=1-edge*.5*ny*ny*ny*ny;
+        double light=(1-beam*(.5+.5*std::cos(2*pi*(y+.5)*200/height)*average))*vignette;
+        for(int x=0;x<width;x++) {
+            auto c=columns[x];auto channel=[&](int n){return uint32_t(std::lround(c[n]*light));};
+            output[size_t(y)*width+x]=0xff000000|(channel(0)<<16)|(channel(1)<<8)|channel(2);
+        }
+    }
+}
+void crt_glow(const std::vector<uint32_t>& picture,int width,int height,Pixels& output) {
+    if((width!=320 && width!=640) || height!=width*200/320 || picture.size()!=size_t(width)*height)
+        throw std::runtime_error("Invalid CRT source image");
+    int factor=width/320;
+    // Extract a small highlight image before blurring. Blacks stay black and
+    // bloom follows the artwork rather than brightening the whole rectangle.
+    std::vector<std::array<unsigned,3>> highlights(64000);
+    for(int y=0;y<200;y++)for(int x=0;x<320;x++) {
+        auto& h=highlights[y*320+x];
+        for(int dy=0;dy<factor;dy++)for(int dx=0;dx<factor;dx++) {
+            auto p=picture[(y*factor+dy)*width+x*factor+dx];
+            for(int c=0;c<3;c++)h[c]+=unsigned(std::max(0,int((p>>(16-c*8))&255)-64));
+        }
+        for(auto& c:h)c/=factor*factor;
+    }
+    for(int y=0;y<200;y++)for(int x=0;x<320;x++) {
+        unsigned rgb[3]{};
+        for(int dy=-1;dy<=1;dy++)for(int dx=-1;dx<=1;dx++) {
+            auto h=highlights[std::clamp(y+dy,0,199)*320+std::clamp(x+dx,0,319)];
+            unsigned weight=(dx==0?2:1)*(dy==0?2:1);
+            for(int c=0;c<3;c++)rgb[c]+=h[c]*weight;
+        }
+        output[y*320+x]=0xff000000|((rgb[0]/16)<<16)|((rgb[1]/16)<<8)|(rgb[2]/16);
     }
 }
 }

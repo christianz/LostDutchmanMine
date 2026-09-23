@@ -1,0 +1,17 @@
+# Start with --settings and a fresh --config. Preview both CRT strengths, save
+# Classic, then test Cancel and Apply from F11 without advancing the game clock.
+1000 down 81
+1100 down 79
+1300 screen 420
+1500 down 79
+1700 screen 421
+1800 down 40
+2000 down 68
+2100 down 81
+2200 down 79
+2400 screen 422
+2500 down 41
+2700 down 68
+2800 down 81
+3000 screen 423
+3100 down 40

@@ -23,6 +23,8 @@ build/test-poker: $(filter-out build/probe.o,$(OBJECTS)) tests/poker.cpp
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $^ -o $@
 build/test-quit: $(filter-out build/probe.o,$(OBJECTS)) tests/quit.cpp
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $^ -o $@
+build/test-mouse: $(filter-out build/probe.o,$(OBJECTS)) tests/mouse.cpp
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $^ -o $@
 build/legacy.o: build/generated/image_info.h
 build/ldm-native: $(filter-out build/probe.o,$(OBJECTS)) build/desktop.o build/session.o build/display.o build/presentation.o | build/LostDutchmanMine.bmp build/ui-font.bmp
 	$(CXX) $(CXXFLAGS) $^ $(SDL_LIBS) -o $@

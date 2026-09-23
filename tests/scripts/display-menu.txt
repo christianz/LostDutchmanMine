@@ -1,5 +1,6 @@
 # Start with --settings and a fresh --config file. SDL scancodes drive the UI.
 1000 screen 300
+1050 down 81
 1100 down 81
 1200 down 79
 1300 down 81

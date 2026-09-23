@@ -36,11 +36,19 @@ at 100% brightness preserves the game's palette, and Crisp retains hard edges.
 These filters enlarge the existing artwork; they do not invent detail or new
 animation frames. Monitor presentation is paced separately from the game clock.
 
+**CRT monitor** offers Off, Soft and Classic: steady scanlines, an RGB phosphor
+mask, soft highlight glow and gently darker edges. The effect appears in the
+live preview and is saved with your other preferences. It is off by default;
+Soft is subtle and Classic is stronger. It leaves the settings text sharp and
+keeps the same mouse coordinates. CRT rendering adds GPU work at high resolutions.
+
 VGA starts automatically, without the original graphics selector.
 Hold cursor keys or the numeric keypad to move and release to stop. Use the mouse
 for selections, F1-F6 for the status panel,
 Space for action and Alt+Enter for fullscreen. Align with a doorway and hold Up
 to walk into a building. Save/load is under F6.
+One click switches from keyboard movement to the hand cursor. Short clicks are
+preserved until the game polls them, including the click used to focus its window.
 
 The executable finds `Game/` and `Saves/` alongside itself regardless of the
 working directory. The supplied saved games remain in `Game/`; writes go to
@@ -81,12 +89,13 @@ The verified Linux build in this workspace uses the Makefile with local SDL2
 headers and the system SDL2 shared library:
 
 ```sh
-make -j4 build/ldm-native build/test-assets build/test-arithmetic build/test-poker build/test-quit build/test-display
+make -j4 build/ldm-native build/test-assets build/test-arithmetic build/test-poker build/test-quit build/test-display build/test-mouse
 build/test-arithmetic
 build/test-assets /path/to/LDM/LDMG
 build/test-poker
 build/test-quit
 build/test-display
+build/test-mouse
 build/ldm-native --data /path/to/LDM --image recovered/load-image.bin --saves .local/saves
 ```
 

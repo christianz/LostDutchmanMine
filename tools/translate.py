@@ -163,6 +163,12 @@ class Emitter:
             code=[f's.string_op("{op[:4]}",{size},{rep},{source});']
         elif m=='nop':pass
         else:raise ValueError(f'Unsupported instruction {cs:04x}:{ip:04x}: {m} {i.op_str}')
+        if (cs,ip)==(0x0fc5,0x0038):
+            # This original helper reads buttons, Y and X through three BIOS
+            # calls. Latch one desktop event for the whole helper so a short
+            # click survives batching and all three reads agree on its point.
+            if i.bytes.hex()!='55':raise ValueError('Unexpected mouse polling layout')
+            code.insert(0,'s.mouse.poll();')
         if not terminal:code += [self.goto(nxt,False)]
         return code
 

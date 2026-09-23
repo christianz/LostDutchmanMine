@@ -1,0 +1,18 @@
+# A press and release delivered in one desktop event batch must survive until
+# the original game polls it, both after keyboard movement and inside a menu.
+19000 down 79
+19400 up 79
+19500 capture 400
+19600 mouse 250 130
+19650 buttons 1
+19650 buttons 0
+20200 capture 401
+# A second quick click on F6 should open its menu, not need another long press.
+20500 mouse 275 180
+20550 buttons 1
+20550 buttons 0
+21100 capture 402
+# Click Quit Game once in the same batch; test must exit before its time limit.
+21500 mouse 205 104
+21550 buttons 1
+21550 buttons 0

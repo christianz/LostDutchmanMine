@@ -58,6 +58,8 @@ fullscreen, an 85% centred picture, soft pixel edges and gentle colours.
 F11 reopens display settings during play, pausing the game and music. Settings
 are saved in display.ini beside the executable; keep this file when updating.
 Turn off Show at startup to skip the menu next time. F11 always remains available.
+CRT monitor offers Off, Soft and Classic: steady scanlines, phosphor texture,
+soft glow and gentle edge shading. Preview it in the menu; the choice is saved.
 
 VGA starts automatically. Allow the original title/credits sequence to finish.
 Hold cursor keys or the numeric keypad to move; release to stop. Use the mouse for choices,
@@ -65,6 +67,8 @@ F1-F6 for the status panel, Space for action, Alt+Enter for fullscreen.
 To enter a building, align with its doorway and hold Up to walk inside.
 Save and load through F6. New saves go in Saves; the supplied originals in Game
 are read only. Back up Saves when moving or updating this build.
+Short mouse clicks are now preserved, including the click used to focus the
+window. One click restores the hand after keyboard movement.
 
 This is a development build of a faithful port, not a fully validated release.
 Windows x64 is cross-compiled; independent Windows 11 testing remains outstanding.

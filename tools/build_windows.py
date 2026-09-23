@@ -13,7 +13,7 @@ common=[str(zig),'c++','-target','x86_64-windows-gnu','-std=c++17','-O1','-Isrc'
 sources=list((root/'build/generated').glob('*.cpp'))+[root/'src'/name for name in ('legacy.cpp','desktop.cpp','audio.cpp','session.cpp','display.cpp','presentation.cpp')]+[root/'third_party/ymfm'/name for name in ('ymfm_opl.cpp','ymfm_adpcm.cpp','ymfm_pcm.cpp')]
 def compile(source):
     dest=out/(source.stem+'.o')
-    headers=[root/'src/legacy.h',root/'src/audio.h',root/'build/generated/image_info.h']
+    headers=[root/'src/legacy.h',root/'src/audio.h',root/'src/mouse.h',root/'build/generated/image_info.h']
     if source.parent==root/'src':headers+=list((root/'src').glob('*.h'))
     if dest.exists() and dest.stat().st_mtime>max(source.stat().st_mtime,*(p.stat().st_mtime for p in headers)):return dest
     r=subprocess.run(common+['-c',str(source),'-o',str(dest)],cwd=root,env=env,capture_output=True,text=True)

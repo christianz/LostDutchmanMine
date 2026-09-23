@@ -5,6 +5,24 @@ not yet certified. The original DOS program was neither launched nor modified.
 
 ## Verified
 
+- Update 3 reproduces missed mouse activation: after keyboard movement, a press
+  and release in the same event batch leave mouse mode 1 and visibility -1, even
+  after further quick clicks. The fix retains both transitions and a coherent
+  click position across the original helper's three BIOS calls. The same script
+  now restores the hand (mode 0, visibility 0), opens F6 and exits through Quit
+  Game using one quick click each, with no movement of the player.
+- At 3840x2160 with Classic CRT and an 85% picture, an actual X11 focus switch
+  followed by one 5 ms mouse click restores the hand. Two further 5 ms clicks on
+  F6 and Quit exit normally at 22.73s. This checks Linux input/rendering;
+  independent Windows 11 focus/DPI behaviour remains unvalidated.
+- The original mouse-helper test checks quick press/release, FIFO order, coherent
+  coordinates despite interleaved movement, held buttons, focus clearing, game
+  pointer positioning and expiry of clicks made while the game was not polling.
+- CRT Off/Soft/Classic render the same captured scene at 4K through SDL/OpenGL.
+  Checks cover disabled identity, both strengths, scanlines, RGB phosphors,
+  edge shading, local highlight glow, source preservation, persistence and
+  malformed settings. CRT preview, Cancel and Apply also run through the UI.
+  These are spatial effects; no flicker, frame interpolation or curvature is used.
 - Update 2 reproduces the Quit Game crash at 1613:1c7d using F6 and the original
   Quit button. It recovers graphics cleanup and the subsequent C file cleanup
   callback at 13b4:0752, and implements the observed BIOS text scan-line restore.
@@ -99,13 +117,15 @@ as Windows Server 2025, not Windows 11. No Windows 11 runtime claim is made.
 ## Reproduce focused checks
 
 ```sh
-make -j4 build/ldm-native build/test-assets build/test-arithmetic build/test-poker build/test-quit build/test-display
+make -j4 build/ldm-native build/test-assets build/test-arithmetic build/test-poker build/test-quit build/test-display build/test-mouse
 build/test-arithmetic
 build/test-assets /nas/tmp/LDM/LDMG
 build/test-poker
 build/test-quit
 build/test-display
+build/test-mouse
 python3 tests/verify-quit.py
+python3 tests/verify-mouse.py
 SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy build/ldm-native \
   --data /nas/tmp/LDM --image recovered/load-image.bin \
   --saves .local/movement-saves --seconds 23 \
@@ -129,6 +149,8 @@ Use a fresh config path for the display-menu script. `screen` script events and
 `--screenshot` capture presented output; `capture` retains the original 320x200
 framebuffer and selected state fields. Timed/scripted runs skip startup settings
 unless explicitly launched with `--settings`.
+`tests/scripts/crt-menu.txt` previews both CRT strengths, saves Classic and
+checks Cancel/Apply from F11. Run it with a fresh config, `--settings --seconds 4`.
 
 `tests/scripts/poker.txt` walks to the saloon and selects Play. Its opponent is
 chosen by the original game's random state and is sometimes absent; check the
