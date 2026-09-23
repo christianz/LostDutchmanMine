@@ -31,6 +31,10 @@ build/test-console: $(filter-out build/probe.o,$(OBJECTS)) tests/console.cpp
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $^ -o $@
 build/test-panning: $(filter-out build/probe.o,$(OBJECTS)) tests/panning.cpp
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $^ -o $@
+build/test-combat: $(filter-out build/probe.o,$(OBJECTS)) tests/combat.cpp
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $^ -o $@
+build/test-combat-scene: $(filter-out build/probe.o,$(OBJECTS)) tests/combat-scene.cpp
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $^ -o $@
 build/legacy.o: build/generated/image_info.h
 build/ldm-native: $(filter-out build/probe.o,$(OBJECTS)) build/desktop.o build/session.o build/display.o build/presentation.o | build/LostDutchmanMine.bmp build/ui-font.bmp build/panning-creek.ppm
 	$(CXX) $(CXXFLAGS) $^ $(SDL_LIBS) -o $@

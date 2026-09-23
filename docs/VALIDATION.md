@@ -5,6 +5,26 @@ not yet certified. The original DOS program was neither launched nor modified.
 
 ## Verified
 
+- Update 6 adds optional mouse aiming and one shot per left press to the original
+  shooting encounters, using the existing QoL checkbox. Original-code checks
+  verify pointer-centred aiming, clamping, preserved quick-click positions,
+  keyboard/Space coexistence, no held-button auto-fire, focus reset, and untouched
+  hand/status/victory/no-gun paths. QoL off restores original controls.
+- A controlled Native American encounter runs original startup/assets and combat
+  with a synthetic clock. It renders the original crosshair at two mouse
+  positions; a click aimed at the opponent passes the original hit test and
+  spends exactly one bullet. This is not a wall-clock timing/fidelity test.
+- A 39-second native desktop scenario loads a separate combat save through F6,
+  aims by mouse, fires a quick click, holds another click, then aims/fires by
+  keyboard. Exactly three bullets are spent. Right-click opens the hand; a
+  direction returns to aiming. F11 pauses execution and resumes mouse aiming;
+  focus reset leaves no queued shot. The loaded fixture uses a bandit encounter;
+  both encounter types share the same original aiming/shooting routine.
+- At 3840x2160 with an 85% picture and Classic CRT, real X11 mouse motion maps
+  to the original aiming coordinates and a 30 ms click spends one bullet without
+  opening the hand. Linux/OpenGL rendering and the Windows x64 cross-build pass.
+  Independent Windows 11 runtime remains outstanding. Mouse, keyboard, panning,
+  console, display, poker and quit regression checks also pass.
 - Update 5 adds optional interactive panning with new pixel artwork. The original
   Pan action still checks ownership, pack capacity and river-specific gold grade.
   Three rounds of rocking/rinsing retain or lose gold according to preparation;
@@ -166,7 +186,7 @@ as Windows Server 2025, not Windows 11. No Windows 11 runtime claim is made.
 ## Reproduce focused checks
 
 ```sh
-make -j4 build/ldm-native build/test-assets build/test-arithmetic build/test-poker build/test-quit build/test-display build/test-mouse build/test-keyboard build/test-console build/test-panning
+make -j4 build/ldm-native build/test-assets build/test-arithmetic build/test-poker build/test-quit build/test-display build/test-mouse build/test-keyboard build/test-console build/test-panning build/test-combat build/test-combat-scene
 build/test-arithmetic
 build/test-assets /nas/tmp/LDM/LDMG
 build/test-poker
@@ -176,6 +196,14 @@ build/test-mouse
 build/test-keyboard
 build/test-console
 build/test-panning
+build/test-combat
+build/test-combat-scene /nas/tmp/LDM
+python3 tests/make-combat-fixture.py /nas/tmp/LDM/LDMSAVE1.SAV .local/combat-test/Saves
+SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy build/ldm-native \
+  --data /nas/tmp/LDM --image recovered/load-image.bin \
+  --saves .local/combat-test/Saves --config .local/combat-test/display.ini \
+  --seconds 39 --script tests/scripts/combat.txt
+python3 tests/verify-combat.py
 python3 tests/verify-quit.py
 python3 tests/verify-mouse.py
 python3 tests/make-river-fixture.py /nas/tmp/LDM/LDMSAVE1.SAV .local/panning-test/Saves

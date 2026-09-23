@@ -187,7 +187,8 @@ int main(int argc,char**argv) {
                         <<",\"mouse_x\":"<<frame.mouse_x<<",\"mouse_y\":"<<frame.mouse_y
                         <<",\"panning_phase\":"<<frame.panning_phase<<",\"panning_round\":"<<frame.panning_round
                         <<",\"panning_loosened\":"<<frame.panning_loosened<<",\"panning_gold\":"<<frame.panning_gold
-                        <<",\"gold_bags\":"<<frame.gold_bags<<",\"qol\":"<<frame.qol_improvements<<"}\n";
+                        <<",\"gold_bags\":"<<frame.gold_bags<<",\"qol\":"<<frame.qol_improvements
+                        <<",\"combat\":"<<frame.combat_active<<",\"bullets\":"<<frame.bullets<<"}\n";
                 }else throw std::runtime_error("Unknown script event");
             }
             if(elapsed_ms>=next_frame || !screen_capture.empty()) {

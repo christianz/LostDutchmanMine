@@ -40,6 +40,18 @@ The native state loads data at paragraph 1000; DS is normally 82bd at runtime.
 
 ## Details that matter
 
+- Optional mouse aiming brackets only the original encounter input call at
+  040a:0288/028d. Its mouse-button result at 0fa7:0011 is filtered so left presses
+  in the scene fire instead of activating the hand. The existing coherent mouse
+  sample supplies click coordinates and preserves short down/up events. Held
+  presses do not repeat. Right clicks and status-panel clicks retain the hand.
+  Mouse movement positions the original 16x16 sight through DS:5b4a/5b4c, offset
+  by eight pixels to its centre and clamped to the original aiming area. Only a
+  changed sample or new click updates aim, preserving keyboard control while
+  the pointer rests. The original 040a:09e2 shooting routine still checks weapon,
+  ammunition and hit geometry. QoL off, hand menus, no gun and completed fights
+  keep original input. Focus/settings clears reset the native pointer baseline.
+  No new combat state enters original memory or saved-game layouts.
 - Optional panning hooks the supplied executable's unconditional reward jump at
   033f:0303 (bytes E9 0A 01), after its ownership check for DS:53dc. With QoL off,
   execution follows the original jump to 033f:0410. With QoL on, a native activity

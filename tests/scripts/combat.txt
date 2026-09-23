@@ -1,0 +1,42 @@
+# Load isolated combat save via original F6. Keep shots in empty sky to miss.
+18000 key 16384
+19500 mouse 208 85
+19560 buttons 1
+19620 buttons 0
+21200 ascii 49
+23500 capture 910
+24000 mouse 70 45
+24500 capture 911
+25000 mouse 245 35
+25500 capture 912
+26000 buttons 1
+26005 buttons 0
+26900 capture 913
+27200 buttons 1
+28500 capture 914
+28600 buttons 0
+29000 down 7 0
+29250 up 7 0
+29700 capture 915
+30000 down 44 0
+30060 up 44 0
+31000 capture 916
+# Right-click hand, then return to aiming with a direction key.
+31500 buttons 2
+31560 buttons 0
+32300 capture 917
+32500 down 4 0
+32750 up 4 0
+33300 mouse 95 50
+33800 capture 918
+# F11 pauses the encounter; its input reset must discard queued clicks.
+34200 down 68 0
+34260 up 68 0
+34900 capture 919
+35900 capture 920
+36200 down 41 0
+36260 up 41 0
+36700 mouse 145 60
+37200 capture 921
+37600 focuslost
+38100 capture 922

@@ -40,6 +40,13 @@ struct State {
     bool qol_improvements=true;
     Panning panning;
     void pan_action();
+    bool combat_active=false,combat_input_read=false,combat_mouse_fire=false;
+    MouseSample combat_pointer;
+    void begin_combat();
+    void reset_combat_pointer();
+    void begin_combat_input();
+    void filter_combat_mouse();
+    void finish_combat_input();
     int video_mode=3,text_scan_lines=400;
     MouseInput mouse;
     int mouse_visibility=-1,mouse_hot_x=0,mouse_hot_y=0;

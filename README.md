@@ -42,7 +42,8 @@ live preview and is saved with your other preferences. It is off by default;
 Soft is subtle and Classic is stronger. It leaves the settings text sharp and
 keeps the same mouse coordinates. CRT rendering adds GPU work at high resolutions.
 
-**QoL improvements** enables the new panning minigame and is checked by default.
+**QoL improvements** enables the new panning minigame and mouse aiming in combat,
+and is checked by default.
 At a river, choose Pan while carrying a pan. Rock it left and right using A/D,
 arrows, numpad 4/6, the onscreen buttons, or by dragging the pan. When the loosen
 bar turns gold, press Space/Enter or click Wash. Complete three washes and take
@@ -54,6 +55,13 @@ under the choice it started with. Movement/display improvements remain available
 
 The new creek artwork and animated pan are drawn at the game's 320x200 resolution
 and pass through the same scaling, colour and CRT options. The view stays steady.
+
+During shooting encounters, move the mouse over the scene to aim the original
+crosshair and **left-click** to fire one shot. **Right-click** opens the hand
+cursor for Run/status/menu selections; a direction key returns to aiming.
+WASD, arrows and numpad still aim, and **Space** still fires. A stationary mouse
+does not override keyboard aiming. Uncheck QoL improvements for the original
+keyboard aiming and mouse selection behavior. Ammunition and hit rules are unchanged.
 
 VGA starts automatically, without the original graphics selector.
 Hold **WASD**, cursor keys or the numeric keypad to move; release to stop.
@@ -109,7 +117,7 @@ The verified Linux build in this workspace uses the Makefile with local SDL2
 headers and the system SDL2 shared library:
 
 ```sh
-make -j4 build/ldm-native build/test-assets build/test-arithmetic build/test-poker build/test-quit build/test-display build/test-mouse build/test-keyboard build/test-console build/test-panning
+make -j4 build/ldm-native build/test-assets build/test-arithmetic build/test-poker build/test-quit build/test-display build/test-mouse build/test-keyboard build/test-console build/test-panning build/test-combat build/test-combat-scene
 build/test-arithmetic
 build/test-assets /path/to/LDM/LDMG
 build/test-poker
@@ -119,6 +127,8 @@ build/test-mouse
 build/test-keyboard
 build/test-console
 build/test-panning
+build/test-combat
+build/test-combat-scene /path/to/LDM
 build/ldm-native --data /path/to/LDM --image recovered/load-image.bin --saves .local/saves
 ```
 

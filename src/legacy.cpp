@@ -152,6 +152,44 @@ void State::pan_action() {
         panning.begin();keys.clear();mouse.clear();set_movement(0);w16(ds,0x5a1a,0);
     }else ip=0x0410; // Original behavior, including its pack-full message.
 }
+void State::reset_combat_pointer() {
+    combat_pointer=mouse.current();combat_mouse_fire=false;
+}
+void State::begin_combat() {
+    combat_active=true;combat_input_read=false;reset_combat_pointer();
+}
+void State::begin_combat_input() {
+    // Only the encounter's aiming read opts in. Its hand cursor, status menus,
+    // victory dialog and every other game's input poll retain their behavior.
+    combat_input_read=qol_improvements && u16(ds,0x5d62)==1 &&
+        u16(ds,0x5302)==0 && u16(ds,0x53e0)>0;
+    combat_mouse_fire=false;
+}
+void State::filter_combat_mouse() {
+    const auto& point=mouse.sample();
+    if(combat_input_read && point.buttons==1 && point.y<112) {
+        // The original mouse poll normally activates the hand. In the shooting
+        // area, a left press instead fires once at its latched click position.
+        combat_mouse_fire=!(combat_pointer.buttons&1);
+        ax=0;
+    }
+}
+void State::finish_combat_input() {
+    const auto point=mouse.sample();
+    if(combat_input_read && point.y<112 && !(point.buttons&2)) {
+        if(combat_mouse_fire || point.x!=combat_pointer.x || point.y!=combat_pointer.y) {
+            // The original 16x16 sight is positioned by its top-left corner.
+            // Keep its centre under the pointer and within the aiming bounds.
+            w16(ds,0x5b4a,std::clamp(point.x-8,20,290));
+            w16(ds,0x5b4c,std::clamp(point.y-8,20,94-int(u16(ds,0x112))));
+            // A fresh pointer position takes priority over a simultaneous
+            // direction; stationary mice never undo keyboard aiming.
+            if(ax<0x80)ax=0;
+        }
+        if(combat_mouse_fire)ax=0x80;
+    }
+    combat_pointer=point;combat_input_read=false;combat_mouse_fire=false;
+}
 void State::interrupt(uint8_t number) {
     waiting=false;
     uint8_t ah=ax>>8,al=ax;

@@ -62,7 +62,14 @@ Turn off Show at startup to skip the menu next time. F11 always remains availabl
 CRT monitor offers Off, Soft and Classic: steady scanlines, phosphor texture,
 soft glow and gentle edge shading. Preview it in the menu; the choice is saved.
 
-QoL improvements enables interactive panning and is checked by default. At a river,
+QoL improvements enables interactive panning and mouse aiming, checked by default.
+In shooting encounters, move the mouse to aim and left-click to fire one shot.
+Right-click opens the hand for Run/status/menu choices; a direction key returns
+to aiming. WASD, arrows and numpad still aim; Space still fires. A stationary mouse
+does not undo keyboard aiming. Ammunition and hit rules stay the same. Uncheck
+QoL improvements to restore the original keyboard aiming/mouse selection behavior.
+
+At a river,
 choose Pan while carrying a pan. Rock left/right with A/D, arrows, numpad 4/6,
 the onscreen buttons, or drag the pan. Wash when the loosen bar turns gold using
 Space, Enter or the Wash button. Three careful washes preserve the gold; washing

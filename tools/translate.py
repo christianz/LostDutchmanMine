@@ -186,6 +186,17 @@ class Emitter:
             # click survives batching and all three reads agree on its point.
             if i.bytes.hex()!='55':raise ValueError('Unexpected mouse polling layout')
             code.insert(0,'s.mouse.poll();')
+        combat_sites = {
+            (0x040a,0x0002):('55','s.begin_combat();'),
+            (0x040a,0x0288):('9a0600a70f','s.begin_combat_input();'),
+            (0x0fa7,0x0011):('258000','s.filter_combat_mouse();'),
+            (0x040a,0x028d):('e97800','s.finish_combat_input();'),
+            (0x040a,0x0768):('5f','s.combat_active=false; s.combat_input_read=false;'),
+        }
+        if (cs,ip) in combat_sites:
+            expected,hook=combat_sites[cs,ip]
+            if i.bytes.hex()!=expected:raise ValueError('Unexpected combat input layout')
+            code.insert(0,hook)
         if (cs,ip) in MOVEMENT_READ_SITES:
             # Only movement/command polls use native direction aliases. Clear
             # the context before dispatching commands that open text fields.

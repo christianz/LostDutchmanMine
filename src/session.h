@@ -16,6 +16,8 @@ struct Snapshot {
     bool custom_cursor=false;
     int panning_phase=0,panning_round=0,panning_loosened=0,panning_gold=0,gold_bags=0;
     bool qol_improvements=true;
+    bool combat_active=false;
+    int bullets=0;
 };
 void read_frame(const State& state,Pixels& pixels);
 // The game has a dedicated clock. A blocking GPU present, slow monitor or open

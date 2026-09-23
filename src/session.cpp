@@ -67,8 +67,8 @@ void Session::run() {
                 case Kind::Directions:directions=uint8_t(command.a);break;
                 case Kind::Mouse:state_.mouse.move(command.a,command.b);if(was_panning)state_.panning.pointer(command.a,command.b);break;
                 case Kind::Buttons:if(was_panning)state_.panning.buttons(command.a);else state_.mouse.buttons(command.a);break;
-                case Kind::Clear:directions=0;state_.keys.clear();state_.mouse.clear();state_.panning.clear_input();break;
-                case Kind::Qol:state_.qol_improvements=command.a!=0;break;
+                case Kind::Clear:directions=0;state_.keys.clear();state_.mouse.clear();state_.panning.clear_input();state_.reset_combat_pointer();break;
+                case Kind::Qol:state_.qol_improvements=command.a!=0;state_.reset_combat_pointer();break;
             }
             while(timer_elapsed>=((state_.pit_divisor?state_.pit_divisor:65536)/1193182.0)) {
                 timer_elapsed-=(state_.pit_divisor?state_.pit_divisor:65536)/1193182.0;
@@ -96,6 +96,7 @@ void Session::run() {
                 next.panning_phase=int(state_.panning.phase());next.panning_round=state_.panning.round();
                 next.panning_loosened=state_.panning.loosened();next.panning_gold=state_.panning.gold();
                 next.gold_bags=state_.u16(0x82bd,0x53ea);next.qol_improvements=state_.qol_improvements;
+                next.combat_active=state_.combat_active;next.bullets=state_.u16(0x82bd,0x53e2);
                 {std::lock_guard<std::mutex> lock(frame_mutex_);next.sequence=frame_.sequence+1;frame_=std::move(next);}
                 published=now;
             }
