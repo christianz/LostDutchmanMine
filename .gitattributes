@@ -1,0 +1,2 @@
+# P6 pixels can contain newline bytes: Windows checkouts must never convert them.
+*.ppm binary
