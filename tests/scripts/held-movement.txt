@@ -1,0 +1,26 @@
+# Real SDL scancodes through the desktop input adapter. No graphics-selection key.
+1000 capture 200
+18000 capture 201
+18500 down 79
+18650 capture 202
+18900 capture 203
+19100 up 79
+19300 capture 204
+19800 capture 205
+20000 down 80
+20400 focuslost
+20600 capture 206
+21000 capture 207
+21100 down 80
+21100 down 79
+21400 capture 208
+21900 capture 209
+22000 up 80
+22000 up 79
+22200 capture 210
+# Simulate queued desktop repeats immediately followed by release.
+22300 repeat 79
+22300 repeat 79
+22300 repeat 79
+22300 up 79
+22800 capture 211

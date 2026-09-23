@@ -2,7 +2,7 @@
 """Cross-compile generated native code using an official local Zig toolchain."""
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-import os, subprocess
+import os, shutil, subprocess
 
 root=Path(__file__).resolve().parents[1]
 zig=root/'.local/deps/zig-x86_64-linux-0.15.1/zig'
@@ -18,6 +18,10 @@ def compile(source):
     if r.returncode:raise RuntimeError(r.stdout+r.stderr)
     return dest
 with ThreadPoolExecutor(max_workers=4) as pool:objects=list(pool.map(compile,sources))
+icon=out/'icon.o'
+subprocess.run([str(zig),'rc','/i',str(root/'resources'),'/fo',str(icon),'--',str(root/'resources/windows.rc')],cwd=root,env=env,check=True)
+objects.append(icon)
 exe=out/'LostDutchmanMine.exe'
 subprocess.run(common+[str(o) for o in objects]+[str(sdl/'lib/libSDL2.dll.a'),'-o',str(exe)],cwd=root,env=env,check=True)
+shutil.copy2(root/'resources/ldm-icon.bmp',out/'LostDutchmanMine.bmp')
 print('Built',exe,exe.stat().st_size,'bytes')

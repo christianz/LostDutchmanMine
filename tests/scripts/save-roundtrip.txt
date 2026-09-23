@@ -1,4 +1,3 @@
-0 ascii 51
 19000 key 16384
 21500 mouse 115 85
 21600 buttons 1

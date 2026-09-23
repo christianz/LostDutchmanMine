@@ -5,6 +5,25 @@ not yet certified. The original DOS program was neither launched nor modified.
 
 ## Verified
 
+- VGA starts automatically without loading SELECT.BIN or sending a selection
+  key. A one-second capture already shows the original VGA title screen.
+- Held arrows and keypad directions use the original movement cadence. The SDL
+  input scenario moves x=160 → 166 → 172 → 178 without repeat events, stops at
+  178 after release, moves left, then stops at 160 after focus loss. Simultaneous
+  opposite directions settle to neutral, and release discards queued desktop
+  repeats. Captures are checked by
+  `tests/verify-movement.py`.
+- Poker's original card comparator at 0106:0000 is recovered. The new test
+  reproduced the reported crash before the fix and passes all 120 permutations
+  of a five-card hand afterward, checking descending rank, record identity and
+  stack preservation through the original qsort and far callback.
+- Normal input navigation reaches the saloon, approaches the poker table and
+  selects Play. A hand deals successfully and reaches the Discard prompt, beyond
+  the reported crash; cash is $240 and the pot $20 after the original ante.
+  This checks dealing, not every poker outcome or a complete hand.
+- The prospector icon is embedded in the Windows PE as seven icon sizes plus
+  an icon group. An actual SDL/X11 window exposes the 64x64 version with
+  transparent corners. New artwork and the generation prompt are in resources/.
 - Native Linux executable, SDL2 display and audio, original VGA title/credits,
   town rendering, cursor-key movement, mouse selection and F6 save/load menus.
 - New native save, movement away from the saved position, then restoration
@@ -41,8 +60,8 @@ headless recovery probe's accelerated synthetic clock is not fidelity evidence.
 - Compare visuals, timing and sound against an independently captured original
   reference. Retaining original code reduces divergence but does not prove
   that every native platform service is exact.
-- VGA is the supported test configuration. Other original graphics choices,
-  physical joystick input and macOS remain unvalidated.
+- VGA is the default supported configuration; the original graphics selector
+  is skipped. Physical joystick input and macOS remain unvalidated.
 - Additional indirect call targets may need recovery when unexplored paths
   execute. Such a path fails explicitly; there is no interpreter fallback.
 - Several unused DOS services retain minimal implementations (allocation,
@@ -57,9 +76,15 @@ as Windows Server 2025, not Windows 11. No Windows 11 runtime claim is made.
 ## Reproduce focused checks
 
 ```sh
-make -j4 build/ldm-native build/test-assets build/test-arithmetic
+make -j4 build/ldm-native build/test-assets build/test-arithmetic build/test-poker
 build/test-arithmetic
 build/test-assets /nas/tmp/LDM/LDMG
+build/test-poker
+SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy build/ldm-native \
+  --data /nas/tmp/LDM --image recovered/load-image.bin \
+  --saves .local/movement-saves --seconds 23 \
+  --script tests/scripts/held-movement.txt
+python3 tests/verify-movement.py
 SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy build/ldm-native \
   --data /nas/tmp/LDM --image recovered/load-image.bin \
   --saves .local/roundtrip-saves --seconds 43 \
@@ -69,3 +94,8 @@ SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy build/ldm-native \
 Scripts write diagnostic BMP frames and selected recovered state fields under
 `captures/`. Normal interactive play does not write those diagnostic captures.
 Arithmetic and asset checks need no SDL window or DOS environment.
+
+`tests/scripts/poker.txt` walks to the saloon and selects Play. Its opponent is
+chosen by the original game's random state and is sometimes absent; check the
+captured invitation and dealt hand rather than treating a zero exit as proof
+that poker was exercised.

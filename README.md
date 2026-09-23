@@ -3,7 +3,7 @@
 Development build of a faithful native port of the supplied 1989 DOS game.
 The native Linux build runs the original title, town, movement, menus, saved
 games and AdLib music. A Windows x64 executable is cross-compiled from the same
-C++17 source. Windows 11 runtime testing and a complete playthrough remain open.
+C++17 source. Independent Windows 11 testing and a complete playthrough remain open.
 macOS is a prospective SDL2 target and has not been built or tested.
 
 The original executable is EXEPACK-compressed Microsoft C code. Its game logic
@@ -24,8 +24,9 @@ are ignored by Git. Do not publish recovered game code or assets automatically.
 ## Play
 
 Copy the complete Windows bundle to a writable folder and double-click
-`LostDutchmanMine.exe`. Press **3** at the original graphics selector for VGA.
-Use cursor keys to move, the mouse for selections, F1-F6 for the status panel,
+`LostDutchmanMine.exe`. VGA starts automatically, without a graphics selector.
+Hold cursor keys or the numeric keypad to move and release to stop. Use the mouse
+for selections, F1-F6 for the status panel,
 Space for action and Alt+Enter for fullscreen. Align with a doorway and hold Up
 to walk into a building. Save/load is under F6.
 
@@ -67,9 +68,10 @@ The verified Linux build in this workspace uses the Makefile with local SDL2
 headers and the system SDL2 shared library:
 
 ```sh
-make -j4 build/ldm-native build/test-assets build/test-arithmetic
+make -j4 build/ldm-native build/test-assets build/test-arithmetic build/test-poker
 build/test-arithmetic
 build/test-assets /path/to/LDM/LDMG
+build/test-poker
 build/ldm-native --data /path/to/LDM --image recovered/load-image.bin --saves .local/saves
 ```
 

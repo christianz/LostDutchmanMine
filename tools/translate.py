@@ -80,6 +80,11 @@ class Emitter:
 
     def translate(self, cs,ip,i):
         self.cs,self.ip,self.ins=cs,ip,i
+        if (cs,ip)==(0x1265,0x0693):
+            # Choose VGA before the original SELECT.BIN load/draw/input block.
+            # Rejoin the original accepted-'3' path, retaining its initialization.
+            if i.bytes.hex()!='ba22fa': raise ValueError('Unexpected video selector layout')
+            return ['s.ax=0x1333;',self.goto(0x06f7,False)]
         m=i.mnemonic; ops=i.operands; nxt=(ip+i.size)&65535
         a=lambda n=0:self.read(ops[n])
         w=lambda v,n=0:self.write(ops[n],v)

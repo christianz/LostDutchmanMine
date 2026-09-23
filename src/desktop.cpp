@@ -14,6 +14,26 @@ void audio_callback(void* userdata,Uint8* stream,int bytes) {
     static_cast<ldm::Audio*>(userdata)->render(reinterpret_cast<float*>(stream),bytes/int(sizeof(float)));
 }
 struct ScriptEvent {uint64_t time;std::string type;int a=0,b=0;};
+uint8_t direction(SDL_Scancode key) {
+    switch(key) {
+    case SDL_SCANCODE_UP:case SDL_SCANCODE_KP_8:return 1;
+    case SDL_SCANCODE_DOWN:case SDL_SCANCODE_KP_2:return 2;
+    case SDL_SCANCODE_LEFT:case SDL_SCANCODE_KP_4:return 4;
+    case SDL_SCANCODE_RIGHT:case SDL_SCANCODE_KP_6:return 8;
+    case SDL_SCANCODE_HOME:case SDL_SCANCODE_KP_7:return 5;
+    case SDL_SCANCODE_PAGEUP:case SDL_SCANCODE_KP_9:return 9;
+    case SDL_SCANCODE_END:case SDL_SCANCODE_KP_1:return 6;
+    case SDL_SCANCODE_PAGEDOWN:case SDL_SCANCODE_KP_3:return 10;
+    default:return 0;
+    }
+}
+uint8_t movement(const std::array<bool,SDL_NUM_SCANCODES>& held) {
+    uint8_t mask=0;
+    for(unsigned i=0;i<held.size();i++)if(held[i])mask|=direction(SDL_Scancode(i));
+    if((mask&3)==3)mask&=~3; // Opposite directions cancel, independently per axis.
+    if((mask&12)==12)mask&=~12;
+    return mask;
+}
 uint16_t keycode(const SDL_KeyboardEvent& e) {
     uint16_t scan=0;
     switch(e.keysym.sym) {
@@ -130,6 +150,9 @@ int main(int argc,char**argv) {
         }
         window=SDL_CreateWindow("Lost Dutchman Mine — native port (development)",SDL_WINDOWPOS_CENTERED,SDL_WINDOWPOS_CENTERED,960,720,SDL_WINDOW_RESIZABLE|SDL_WINDOW_ALLOW_HIGHDPI);
         if(!window)throw std::runtime_error(SDL_GetError());
+        if(auto icon=SDL_LoadBMP((app_dir/"LostDutchmanMine.bmp").string().c_str())) {
+            SDL_SetWindowIcon(window,icon);SDL_FreeSurface(icon);
+        }
         renderer=SDL_CreateRenderer(window,-1,SDL_RENDERER_SOFTWARE);
         if(!renderer)throw std::runtime_error(SDL_GetError());
         SDL_RenderSetLogicalSize(renderer,320,240);
@@ -137,6 +160,22 @@ int main(int argc,char**argv) {
         texture=SDL_CreateTexture(renderer,SDL_PIXELFORMAT_ARGB8888,SDL_TEXTUREACCESS_STREAMING,320,200);
         if(!texture)throw std::runtime_error(SDL_GetError());
         std::array<uint32_t,64000> pixels{};
+        std::array<bool,SDL_NUM_SCANCODES> held{};
+        auto keyboard=[&](const SDL_KeyboardEvent& key,bool pressed) {
+            auto scan=key.keysym.scancode;
+            if(scan>SDL_SCANCODE_UNKNOWN && scan<SDL_NUM_SCANCODES)held[scan]=pressed;
+            auto bios=keycode(key);
+            if(pressed) {
+                if(key.keysym.sym==SDLK_RETURN && (key.keysym.mod&KMOD_ALT)) {
+                    if(!key.repeat)SDL_SetWindowFullscreen(window,SDL_GetWindowFlags(window)&SDL_WINDOW_FULLSCREEN_DESKTOP?0:SDL_WINDOW_FULLSCREEN_DESKTOP);
+                }else if(bios)s->keys.push_back(bios|((key.repeat && direction(scan))?0x10000u:0));
+            }else if(direction(scan)) {
+                s->keys.erase(std::remove_if(s->keys.begin(),s->keys.end(),[&](uint32_t pending){
+                    return (pending&0x10000) && uint16_t(pending)==bios;
+                }),s->keys.end());
+            }
+        };
+        auto release_input=[&](){held.fill(false);s->set_movement(0);s->keys.clear();s->mouse_buttons=0;};
         uint64_t start=SDL_GetPerformanceCounter(),last=start,last_frame=0;
         double frequency=double(SDL_GetPerformanceFrequency()),timer_elapsed=0;
         while(s->running) {
@@ -150,13 +189,21 @@ int main(int argc,char**argv) {
             SDL_Event e;
             while(SDL_PollEvent(&e)) {
                 if(e.type==SDL_QUIT)s->running=false;
-                else if(e.type==SDL_KEYDOWN){if(e.key.keysym.sym==SDLK_RETURN&&(e.key.keysym.mod&KMOD_ALT)){SDL_SetWindowFullscreen(window,SDL_GetWindowFlags(window)&SDL_WINDOW_FULLSCREEN_DESKTOP?0:SDL_WINDOW_FULLSCREEN_DESKTOP);}else{auto k=keycode(e.key);if(k)s->keys.push_back(k);}}
+                else if(e.type==SDL_KEYDOWN || e.type==SDL_KEYUP)keyboard(e.key,e.type==SDL_KEYDOWN);
+                else if(e.type==SDL_WINDOWEVENT && e.window.event==SDL_WINDOWEVENT_FOCUS_LOST)release_input();
                 else if(e.type==SDL_MOUSEMOTION){s->mouse_x=std::clamp(e.motion.x,0,319);s->mouse_y=std::clamp(e.motion.y*200/240,0,199);}
                 else if(e.type==SDL_MOUSEBUTTONDOWN || e.type==SDL_MOUSEBUTTONUP){int bit=e.button.button==SDL_BUTTON_LEFT?1:e.button.button==SDL_BUTTON_RIGHT?2:0;if(e.type==SDL_MOUSEBUTTONDOWN)s->mouse_buttons|=bit;else s->mouse_buttons&=~bit;}
             }
             while(event_pos<events.size() && events[event_pos].time<=elapsed) {
                 auto event=events[event_pos++];
                 if(event.type=="key")s->keys.push_back(uint16_t(event.a));
+                else if(event.type=="down" || event.type=="up" || event.type=="repeat") {
+                    if(event.a<=0 || event.a>=SDL_NUM_SCANCODES)throw std::runtime_error("Invalid scripted scancode");
+                    SDL_KeyboardEvent key{};key.keysym.scancode=SDL_Scancode(event.a);
+                    key.keysym.sym=SDL_GetKeyFromScancode(key.keysym.scancode);key.repeat=event.type=="repeat";
+                    keyboard(key,event.type!="up");
+                }
+                else if(event.type=="focuslost")release_input();
                 else if(event.type=="ascii") {
                     SDL_KeyboardEvent key{};key.keysym.sym=event.a;
                     if(event.a>='A'&&event.a<='Z'){key.keysym.sym+=32;key.keysym.mod=KMOD_SHIFT;}
@@ -169,10 +216,12 @@ int main(int argc,char**argv) {
                     // Recovered game-state fields for reproducible save and movement checks.
                     std::ofstream meta(std::filesystem::path("captures")/(std::to_string(event.a)+".json"));
                     meta<<"{\"x\":"<<s->u16(0x82bd,0x5b4a)<<",\"y\":"<<s->u16(0x82bd,0x5b4c)
-                        <<",\"town_page\":"<<s->u16(0x82bd,0x5b5a)<<",\"building\":"<<s->u16(0x82bd,0x5b5e)<<"}\n";
+                        <<",\"town_page\":"<<s->u16(0x82bd,0x5b5a)<<",\"building\":"<<s->u16(0x82bd,0x5b5e)
+                        <<",\"video_mode\":"<<s->video_mode<<",\"held_directions\":"<<unsigned(movement(held))<<"}\n";
                 }
                 else throw std::runtime_error("Unknown script event");
             }
+            s->set_movement(movement(held));
             for(int steps=0;steps<4096 && s->running;steps++) {
                 ldm::native_step(*s);
                 if(s->waiting)break;

@@ -30,7 +30,9 @@ struct State {
     Audio audio;
     std::array<uint32_t,256> palette{};
     std::array<uint8_t,16> attributes{};
-    std::vector<uint16_t> keys;
+    // Low 16 bits are BIOS AX; bit 16 marks desktop auto-repeat so releasing a
+    // direction can discard stale repeats while preserving a quick key tap.
+    std::vector<uint32_t> keys;
     int video_mode=3,mouse_x=160,mouse_y=100,mouse_buttons=0;
     int mouse_visibility=-1,mouse_hot_x=0,mouse_hot_y=0;
     bool custom_cursor=false;
@@ -42,6 +44,9 @@ struct State {
     unsigned speaker_write_phase=0;
     bool timer_active=false;
     void timer_interrupt();
+    // Original joystick state, read once per game movement tick. Native held
+    // directions use that existing path instead of desktop keyboard auto-repeat.
+    void set_movement(uint8_t directions) { w8(LoadSegment+0x72ba,1,directions); }
     uint8_t u8(uint16_t seg, uint16_t off) const { return memory[((uint32_t(seg)<<4)+off)&0xfffff]; }
     uint16_t u16(uint16_t seg, uint16_t off) const { return u8(seg,off)|(uint16_t(u8(seg,uint16_t(off+1)))<<8); }
     void w8(uint16_t seg,uint16_t off,uint8_t v) { memory[((uint32_t(seg)<<4)+off)&0xfffff]=v; }

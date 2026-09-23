@@ -7,6 +7,7 @@ GENERATED = $(wildcard build/generated/*.cpp)
 OBJECTS = $(patsubst %.cpp,%.o,$(GENERATED)) build/legacy.o build/audio.o build/ymfm_opl.o build/ymfm_adpcm.o build/ymfm_pcm.o build/probe.o
 
 .PHONY: all recover clean
+.DELETE_ON_ERROR:
 all: build/ldm-native
 recover:
 	.venv/bin/python tools/unpack.py $(DATA)/LDM.EXE
@@ -18,9 +19,13 @@ build/test-assets: $(filter-out build/probe.o,$(OBJECTS)) build/assets.o tests/a
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $^ -o $@
 build/test-arithmetic: $(filter-out build/probe.o,$(OBJECTS)) tests/arithmetic.cpp
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $^ -o $@
+build/test-poker: $(filter-out build/probe.o,$(OBJECTS)) tests/poker.cpp
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $^ -o $@
 build/legacy.o: build/generated/image_info.h
-build/ldm-native: $(filter-out build/probe.o,$(OBJECTS)) build/desktop.o
+build/ldm-native: $(filter-out build/probe.o,$(OBJECTS)) build/desktop.o | build/LostDutchmanMine.bmp
 	$(CXX) $(CXXFLAGS) $^ $(SDL_LIBS) -o $@
+build/LostDutchmanMine.bmp: resources/ldm-icon.bmp
+	cp $< $@
 build/desktop.o: src/desktop.cpp src/legacy.h
 	$(CXX) $(CPPFLAGS) -I$(SDL_INCLUDE) $(CXXFLAGS) -MMD -MP -c $< -o $@
 build/generated/%.o: build/generated/%.cpp src/legacy.h

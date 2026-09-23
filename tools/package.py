@@ -27,6 +27,8 @@ out.mkdir(parents=True)
 (out/'Saves').mkdir()
 (out/'licenses').mkdir()
 shutil.copy2(executable, out/('LostDutchmanMine.exe' if args.platform == 'windows' else 'LostDutchmanMine'))
+shutil.copy2(root/'resources/ldm-icon.bmp', out/'LostDutchmanMine.bmp')
+shutil.copy2(root/'resources/ldm.ico', out/'LostDutchmanMine.ico')
 shutil.copy2(root/'recovered/load-image.bin', out/'Game/port-data.bin')
 for name in ('LDMG', 'LDM.CAP', 'LDMSAVE.LDM'):
     source = args.data/name
@@ -49,15 +51,15 @@ launch = 'Double-click LostDutchmanMine.exe.' if args.platform == 'windows' else
 Keep Game, Saves and the executable together. On Windows, copy the whole folder
 to your PC before running. No installation or administrator access is needed.
 
-Press 3 at the original graphics selector to choose VGA. Allow the original
-title/credits sequence to finish. Use cursor keys to move, mouse for choices,
+VGA starts automatically. Allow the original title/credits sequence to finish.
+Hold cursor keys or the numeric keypad to move; release to stop. Use the mouse for choices,
 F1-F6 for the status panel, Space for action, Alt+Enter for fullscreen.
 To enter a building, align with its doorway and hold Up to walk inside.
 Save and load through F6. New saves go in Saves; the supplied originals in Game
 are read only. Back up Saves when moving or updating this build.
 
 This is a development build of a faithful port, not a fully validated release.
-Windows x64 is cross-compiled; a Windows 11 runtime test remains outstanding.
+Windows x64 is cross-compiled; independent Windows 11 testing remains outstanding.
 Linux runtime, original VGA assets, movement, menus and saves have been tested.
 See VALIDATION.md for the exact coverage and remaining work.
 

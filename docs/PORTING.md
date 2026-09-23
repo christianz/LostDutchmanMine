@@ -36,6 +36,17 @@ The native state loads data at paragraph 1000; DS is normally 82bd at runtime.
 - Keyboard reads require BIOS scan codes as well as ASCII. The original save
   selector compares scans 02 through 09 for slots 1 through 8. Its key reader
   intentionally drains queued typeahead; scripted text needs reasonable pacing.
+- Held arrows/keypad directions feed the original joystick direction byte at
+  relative segment 72ba:0001, read by 0fa7:0066. This preserves the game's own
+  movement cadence without waiting for OS keyboard repeat. Keyboard events still
+  reach menus. Releasing a direction removes its pending repeats; losing window
+  focus clears all held controls. Opposing directions cancel per axis.
+- The VGA default replaces the selector entry at 1265:0693 with AX=1333 and
+  resumes its accepted-choice path at 1265:06f7. SELECT.BIN is never loaded or
+  displayed. Original VGA initialization, assets and title sequence still run.
+- Poker passes the far comparator 0106:0000 to qsort at 13b4:227c. This
+  address-taken callback must be an explicit recovery entry point; direct-call
+  traversal alone misses it. The poker test exercises the real sort and callback.
 - Original timer handler: 1398:00ce, relocated to 2398:00ce. Timer 0 is driven
   by the real 1,193,182 Hz PIT rate and the divisor requested by the original
   game/music routines. Chaining to the default BIOS timer updates its tick count.
