@@ -1,0 +1,9 @@
+.venv/
+.local/
+build*/
+__pycache__/
+*.pyc
+original/
+recovered/
+captures/
+dist/
