@@ -4,7 +4,7 @@ CPPFLAGS += -Isrc -Ibuild/generated -Ithird_party/ymfm
 SDL_INCLUDE ?= .local/deps/SDL2-2.32.0/x86_64-w64-mingw32/include/SDL2
 SDL_LIBS ?= -l:libSDL2-2.0.so.0
 GENERATED = $(wildcard build/generated/*.cpp)
-OBJECTS = $(patsubst %.cpp,%.o,$(GENERATED)) build/legacy.o build/audio.o build/ymfm_opl.o build/ymfm_adpcm.o build/ymfm_pcm.o build/probe.o
+OBJECTS = $(patsubst %.cpp,%.o,$(GENERATED)) build/legacy.o build/panning.o build/audio.o build/ymfm_opl.o build/ymfm_adpcm.o build/ymfm_pcm.o build/probe.o
 
 .PHONY: all recover clean
 .DELETE_ON_ERROR:
@@ -29,12 +29,16 @@ build/test-keyboard: $(filter-out build/probe.o,$(OBJECTS)) tests/keyboard.cpp s
 	$(CXX) $(CPPFLAGS) -I$(SDL_INCLUDE) $(CXXFLAGS) $(filter %.o %.cpp,$^) -o $@
 build/test-console: $(filter-out build/probe.o,$(OBJECTS)) tests/console.cpp
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $^ -o $@
+build/test-panning: $(filter-out build/probe.o,$(OBJECTS)) tests/panning.cpp
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $^ -o $@
 build/legacy.o: build/generated/image_info.h
-build/ldm-native: $(filter-out build/probe.o,$(OBJECTS)) build/desktop.o build/session.o build/display.o build/presentation.o | build/LostDutchmanMine.bmp build/ui-font.bmp
+build/ldm-native: $(filter-out build/probe.o,$(OBJECTS)) build/desktop.o build/session.o build/display.o build/presentation.o | build/LostDutchmanMine.bmp build/ui-font.bmp build/panning-creek.ppm
 	$(CXX) $(CXXFLAGS) $^ $(SDL_LIBS) -o $@
 build/LostDutchmanMine.bmp: resources/ldm-icon.bmp
 	cp $< $@
 build/ui-font.bmp: resources/ui-font.bmp
+	cp $< $@
+build/panning-creek.ppm: resources/panning/creek.ppm
 	cp $< $@
 build/desktop.o: src/desktop.cpp src/legacy.h
 	$(CXX) $(CPPFLAGS) -I$(SDL_INCLUDE) $(CXXFLAGS) -MMD -MP -c $< -o $@

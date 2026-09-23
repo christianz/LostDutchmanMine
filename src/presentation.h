@@ -6,7 +6,7 @@
 
 namespace ldm {
 enum MenuItem { Display, PictureSize, ScalingFilter, CrtMonitor, ColourProfile,
-    Brightness, VSync, Startup, Comfort, Original, Cancel, Apply, MenuItemCount };
+    Brightness, VSync, Startup, QualityOfLife, Comfort, Original, Cancel, Apply, MenuItemCount };
 class Presentation {
 public:
     Presentation(SDL_Window* window,SDL_Renderer* renderer,const std::filesystem::path& app);

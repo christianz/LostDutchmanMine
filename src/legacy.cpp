@@ -139,6 +139,19 @@ void State::timer_interrupt() {
     }
     timer_active=false;
 }
+void State::pan_action() {
+    // Called after the original ownership check and prologue. Rejoin either
+    // its normal inventory insertion or its cleanup; the save layout is unchanged.
+    if(panning.done()) {
+        ip=panning.take_result()?0x0410:0x0427;
+        keys.clear();mouse.clear();set_movement(0);w16(ds,0x5a1a,0);return;
+    }
+    bool room=false;
+    for(int slot=1;slot<11;slot++)if(u16(ds,uint16_t(0x500e + slot*8))==0x2b)room=true;
+    if(qol_improvements && room && video_mode==0x13) {
+        panning.begin();keys.clear();mouse.clear();set_movement(0);w16(ds,0x5a1a,0);
+    }else ip=0x0410; // Original behavior, including its pack-full message.
+}
 void State::interrupt(uint8_t number) {
     waiting=false;
     uint8_t ah=ax>>8,al=ax;

@@ -42,6 +42,19 @@ live preview and is saved with your other preferences. It is off by default;
 Soft is subtle and Classic is stronger. It leaves the settings text sharp and
 keeps the same mouse coordinates. CRT rendering adds GPU work at high resolutions.
 
+**QoL improvements** enables the new panning minigame and is checked by default.
+At a river, choose Pan while carrying a pan. Rock it left and right using A/D,
+arrows, numpad 4/6, the onscreen buttons, or by dragging the pan. When the loosen
+bar turns gold, press Space/Enter or click Wash. Complete three washes and take
+the gold. Rinsing too early can wash the flakes away; Escape abandons a pan.
+Successful panning gives one original gold bag with the river's original grade.
+Uncheck QoL improvements to keep the original instant Pan action. The setting
+persists and can also be changed with F11; a pan already in progress finishes
+under the choice it started with. Movement/display improvements remain available.
+
+The new creek artwork and animated pan are drawn at the game's 320x200 resolution
+and pass through the same scaling, colour and CRT options. The view stays steady.
+
 VGA starts automatically, without the original graphics selector.
 Hold **WASD**, cursor keys or the numeric keypad to move; release to stop.
 Numpad **8/2/4/6** move up/down/left/right and **7/9/1/3** provide diagonals,
@@ -59,7 +72,8 @@ preserved until the game polls them, including the click used to focus its windo
 The executable finds `Game/` and `Saves/` alongside itself regardless of the
 working directory. The supplied saved games remain in `Game/`; writes go to
 `Saves/` with copy-on-write for files opened in read/write mode. Keep `Saves/`
-and `display.ini` when updating. Keep `ui-font.bmp` beside the executable.
+and `display.ini` when updating. Keep `ui-font.bmp` and `panning-creek.ppm`
+beside the executable.
 There is no installer, administrator requirement, Python runtime,
 DOS executable, DOSBox, CPU interpreter or VM in the playable bundle.
 
@@ -95,7 +109,7 @@ The verified Linux build in this workspace uses the Makefile with local SDL2
 headers and the system SDL2 shared library:
 
 ```sh
-make -j4 build/ldm-native build/test-assets build/test-arithmetic build/test-poker build/test-quit build/test-display build/test-mouse build/test-keyboard build/test-console
+make -j4 build/ldm-native build/test-assets build/test-arithmetic build/test-poker build/test-quit build/test-display build/test-mouse build/test-keyboard build/test-console build/test-panning
 build/test-arithmetic
 build/test-assets /path/to/LDM/LDMG
 build/test-poker
@@ -104,6 +118,7 @@ build/test-display
 build/test-mouse
 build/test-keyboard
 build/test-console
+build/test-panning
 build/ldm-native --data /path/to/LDM --image recovered/load-image.bin --saves .local/saves
 ```
 

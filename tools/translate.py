@@ -92,6 +92,11 @@ class Emitter:
 
     def translate(self, cs,ip,i):
         self.cs,self.ip,self.ins=cs,ip,i
+        if (cs,ip)==(0x033f,0x0303):
+            # The supplied executable jumps directly to the panning reward.
+            # Optional native play rejoins that reward or the original cleanup.
+            if i.bytes.hex()!='e90a01':raise ValueError('Unexpected panning reward layout')
+            return ['s.pan_action(); return;']
         if (cs,ip)==(0x1265,0x0693):
             # Choose VGA before the original SELECT.BIN load/draw/input block.
             # Rejoin the original accepted-'3' path, retaining its initialization.

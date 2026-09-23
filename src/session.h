@@ -14,6 +14,8 @@ struct Snapshot {
     int mouse_visibility=-1,mouse_mode=1,mouse_x=160,mouse_y=100;
     uint8_t directions=0;
     bool custom_cursor=false;
+    int panning_phase=0,panning_round=0,panning_loosened=0,panning_gold=0,gold_bags=0;
+    bool qol_improvements=true;
 };
 void read_frame(const State& state,Pixels& pixels);
 // The game has a dedicated clock. A blocking GPU present, slow monitor or open
@@ -29,12 +31,13 @@ public:
     void mouse(int x,int y);
     void buttons(int mask);
     void clear_input();
+    void qol(bool enabled);
     void pause(bool paused);
     bool finished();
     void snapshot(Snapshot& output);
     void stop();
 private:
-    enum class Kind { Key,Release,Directions,Mouse,Buttons,Clear };
+    enum class Kind { Key,Release,Directions,Mouse,Buttons,Clear,Qol };
     struct Command {Kind kind;int a=0,b=0;};
     State& state_;
     std::mutex mutex_,frame_mutex_;

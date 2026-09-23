@@ -30,6 +30,7 @@ shutil.copy2(executable, out/('LostDutchmanMine.exe' if args.platform == 'window
 shutil.copy2(root/'resources/ldm-icon.bmp', out/'LostDutchmanMine.bmp')
 shutil.copy2(root/'resources/ldm.ico', out/'LostDutchmanMine.ico')
 shutil.copy2(root/'resources/ui-font.bmp', out/'ui-font.bmp')
+shutil.copy2(root/'resources/panning/creek.ppm', out/'panning-creek.ppm')
 shutil.copy2(root/'recovered/load-image.bin', out/'Game/port-data.bin')
 for name in ('LDMG', 'LDM.CAP', 'LDMSAVE.LDM'):
     source = args.data/name
@@ -60,6 +61,15 @@ are saved in display.ini beside the executable; keep this file when updating.
 Turn off Show at startup to skip the menu next time. F11 always remains available.
 CRT monitor offers Off, Soft and Classic: steady scanlines, phosphor texture,
 soft glow and gentle edge shading. Preview it in the menu; the choice is saved.
+
+QoL improvements enables interactive panning and is checked by default. At a river,
+choose Pan while carrying a pan. Rock left/right with A/D, arrows, numpad 4/6,
+the onscreen buttons, or drag the pan. Wash when the loosen bar turns gold using
+Space, Enter or the Wash button. Three careful washes preserve the gold; washing
+too soon can lose it. Take Gold puts one original gold bag in your pack. Escape
+abandons a pan. F11 pauses it. Uncheck QoL improvements for the original instant
+Pan action; the choice persists and applies to the next pan. Keep panning-creek.ppm
+beside the executable. Other movement and display improvements stay available.
 
 VGA starts automatically. Allow the original title/credits sequence to finish.
 Hold WASD, cursor keys or the numeric keypad to move; release to stop.

@@ -40,6 +40,23 @@ The native state loads data at paragraph 1000; DS is normally 82bd at runtime.
 
 ## Details that matter
 
+- Optional panning hooks the supplied executable's unconditional reward jump at
+  033f:0303 (bytes E9 0A 01), after its ownership check for DS:53dc. With QoL off,
+  execution follows the original jump to 033f:0410. With QoL on, a native activity
+  holds that boundary until collection/cancel. Success rejoins 0410, using the
+  original inventory insertion at 0652:0184 and its gold counter at DS:53ea;
+  failure/cancel rejoins cleanup at 033f:0427. River grade remains the original
+  caller argument. A full pack takes the original message path before play.
+- `Panning` owns transient input/animation only. It draws into the published
+  framebuffer, leaving VGA memory and the original save format untouched. The
+  session routes input to it while engaged and clears pending movement/clicks
+  at both transitions. The original timer/music continues; F11 pauses both it
+  and the activity. A QoL setting change affects the next pan. The setting is
+  separate from movement and presentation controls; picture presets preserve it.
+- River QA uses an isolated copy of the supplied slot 1, changing only scene and
+  position fields in the eight save blocks read/written by 0e5a:0380/0140. It
+  loads through the original F6 dialog and enters the activity via the original
+  Pan button. Fixture saves are not packaged into the playable update.
 - Capstone prints opcodes 98/99 as CWDE/CDQ in this build; their actual 16-bit
   semantics are CBW/CWD. The translator handles that explicitly.
 - VGA detection requires BIOS 10h/1Bh's real function/state and static capability

@@ -2,6 +2,7 @@
 #include "audio.h"
 #include "keyboard_event.h"
 #include "mouse.h"
+#include "panning.h"
 #include <array>
 #include <cstdint>
 #include <cstdio>
@@ -36,6 +37,9 @@ struct State {
     // text fields receive their ordinary BIOS character and scan pair.
     std::vector<uint32_t> keys;
     bool movement_key_read=false;
+    bool qol_improvements=true;
+    Panning panning;
+    void pan_action();
     int video_mode=3,text_scan_lines=400;
     MouseInput mouse;
     int mouse_visibility=-1,mouse_hot_x=0,mouse_hot_y=0;

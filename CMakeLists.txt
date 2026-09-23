@@ -11,12 +11,16 @@ if(NOT LDM_GENERATED)
 endif()
 find_package(SDL2 2.26 REQUIRED)
 find_package(Threads REQUIRED)
-add_library(ldm-core STATIC ${LDM_GENERATED} src/legacy.cpp src/audio.cpp
+add_library(ldm-core STATIC ${LDM_GENERATED} src/legacy.cpp src/panning.cpp src/audio.cpp
     third_party/ymfm/ymfm_opl.cpp third_party/ymfm/ymfm_adpcm.cpp third_party/ymfm/ymfm_pcm.cpp)
 target_include_directories(ldm-core PUBLIC src build/generated PRIVATE third_party/ymfm)
 target_link_libraries(ldm-core PUBLIC Threads::Threads)
 add_executable(LostDutchmanMine src/desktop.cpp src/display.cpp src/presentation.cpp src/session.cpp)
 target_link_libraries(LostDutchmanMine PRIVATE ldm-core SDL2::SDL2)
+add_custom_command(TARGET LostDutchmanMine POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    "${CMAKE_SOURCE_DIR}/resources/panning/creek.ppm"
+    "$<TARGET_FILE_DIR:LostDutchmanMine>/panning-creek.ppm")
 add_custom_command(TARGET LostDutchmanMine POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
     "${CMAKE_SOURCE_DIR}/resources/ldm-icon.bmp"
@@ -47,6 +51,8 @@ add_executable(test-keyboard tests/keyboard.cpp)
 target_link_libraries(test-keyboard PRIVATE ldm-core SDL2::SDL2)
 add_executable(test-console tests/console.cpp)
 target_link_libraries(test-console PRIVATE ldm-core)
+add_executable(test-panning tests/panning.cpp)
+target_link_libraries(test-panning PRIVATE ldm-core)
 add_executable(test-assets tests/assets.cpp src/assets.cpp)
 target_link_libraries(test-assets PRIVATE ldm-core)
 add_executable(test-display tests/display.cpp src/display.cpp)
@@ -59,4 +65,5 @@ add_test(NAME quit COMMAND test-quit)
 add_test(NAME mouse COMMAND test-mouse)
 add_test(NAME keyboard COMMAND test-keyboard)
 add_test(NAME console COMMAND test-console)
-set_tests_properties(poker quit mouse keyboard console PROPERTIES WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
+add_test(NAME panning COMMAND test-panning)
+set_tests_properties(poker quit mouse keyboard console panning PROPERTIES WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")

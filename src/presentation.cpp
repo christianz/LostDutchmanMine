@@ -128,19 +128,25 @@ void Presentation::text(float x,float y,float size,const std::string& value,uint
 void Presentation::menu(const Pixels& pixels,const DisplaySettings& s,bool startup,int selected,const std::string& message) {
     ui_layout();draw_colour(renderer_,0xff17140f);SDL_RenderClear(renderer_);
     if(icon_){auto r=ui_rect(38,32,64,64);SDL_RenderCopyF(renderer_,icon_,nullptr,&r);}
-    text(118,64,32,"Lost Dutchman Mine",ink);text(119,91,15,"DISPLAY & COLOUR",gold);
+    text(118,64,32,"Lost Dutchman Mine",ink);text(119,91,15,"DISPLAY & GAMEPLAY",gold);
     box(40,122,960,1,line);
-    const char* labels[]={"Display","Picture size","Scaling","CRT monitor","Colour","Brightness","VSync","Show at startup"};
+    const char* labels[]={"Display","Picture size","Scaling","CRT monitor","Colour","Brightness","VSync","Show at startup","QoL improvements"};
     const char* windows[]={"960 x 720 window","1280 x 960 window","1600 x 1200 window","Fullscreen"};
     const char* filters[]={"Crisp pixels","Soft pixels","Pixel art"};
     const char* colours[]={"Original","Warm","Vivid","Gentle"};
     const char* crt[]={"Off","Soft","Classic"};
-    std::string values[]={windows[s.window],std::to_string(s.size)+"%",filters[int(s.scaling)],crt[int(s.crt)],colours[int(s.colour)],std::to_string(s.brightness)+"%",s.vsync?"On":"Off",s.startup?"Yes":"No"};
+    std::string values[]={windows[s.window],std::to_string(s.size)+"%",filters[int(s.scaling)],crt[int(s.crt)],colours[int(s.colour)],std::to_string(s.brightness)+"%",s.vsync?"On":"Off",s.startup?"Yes":"No",s.qol?"On":"Off"};
     for(int i=0;i<Comfort;i++) {
-        float y=154+i*48;box(40,y,496,42,panel);box(40,y,496,42,i==selected?gold:line,true);
-        text(55,y+28,18,labels[i],i==selected?ink:muted);
-        text(270,y+29,22,"<",gold);text(502,y+29,22,">",gold);
-        text(388,y+28,17,values[i],ink,true);
+        float y=154+i*44;box(40,y,496,38,panel);box(40,y,496,38,i==selected?gold:line,true);
+        text(55,y+26,18,labels[i],i==selected?ink:muted);
+        if(i==QualityOfLife) {
+            box(348,y+9,20,20,ink,true);
+            if(s.qol){text(351,y+25,18,"x",gold);}
+            text(402,y+26,17,values[i],ink,true);
+        }else {
+            text(270,y+27,22,"<",gold);text(502,y+27,22,">",gold);
+            text(388,y+26,17,values[i],ink,true);
+        }
     }
     text(568,153,15,"LIVE PREVIEW",gold);
     box(568,174,432,324,0xff000000);
@@ -157,6 +163,7 @@ void Presentation::menu(const Pixels& pixels,const DisplaySettings& s,bool start
         {"Adjust picture brightness to suit your room.","100% keeps the original brightness."},
         {"Synchronise presentation with the monitor.","The game's clock runs independently."},
         {"Choose whether this menu opens at launch.","You can always open it again with F11."},
+        {"Play the new gold-panning minigame.","Off keeps the original instant Pan action."},
         {"Fullscreen, 85% picture size and soft edges.","Gentle colours; adjust any choice to taste."},
         {"Crisp pixels and the original colour palette.","A window with the original 4:3 proportions."},
         {"Settings are saved when you apply them.","F11 pauses play and reopens this menu."}
@@ -179,8 +186,8 @@ void Presentation::menu(const Pixels& pixels,const DisplaySettings& s,bool start
 int Presentation::menu_hit(int wx,int wy,bool& left) {
     ui_layout();int px,py;physical_point(wx,wy,px,py);
     float x=(px-ui_x_)/ui_scale_,y=(py-ui_y_)/ui_scale_;left=x>=258 && x<300;
-    if(x>=40 && x<536 && y>=154 && y<154+Comfort*48) {
-        int row=int(y-154)/48;if(int(y-154)%48<42)return row;
+    if(x>=40 && x<536 && y>=154 && y<154+Comfort*44) {
+        int row=int(y-154)/44;if(int(y-154)%44<38)return row;
     }
     if(y>=566 && y<610){if(x>=40 && x<280)return Comfort;if(x>=296 && x<536)return Original;}
     if(y>=660 && y<704){if(x>=40 && x<172)return Cancel;if(x>=800 && x<1000)return Apply;}
@@ -205,6 +212,7 @@ void change_setting(DisplaySettings& s,int row,int dir) {
     case Brightness:s.brightness=80+10*cycle((s.brightness-80)/10,5,dir);break;
     case VSync:s.vsync=!s.vsync;break;
     case Startup:s.startup=!s.startup;break;
+    case QualityOfLife:s.qol=!s.qol;break;
     }
 }
 DisplaySettings comfort_settings(bool startup){DisplaySettings s;s.window=3;s.size=85;s.colour=Colour::Gentle;s.startup=startup;return s;}

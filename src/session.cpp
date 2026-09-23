@@ -33,6 +33,7 @@ void Session::directions(uint8_t mask){send({Kind::Directions,mask});}
 void Session::mouse(int x,int y){send({Kind::Mouse,x,y});}
 void Session::buttons(int mask){send({Kind::Buttons,mask});}
 void Session::clear_input(){send({Kind::Clear});}
+void Session::qol(bool enabled){send({Kind::Qol,enabled});}
 void Session::pause(bool paused){paused_=paused;}
 bool Session::finished(){return done_;}
 void Session::snapshot(Snapshot& output) {
@@ -51,35 +52,50 @@ void Session::run() {
                 last=now;
                 std::this_thread::sleep_for(std::chrono::milliseconds(1));continue;
             }
-            timer_elapsed+=std::chrono::duration<double>(now-last).count();last=now;
+            double elapsed=std::chrono::duration<double>(now-last).count();
+            timer_elapsed+=elapsed;last=now;
+            bool was_panning=state_.panning.engaged();
             std::vector<Command> commands;
             {std::lock_guard<std::mutex> lock(mutex_);commands.swap(commands_);}
             for(auto command:commands)switch(command.kind) {
-                case Kind::Key:state_.keys.push_back(uint32_t(command.a));break;
+                case Kind::Key:
+                    if(was_panning)state_.panning.key(bios_key(command.a,true),(command.a&KeyRepeat)!=0);
+                    else state_.keys.push_back(uint32_t(command.a));
+                    break;
                 case Kind::Release:
                     state_.keys.erase(std::remove_if(state_.keys.begin(),state_.keys.end(),[&](uint32_t key){return repeat_from(key,unsigned(command.a));}),state_.keys.end());break;
                 case Kind::Directions:directions=uint8_t(command.a);break;
-                case Kind::Mouse:state_.mouse.move(command.a,command.b);break;
-                case Kind::Buttons:state_.mouse.buttons(command.a);break;
-                case Kind::Clear:directions=0;state_.keys.clear();state_.mouse.clear();break;
+                case Kind::Mouse:state_.mouse.move(command.a,command.b);if(was_panning)state_.panning.pointer(command.a,command.b);break;
+                case Kind::Buttons:if(was_panning)state_.panning.buttons(command.a);else state_.mouse.buttons(command.a);break;
+                case Kind::Clear:directions=0;state_.keys.clear();state_.mouse.clear();state_.panning.clear_input();break;
+                case Kind::Qol:state_.qol_improvements=command.a!=0;break;
             }
             while(timer_elapsed>=((state_.pit_divisor?state_.pit_divisor:65536)/1193182.0)) {
                 timer_elapsed-=(state_.pit_divisor?state_.pit_divisor:65536)/1193182.0;
                 state_.timer_interrupt();
             }
-            state_.set_movement(directions);
-            for(int i=0;i<4096 && state_.running;i++) {
-                native_step(state_);if(state_.waiting)break;
+            state_.set_movement(was_panning?0:directions);
+            if(state_.panning.active())state_.panning.update(elapsed,directions);
+            else for(int i=0;i<4096 && state_.running;i++) {
+                native_step(state_);if(state_.waiting || state_.panning.engaged())break;
+            }
+            if(was_panning!=state_.panning.engaged()) {
+                directions=0;state_.set_movement(0);state_.keys.clear();state_.mouse.clear();
+                state_.panning.pointer(state_.mouse.current().x,state_.mouse.current().y);
             }
             state_.audio.speaker((state_.ports[0x61]&3)==3?1193182u/(state_.speaker_divisor?state_.speaker_divisor:65536):0);
             if(now-published>=std::chrono::milliseconds(4)) {
                 Snapshot next;
                 read_frame(state_,next.pixels);next.video_mode=state_.video_mode;
+                if(state_.panning.active())state_.panning.draw(next.pixels);
                 next.x=state_.u16(0x82bd,0x5b4a);next.y=state_.u16(0x82bd,0x5b4c);
                 next.town_page=state_.u16(0x82bd,0x5b5a);next.building=state_.u16(0x82bd,0x5b5e);
                 next.directions=directions;next.custom_cursor=state_.custom_cursor;next.boundaries=state_.boundaries;
                 next.mouse_visibility=state_.mouse_visibility;next.mouse_mode=state_.u16(0x82bd,0x5d62);
                 next.mouse_x=state_.mouse.current().x;next.mouse_y=state_.mouse.current().y;
+                next.panning_phase=int(state_.panning.phase());next.panning_round=state_.panning.round();
+                next.panning_loosened=state_.panning.loosened();next.panning_gold=state_.panning.gold();
+                next.gold_bags=state_.u16(0x82bd,0x53ea);next.qol_improvements=state_.qol_improvements;
                 {std::lock_guard<std::mutex> lock(frame_mutex_);next.sequence=frame_.sequence+1;frame_=std::move(next);}
                 published=now;
             }

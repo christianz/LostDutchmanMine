@@ -17,7 +17,7 @@ struct DisplaySettings {
     Colour colour=Colour::Original;
     Crt crt=Crt::Off;
     int brightness=100;
-    bool vsync=true, startup=true;
+    bool vsync=true, startup=true, qol=true;
 };
 DisplaySettings load_settings(const std::filesystem::path& file);
 void save_settings(const std::filesystem::path& file,const DisplaySettings& settings);

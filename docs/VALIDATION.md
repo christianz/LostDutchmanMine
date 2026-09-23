@@ -5,6 +5,29 @@ not yet certified. The original DOS program was neither launched nor modified.
 
 ## Verified
 
+- Update 5 adds optional interactive panning with new pixel artwork. The original
+  Pan action still checks ownership, pack capacity and river-specific gold grade.
+  Three rounds of rocking/rinsing retain or lose gold according to preparation;
+  success awards exactly one original bag, while failure/cancel awards none.
+  Core checks cover mouse/keyboard play, repeat/idle resistance, focus release,
+  no pan, full pack, both river grades and the original behavior with QoL off.
+- An 81-second native desktop scenario loads an isolated river fixture through
+  F6, clicks the original Pan button, plays with WASD, mouse dragging and Num Lock
+  keypad controls, and collects one bag. F11 pauses original execution and the
+  activity. Walking works afterward. The QoL checkbox is unchecked/applied and
+  the original instant Pan adds a second bag. After re-enabling it, Escape cancels
+  a new activity without adding gold. Saving/loading `PANGOLD` through original
+  slot 8 preserves both bags, position and the 6,066-byte format.
+- QoL is enabled by default, persisted in display.ini, and exposed as a checkbox
+  in startup/F11 settings. Invalid values fall back to the default. Cancelling
+  settings keeps the active choice; display presets preserve it. New art is
+  rendered at 320x200 through the existing scaling/colour/CRT pipeline. Original
+  assets, VGA memory and saved-game layouts are unchanged.
+- At 3840x2160 with Classic CRT and an 85% picture, actual X11 mouse events
+  select the original Pan button, drag five alternating swings to fill the
+  loosen meter and click Wash without losing gold. The SDL/OpenGL output and
+  hit mapping pass on a virtual Linux desktop; this is not a Windows 11 runtime
+  or physical-monitor test. Windows x64 cross-compilation also passes.
 - Update 4 fixes the saloon drink crash: `INT 21h` at `13b4:188e`, AX=`0bff`.
   The original C `kbhit` helper reproduces the missing-service error before the
   fix. Its DOS keyboard-status call now returns immediately without consuming
@@ -143,7 +166,7 @@ as Windows Server 2025, not Windows 11. No Windows 11 runtime claim is made.
 ## Reproduce focused checks
 
 ```sh
-make -j4 build/ldm-native build/test-assets build/test-arithmetic build/test-poker build/test-quit build/test-display build/test-mouse build/test-keyboard build/test-console
+make -j4 build/ldm-native build/test-assets build/test-arithmetic build/test-poker build/test-quit build/test-display build/test-mouse build/test-keyboard build/test-console build/test-panning
 build/test-arithmetic
 build/test-assets /nas/tmp/LDM/LDMG
 build/test-poker
@@ -152,8 +175,15 @@ build/test-display
 build/test-mouse
 build/test-keyboard
 build/test-console
+build/test-panning
 python3 tests/verify-quit.py
 python3 tests/verify-mouse.py
+python3 tests/make-river-fixture.py /nas/tmp/LDM/LDMSAVE1.SAV .local/panning-test/Saves
+SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy build/ldm-native \
+  --data /nas/tmp/LDM --image recovered/load-image.bin \
+  --saves .local/panning-test/Saves --config .local/panning-test/display.ini \
+  --seconds 81 --script tests/scripts/panning.txt
+python3 tests/verify-panning.py
 SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy build/ldm-native \
   --data /nas/tmp/LDM --image recovered/load-image.bin \
   --saves .local/saloon-drinks/Saves --seconds 69 \

@@ -33,6 +33,7 @@ DisplaySettings load_settings(const std::filesystem::path& file) {
         else if(key=="brightness" && n>=80 && n<=120 && n%10==0)s.brightness=n;
         else if(key=="vsync" && (n==0 || n==1))s.vsync=n;
         else if(key=="startup" && (n==0 || n==1))s.startup=n;
+        else if(key=="qol" && (n==0 || n==1))s.qol=n;
     }
     return s;
 }
@@ -44,7 +45,7 @@ void save_settings(const std::filesystem::path& file,const DisplaySettings& s) {
         out<<"# Lost Dutchman Mine display settings. F11 opens the settings window.\n"
            <<"window="<<s.window<<"\nsize="<<s.size<<"\nscaling="<<int(s.scaling)
            <<"\ncolour="<<int(s.colour)<<"\ncrt="<<int(s.crt)<<"\nbrightness="<<s.brightness
-           <<"\nvsync="<<s.vsync<<"\nstartup="<<s.startup<<"\n";
+           <<"\nvsync="<<s.vsync<<"\nstartup="<<s.startup<<"\nqol="<<s.qol<<"\n";
         out.close();if(!out)throw std::runtime_error("Cannot save display settings to "+file.string());
     }
 #ifdef _WIN32
