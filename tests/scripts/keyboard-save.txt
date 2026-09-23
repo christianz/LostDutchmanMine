@@ -1,0 +1,35 @@
+# Select save slot 8 using Num Lock, type WASD42 through real key bindings,
+# confirm with keypad Enter, walk away using A, then restore using keypad 8.
+19000 down 63
+19100 up 63
+21500 mouse 115 85
+21600 buttons 1
+21800 buttons 0
+23500 down 96 4096
+23520 up 96 4096
+25000 down 26 1
+25020 up 26 1
+25300 down 4 1
+25320 up 4 1
+25600 down 22 1
+25620 up 22 1
+25900 down 7 1
+25920 up 7 1
+26200 down 92 4096
+26220 up 92 4096
+26400 down 90 4096
+26420 up 90 4096
+27000 down 88
+27020 up 88
+29000 capture 530
+29500 down 4
+32000 up 4
+33000 capture 531
+34500 down 63
+34520 up 63
+36000 mouse 208 85
+36100 buttons 1
+36300 buttons 0
+38000 down 96 4096
+38020 up 96 4096
+41000 capture 532

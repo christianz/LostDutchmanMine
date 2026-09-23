@@ -146,8 +146,8 @@ void State::interrupt(uint8_t number) {
     auto error=[&](uint16_t n){set_flag(CF,true);ax=n;};
     if(number==0x20){running=false;return;}
     if(number==0x16) {
-        if(ah==1 || ah==0x11){set_flag(ZF,keys.empty());if(!keys.empty())ax=keys.front();return;}
-        if(ah==0 || ah==0x10){if(keys.empty()){waiting=true;return;}ax=keys.front();keys.erase(keys.begin());return;}
+        if(ah==1 || ah==0x11){set_flag(ZF,keys.empty());if(!keys.empty())ax=bios_key(keys.front(),movement_key_read);return;}
+        if(ah==0 || ah==0x10){if(keys.empty()){waiting=true;return;}ax=bios_key(keys.front(),movement_key_read);keys.erase(keys.begin());return;}
         if(ah==2){ax&=0xff00;return;}
     }
     if(number==0x33) {

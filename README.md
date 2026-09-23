@@ -43,7 +43,13 @@ Soft is subtle and Classic is stronger. It leaves the settings text sharp and
 keeps the same mouse coordinates. CRT rendering adds GPU work at high resolutions.
 
 VGA starts automatically, without the original graphics selector.
-Hold cursor keys or the numeric keypad to move and release to stop. Use the mouse
+Hold **WASD**, cursor keys or the numeric keypad to move; release to stop.
+Numpad **8/2/4/6** move up/down/left/right and **7/9/1/3** provide diagonals,
+with Num Lock on or off. Combine W/A/S/D for diagonal movement. With Num Lock on,
+the keypad also enters numbers and selects save slots; **numpad Enter** confirms.
+WASD stays ordinary text when entering a save name. The display menu accepts
+WASD and numpad 8/2/4/6 too. A movement key returns to walking when the hand
+cursor is active. Use the mouse
 for selections, F1-F6 for the status panel,
 Space for action and Alt+Enter for fullscreen. Align with a doorway and hold Up
 to walk into a building. Save/load is under F6.
@@ -89,13 +95,14 @@ The verified Linux build in this workspace uses the Makefile with local SDL2
 headers and the system SDL2 shared library:
 
 ```sh
-make -j4 build/ldm-native build/test-assets build/test-arithmetic build/test-poker build/test-quit build/test-display build/test-mouse
+make -j4 build/ldm-native build/test-assets build/test-arithmetic build/test-poker build/test-quit build/test-display build/test-mouse build/test-keyboard
 build/test-arithmetic
 build/test-assets /path/to/LDM/LDMG
 build/test-poker
 build/test-quit
 build/test-display
 build/test-mouse
+build/test-keyboard
 build/ldm-native --data /path/to/LDM --image recovered/load-image.bin --saves .local/saves
 ```
 

@@ -4,6 +4,7 @@
 #include "image_info.h"
 #include "session.h"
 #include "presentation.h"
+#include "keyboard.h"
 #include <algorithm>
 #include <chrono>
 #include <fstream>
@@ -12,83 +13,13 @@
 #include <sstream>
 
 namespace {
+using ldm::input::keycode;
+using ldm::input::direction;
+using ldm::input::movement;
 void audio_callback(void* userdata,Uint8* stream,int bytes) {
     static_cast<ldm::Audio*>(userdata)->render(reinterpret_cast<float*>(stream),bytes/int(sizeof(float)));
 }
 struct ScriptEvent {uint64_t time;std::string type;int a=0,b=0;};
-uint8_t direction(SDL_Scancode key) {
-    switch(key) {
-    case SDL_SCANCODE_UP:case SDL_SCANCODE_KP_8:return 1;
-    case SDL_SCANCODE_DOWN:case SDL_SCANCODE_KP_2:return 2;
-    case SDL_SCANCODE_LEFT:case SDL_SCANCODE_KP_4:return 4;
-    case SDL_SCANCODE_RIGHT:case SDL_SCANCODE_KP_6:return 8;
-    case SDL_SCANCODE_HOME:case SDL_SCANCODE_KP_7:return 5;
-    case SDL_SCANCODE_PAGEUP:case SDL_SCANCODE_KP_9:return 9;
-    case SDL_SCANCODE_END:case SDL_SCANCODE_KP_1:return 6;
-    case SDL_SCANCODE_PAGEDOWN:case SDL_SCANCODE_KP_3:return 10;
-    default:return 0;
-    }
-}
-uint8_t movement(const std::array<bool,SDL_NUM_SCANCODES>& held) {
-    uint8_t mask=0;
-    for(unsigned i=0;i<held.size();i++)if(held[i])mask|=direction(SDL_Scancode(i));
-    if((mask&3)==3)mask&=~3; // Opposite directions cancel, independently per axis.
-    if((mask&12)==12)mask&=~12;
-    return mask;
-}
-uint16_t keycode(const SDL_KeyboardEvent& e) {
-    uint16_t scan=0;
-    switch(e.keysym.sym) {
-    case SDLK_ESCAPE: return 0x011b;
-    case SDLK_RETURN: return 0x1c0d;
-    case SDLK_BACKSPACE:return 0x0e08;
-    case SDLK_TAB:return 0x0f09;
-    case SDLK_SPACE:return 0x3920;
-    case SDLK_UP:scan=0x48;break;
-    case SDLK_DOWN:scan=0x50;break;
-    case SDLK_LEFT:scan=0x4b;break;
-    case SDLK_RIGHT:scan=0x4d;break;
-    case SDLK_HOME:case SDLK_KP_7:scan=0x47;break;
-    case SDLK_PAGEUP:case SDLK_KP_9:scan=0x49;break;
-    case SDLK_END:case SDLK_KP_1:scan=0x4f;break;
-    case SDLK_PAGEDOWN:case SDLK_KP_3:scan=0x51;break;
-    case SDLK_INSERT:case SDLK_KP_0:scan=0x52;break;
-    case SDLK_KP_8:scan=0x48;break;
-    case SDLK_KP_2:scan=0x50;break;
-    case SDLK_KP_4:scan=0x4b;break;
-    case SDLK_KP_6:scan=0x4d;break;
-    case SDLK_F1:scan=0x3b;break;
-    case SDLK_F2:scan=0x3c;break;
-    case SDLK_F3:scan=0x3d;break;
-    case SDLK_F4:scan=0x3e;break;
-    case SDLK_F5:scan=0x3f;break;
-    case SDLK_F6:scan=0x40;break;
-    case SDLK_F7:scan=0x41;break;
-    case SDLK_F8:scan=0x42;break;
-    case SDLK_F9:scan=0x43;break;
-    case SDLK_F10:scan=0x44;break;
-    default:
-        if(e.keysym.sym>=32 && e.keysym.sym<=126) {
-            int c=e.keysym.sym;
-            const unsigned letter_scan[]={0x1e,0x30,0x2e,0x20,0x12,0x21,0x22,0x23,0x17,0x24,0x25,0x26,0x32,0x31,0x18,0x19,0x10,0x13,0x1f,0x14,0x16,0x2f,0x11,0x2d,0x15,0x2c};
-            if(c>='a'&&c<='z') {
-                scan=letter_scan[c-'a'];
-                if(bool(e.keysym.mod&KMOD_SHIFT)!=bool(e.keysym.mod&KMOD_CAPS))c-=32;
-            } else if(c>='1'&&c<='9') {
-                scan=c-'1'+2;if(e.keysym.mod&KMOD_SHIFT)c="!@#$%^&*("[c-'1'];
-            } else if(c=='0'){scan=0x0b;if(e.keysym.mod&KMOD_SHIFT)c=')';}
-            else {
-                switch(c) {
-                case '-':scan=0x0c;break;case '=':scan=0x0d;break;case '[':scan=0x1a;break;case ']':scan=0x1b;break;
-                case ';':scan=0x27;break;case '\'':scan=0x28;break;case '`':scan=0x29;break;case '\\':scan=0x2b;break;
-                case ',':scan=0x33;break;case '.':scan=0x34;break;case '/':scan=0x35;break;
-                }
-            }
-            return (scan<<8)|uint8_t(c);
-        }
-    }
-    return scan<<8;
-}
 void capture(const std::array<uint32_t,64000>& pixels,const std::filesystem::path& file) {
     std::filesystem::create_directories(file.parent_path());
     auto surface=SDL_CreateRGBSurfaceWithFormatFrom(const_cast<uint32_t*>(pixels.data()),320,200,32,320*4,SDL_PIXELFORMAT_ARGB8888);
@@ -174,7 +105,7 @@ int main(int argc,char**argv) {
         auto keyboard=[&](const SDL_KeyboardEvent& key,bool pressed) {
             if(menu) {
                 if(!pressed)return;
-                switch(key.keysym.sym) {
+                switch(ldm::input::menu_key(key)) {
                 case SDLK_ESCAPE:action(ldm::Cancel,1);break;
                 case SDLK_RETURN:case SDLK_KP_ENTER:if(!key.repeat)action(selected>=ldm::Comfort?selected:ldm::Apply,1);break;
                 case SDLK_SPACE:if(selected<ldm::Comfort || !key.repeat)action(selected,1);break;
@@ -190,12 +121,12 @@ int main(int argc,char**argv) {
             if(pressed && key.keysym.sym==SDLK_F11){if(!key.repeat)open_menu();return;}
             auto scan=key.keysym.scancode;
             if(scan>SDL_SCANCODE_UNKNOWN && scan<SDL_NUM_SCANCODES)held[scan]=pressed;
-            session->directions(movement(held));auto bios=keycode(key);
+            session->directions(movement(held));auto bios=ldm::input::key_event(key);
             if(pressed) {
                 if(key.keysym.sym==SDLK_RETURN && (key.keysym.mod&KMOD_ALT)) {
                     if(!key.repeat){settings.window=settings.window==3?last_window:3;view.apply(settings,true);release_input();}
-                }else if(bios)session->key(bios|((key.repeat && direction(scan))?0x10000u:0));
-            }else if(direction(scan))session->release_repeat(bios);
+                }else if(bios)session->key(bios);
+            }else if(direction(scan))session->release_repeat(scan);
         };
         auto pointer=[&](int wx,int wy,bool press,int button,bool motion) {
             if(menu) {
@@ -235,6 +166,7 @@ int main(int argc,char**argv) {
                     if(event.a<=0 || event.a>=SDL_NUM_SCANCODES)throw std::runtime_error("Invalid scripted scancode");
                     SDL_KeyboardEvent key{};key.keysym.scancode=SDL_Scancode(event.a);
                     key.keysym.sym=SDL_GetKeyFromScancode(key.keysym.scancode);key.repeat=event.type=="repeat";
+                    key.keysym.mod=Uint16(event.b);
                     keyboard(key,event.type!="up");
                 }else if(event.type=="focuslost")release_input();
                 else if(event.type=="ascii") {

@@ -22,6 +22,18 @@ CONDS = {
     'js':'s.flag(SF)','jns':'!s.flag(SF)','jo':'s.flag(OF)','jno':'!s.flag(OF)',
     'jp':'s.flag(PF)','jnp':'!s.flag(PF)','jcxz':'s.cx==0',
 }
+MOVEMENT_READ_SITES = {
+    (0x0fa7,0x009d):('9a3a00a70f',True),
+    (0x0fa7,0x00a4):('9a3a00a70f',True),
+    (0x0fa7,0x00a2):('eb0c',False),
+    (0x0fa7,0x00a9):('b90800',False),
+    # The main command poll can consume a direction between movement ticks,
+    # or while the hand is active. It forwards directions through DS:5a1a.
+    (0x0000,0x0882):('9a4000680b',True),
+    (0x0000,0x0887):('8946f4',False),
+    (0x0000,0x0a90):('9a4000680b',True),
+    (0x0000,0x0a95):('8946fa',False),
+}
 
 
 class Emitter:
@@ -169,6 +181,20 @@ class Emitter:
             # click survives batching and all three reads agree on its point.
             if i.bytes.hex()!='55':raise ValueError('Unexpected mouse polling layout')
             code.insert(0,'s.mouse.poll();')
+        if (cs,ip) in MOVEMENT_READ_SITES:
+            # Only movement/command polls use native direction aliases. Clear
+            # the context before dispatching commands that open text fields.
+            # The simulation thread decides, independently of desktop snapshots.
+            expected,active=MOVEMENT_READ_SITES[cs,ip]
+            if i.bytes.hex()!=expected:raise ValueError('Unexpected movement key reader layout')
+            code.insert(0,f's.movement_key_read={str(active).lower()};')
+        if (cs,ip)==(0x0000,0x0887):
+            # In the world's hand-cursor loop a direction is already forwarded
+            # to DS:5a1a, but the original waits for a right click to return to
+            # walking. Reuse that exact hide-cursor/keyboard-mode return path.
+            # Dialogs/text fields use their own readers and never pass here.
+            directions=' || '.join(f's.ax==0x{scan:02x}' for scan in (0x47,0x48,0x49,0x4b,0x4d,0x4f,0x50,0x51))
+            code.insert(1,f'if({directions}) {{ {self.goto(0x0914,False)} }}')
         if not terminal:code += [self.goto(nxt,False)]
         return code
 

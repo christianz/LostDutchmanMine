@@ -5,6 +5,21 @@ not yet certified. The original DOS program was neither launched nor modified.
 
 ## Verified
 
+- Update 4 adds WASD and completes keypad input. The original movement/text
+  helper test checks all four WASD keys with Shift/Caps Lock, all eight keypad
+  directions with Num Lock on/off, digit/slot scan codes and keypad Enter.
+  The desktop scenario switches from the hand back to walking with D, moves
+  continuously without OS repeat, combines W+A, uses keypad 6/4/9, and stops
+  correctly on release, opposing directions and focus loss. Queued keypad
+  repeats are discarded even if Num Lock changes before release.
+- WASD/keypad navigation also changes CRT/colour settings and confirms with
+  keypad Enter. A save/load scenario selects slot 8 using the keypad, enters
+  `WASD42` using WASD letters and keypad digits, confirms with keypad Enter,
+  walks away with A and reloads with keypad 8. The original 6,066-byte save and
+  its name survive; player x changes 160 -> 70 -> 160 and all position fields
+  match after loading. Existing arrow/focus/repeat and quick mouse/quit checks
+  also pass. These are native Linux tests; the Windows x64 cross-build passes,
+  with independent Windows 11 keyboard testing still outstanding.
 - Update 3 reproduces missed mouse activation: after keyboard movement, a press
   and release in the same event batch leave mouse mode 1 and visibility -1, even
   after further quick clicks. The fix retains both transitions and a coherent
@@ -117,13 +132,14 @@ as Windows Server 2025, not Windows 11. No Windows 11 runtime claim is made.
 ## Reproduce focused checks
 
 ```sh
-make -j4 build/ldm-native build/test-assets build/test-arithmetic build/test-poker build/test-quit build/test-display build/test-mouse
+make -j4 build/ldm-native build/test-assets build/test-arithmetic build/test-poker build/test-quit build/test-display build/test-mouse build/test-keyboard
 build/test-arithmetic
 build/test-assets /nas/tmp/LDM/LDMG
 build/test-poker
 build/test-quit
 build/test-display
 build/test-mouse
+build/test-keyboard
 python3 tests/verify-quit.py
 python3 tests/verify-mouse.py
 SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy build/ldm-native \
@@ -131,6 +147,15 @@ SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy build/ldm-native \
   --saves .local/movement-saves --seconds 23 \
   --script tests/scripts/held-movement.txt
 python3 tests/verify-movement.py
+SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy build/ldm-native \
+  --data /nas/tmp/LDM --image recovered/load-image.bin \
+  --saves .local/keyboard-controls/Saves --config .local/keyboard-controls/display.ini \
+  --seconds 33 --script tests/scripts/keyboard-controls.txt
+SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy build/ldm-native \
+  --data /nas/tmp/LDM --image recovered/load-image.bin \
+  --saves .local/keyboard-save/Saves --seconds 43 \
+  --script tests/scripts/keyboard-save.txt
+python3 tests/verify-keyboard.py
 SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy build/ldm-native \
   --data /nas/tmp/LDM --image recovered/load-image.bin \
   --saves .local/display-test/Saves --config .local/display-test/display.ini \
@@ -149,6 +174,8 @@ Use a fresh config path for the display-menu script. `screen` script events and
 `--screenshot` capture presented output; `capture` retains the original 320x200
 framebuffer and selected state fields. Timed/scripted runs skip startup settings
 unless explicitly launched with `--settings`.
+The keyboard-controls script also needs a fresh config. Its optional final
+column on `down`/`up`/`repeat` supplies SDL modifier bits (4096 is Num Lock).
 `tests/scripts/crt-menu.txt` previews both CRT strengths, saves Classic and
 checks Cancel/Apply from F11. Run it with a fresh config, `--settings --seconds 4`.
 

@@ -28,7 +28,7 @@ Session::~Session(){stop();}
 void Session::stop(){stopping_=true;if(thread_.joinable())thread_.join();}
 void Session::send(Command command){std::lock_guard<std::mutex> lock(mutex_);commands_.push_back(command);}
 void Session::key(uint32_t code){send({Kind::Key,int(code)});}
-void Session::release_repeat(uint16_t code){send({Kind::Release,code});}
+void Session::release_repeat(uint16_t physical_key){send({Kind::Release,physical_key});}
 void Session::directions(uint8_t mask){send({Kind::Directions,mask});}
 void Session::mouse(int x,int y){send({Kind::Mouse,x,y});}
 void Session::buttons(int mask){send({Kind::Buttons,mask});}
@@ -57,7 +57,7 @@ void Session::run() {
             for(auto command:commands)switch(command.kind) {
                 case Kind::Key:state_.keys.push_back(uint32_t(command.a));break;
                 case Kind::Release:
-                    state_.keys.erase(std::remove_if(state_.keys.begin(),state_.keys.end(),[&](uint32_t key){return (key&0x10000) && uint16_t(key)==command.a;}),state_.keys.end());break;
+                    state_.keys.erase(std::remove_if(state_.keys.begin(),state_.keys.end(),[&](uint32_t key){return repeat_from(key,unsigned(command.a));}),state_.keys.end());break;
                 case Kind::Directions:directions=uint8_t(command.a);break;
                 case Kind::Mouse:state_.mouse.move(command.a,command.b);break;
                 case Kind::Buttons:state_.mouse.buttons(command.a);break;

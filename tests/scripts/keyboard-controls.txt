@@ -1,0 +1,61 @@
+# SDL physical scancodes. Optional final column is the modifier mask (4096 = Num Lock).
+18000 capture 500
+18200 mouse 250 130
+18250 buttons 1
+18250 buttons 0
+18700 capture 501
+# D must leave hand mode and keep walking without auto-repeat.
+19000 down 7
+19250 capture 502
+19600 up 7
+20000 capture 503
+20300 capture 504
+# Combined W+A produces a held diagonal.
+20400 down 26
+20400 down 4
+20700 capture 505
+21100 up 26
+21100 up 4
+21600 capture 506
+# Numpad right with Num Lock off, left with it on, then an explicit diagonal.
+23000 down 94
+23600 up 94
+23900 capture 507
+24100 down 92 4096
+24700 up 92 4096
+25000 capture 508
+25200 down 97 4096
+25500 capture 509
+25800 up 97 4096
+26100 capture 510
+# Opposing keys settle to neutral; focus loss releases held movement.
+27000 down 4
+27000 down 7
+27400 capture 511
+27900 capture 512
+28000 up 4
+28000 up 7
+28100 down 7
+28600 focuslost
+28900 capture 513
+29400 capture 514
+# Releasing after a Num Lock change must discard queued keypad repeats.
+29500 repeat 94 4096
+29500 repeat 94 4096
+29500 up 94 0
+30100 capture 515
+# WASD and Num Lock on/off also navigate the native settings menu.
+30400 down 68
+30450 up 68
+30600 down 22
+30650 up 22
+30700 down 7
+30750 up 7
+30800 down 90 4096
+30850 up 90 4096
+30900 down 94
+30950 up 94
+31100 screen 518
+31300 down 88
+31350 up 88
+32000 capture 519

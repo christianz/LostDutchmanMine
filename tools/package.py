@@ -62,7 +62,13 @@ CRT monitor offers Off, Soft and Classic: steady scanlines, phosphor texture,
 soft glow and gentle edge shading. Preview it in the menu; the choice is saved.
 
 VGA starts automatically. Allow the original title/credits sequence to finish.
-Hold cursor keys or the numeric keypad to move; release to stop. Use the mouse for choices,
+Hold WASD, cursor keys or the numeric keypad to move; release to stop.
+Numpad 8/2/4/6 move up/down/left/right; 7/9/1/3 move diagonally. Num Lock may be
+on or off for movement. Combine WASD keys for diagonals. With Num Lock on, the
+keypad enters numbers and selects save slots. Numpad Enter confirms. WASD letters
+still type normally in save names. WASD/numpad also navigate display settings.
+A movement key returns to walking when the hand cursor is active.
+Use the mouse for choices,
 F1-F6 for the status panel, Space for action, Alt+Enter for fullscreen.
 To enter a building, align with its doorway and hold Up to walk inside.
 Save and load through F6. New saves go in Saves; the supplied originals in Game

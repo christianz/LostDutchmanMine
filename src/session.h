@@ -24,7 +24,7 @@ public:
     ~Session();
     Session(const Session&)=delete;
     void key(uint32_t code);
-    void release_repeat(uint16_t code);
+    void release_repeat(uint16_t physical_key);
     void directions(uint8_t mask);
     void mouse(int x,int y);
     void buttons(int mask);

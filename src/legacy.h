@@ -1,5 +1,6 @@
 #pragma once
 #include "audio.h"
+#include "keyboard_event.h"
 #include "mouse.h"
 #include <array>
 #include <cstdint>
@@ -31,9 +32,10 @@ struct State {
     Audio audio;
     std::array<uint32_t,256> palette{};
     std::array<uint8_t,16> attributes{};
-    // Low 16 bits are BIOS AX; bit 16 marks desktop auto-repeat so releasing a
-    // direction can discard stale repeats while preserving a quick key tap.
+    // Native event tags are interpreted only at the original movement reader;
+    // text fields receive their ordinary BIOS character and scan pair.
     std::vector<uint32_t> keys;
+    bool movement_key_read=false;
     int video_mode=3,text_scan_lines=400;
     MouseInput mouse;
     int mouse_visibility=-1,mouse_hot_x=0,mouse_hot_y=0;

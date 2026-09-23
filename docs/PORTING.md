@@ -31,6 +31,9 @@ The native state loads data at paragraph 1000; DS is normally 82bd at runtime.
 - `src/audio.*`: synchronized YM3812 synthesis using ymfm plus PC speaker tone.
 - `src/mouse.h`: desktop button transitions and their coordinates, retained until
   a complete original mouse poll reads them; current motion remains independent.
+- `src/keyboard.h`: physical WASD/keypad/direction bindings and normal BIOS text.
+  `keyboard_event.h` retains both meanings in the native event queue, with source
+  key identity for repeat cleanup even if Num Lock/Shift changes before release.
 - `src/assets.*`: readable packed-asset decoder, differentially checked against
   the translated original routine at 1265:1250. The runtime still uses the
   translated original decoder.
@@ -46,11 +49,26 @@ The native state loads data at paragraph 1000; DS is normally 82bd at runtime.
 - Keyboard reads require BIOS scan codes as well as ASCII. The original save
   selector compares scans 02 through 09 for slots 1 through 8. Its key reader
   intentionally drains queued typeahead; scripted text needs reasonable pacing.
-- Held arrows/keypad directions feed the original joystick direction byte at
+- Held WASD/arrows/keypad directions feed the original joystick direction byte at
   relative segment 72ba:0001, read by 0fa7:0066. This preserves the game's own
   movement cadence without waiting for OS keyboard repeat. Keyboard events still
   reach menus. Releasing a direction removes its pending repeats; losing window
   focus clears all held controls. Opposing directions cancel per axis.
+- Movement aliases are selected on the simulation thread only around the input
+  calls at 0fa7:009d/00a4 and the main command reads at 0000:0882/0a90. The latter
+  cover mouse-to-keyboard activation and direction forwarding through DS:5a1a.
+  The context clears immediately after each read, before dispatching any dialog.
+  The original text readers receive unmodified letters; Num Lock keypad digits
+  receive the number-row BIOS scan codes required by the original save selector.
+  Keypad movement uses physical scancodes with either Num Lock state. Tags never
+  enter the original 16-bit registers or save data. The native display menu also
+  accepts WASD and cardinal keypad keys; keypad Enter confirms both native and
+  original dialogs.
+- In the world hand-cursor loop, 0000:0887 now forwards a recognized direction
+  to the original right-click return at 0000:0914. This hides the hand and restores
+  keyboard mode while retaining DS:5a1a's pending direction. Without this, the
+  original loop keeps consuming movement keys while remaining in mouse mode.
+  Original dialogs and name-entry routines do not pass through this branch.
 - The mouse helper at 0fc5:0038 separately reads buttons, Y and X through three
   INT 33h calls. Its AOT entry latches one coherent desktop sample for those reads.
   Each button transition is retained: processing down/up in one desktop batch
