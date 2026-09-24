@@ -3,6 +3,27 @@
 Status: runnable development build. Full fidelity and complete gameplay are
 not yet certified. The original DOS program was neither launched nor modified.
 
+## Verified in update 12
+
+- Clicking cave scenery with the QoL pointer no longer restarts the scene.
+  Both reported symptoms came from that restart: the wilderness entrance
+  replayed, and indoor coordinates replaced the saved map return position.
+- `test-cave` reproduces the restart before the fix. Its eight scenarios now
+  pass: quick/held clicks during entry and inside the cave; resumed-scene
+  state with QoL on/off; rejected entry without a lamp or without oil. All
+  exits restore exact map X/Y and scroll offsets through the original code.
+- A Linux SDL desktop comparison loads identical isolated map saves, presses
+  Space, clicks inside the cave, then walks left to leave. Update 11 replays
+  the wilderness and returns at (60,50) instead of (135,61). Update 12 stays
+  in the cave and restores (135,61), retaining scroll (13,8). Screenshots and
+  frame metadata are checked by `tests/verify-cave.py`; input is recorded in
+  `tests/scripts/cave-roundtrip.txt`. `test-cave GAME FRESH-DIRECTORY` exports
+  the isolated QA fixture without modifying supplied saves.
+- Ten relevant native executables pass: cave, keyboard, menu, mouse, menu
+  scene, QoL, panning, panning scene, combat and combat scene. Real toolbar
+  actions, classic scenery commands and combat input retain their routing.
+  Windows x64 cross-compilation passes; Windows runtime remains untested.
+
 ## Verified in update 11
 
 - Health and inventory no longer show hover outlines for the scene's hidden

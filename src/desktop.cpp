@@ -187,6 +187,8 @@ int main(int argc,char**argv) {
                         <<",\"mouse_x\":"<<frame.mouse_x<<",\"mouse_y\":"<<frame.mouse_y
                         <<",\"pointer_visible\":"<<frame.pointer_visible<<",\"desert_view\":"<<frame.desert_view
                         <<",\"map_view\":"<<frame.map_view<<",\"survival_ticks\":"<<frame.survival_ticks
+                        <<",\"cave_view\":"<<frame.cave_view<<",\"map_scroll_x\":"<<frame.map_scroll_x<<",\"map_scroll_y\":"<<frame.map_scroll_y
+                        <<",\"return_x\":"<<frame.return_x<<",\"return_y\":"<<frame.return_y
                         <<",\"panning_active\":"<<frame.panning_active
                         <<",\"gold_bags\":"<<frame.gold_bags<<",\"qol\":"<<frame.qol_improvements
                         <<",\"combat\":"<<frame.combat_active<<",\"bullets\":"<<frame.bullets<<"}\n";

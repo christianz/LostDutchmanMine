@@ -94,6 +94,9 @@ void Session::run() {
                 next.mouse_x=state_.mouse.current().x;next.mouse_y=state_.mouse.current().y;
                 next.pointer_visible=state_.game_ui.pointer_visible(state_);
                 next.desert_view=state_.desert_view_active;next.map_view=state_.u16(0x82bd,0x5e06)!=0;
+                next.cave_view=state_.u16(0x82bd,0x5e0a)!=0;
+                next.map_scroll_x=state_.u16(0x82bd,0x5b56);next.map_scroll_y=state_.u16(0x82bd,0x5b58);
+                next.return_x=state_.u16(0x82bd,0x5b60);next.return_y=state_.u16(0x82bd,0x5b62);
                 next.survival_ticks=state_.u16(0x82bd,0x5406);
                 next.panning_active=state_.panning_active;
                 next.gold_bags=state_.u16(0x82bd,0x53ea);next.qol_improvements=state_.qol_improvements;

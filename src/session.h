@@ -13,6 +13,8 @@ struct Snapshot {
     int video_mode=3,x=0,y=0,town_page=0,building=0;
     int mouse_visibility=-1,mouse_mode=1,mouse_x=160,mouse_y=100;
     bool pointer_visible=false,desert_view=false,map_view=false;
+    bool cave_view=false;
+    int map_scroll_x=0,map_scroll_y=0,return_x=0,return_y=0;
     int survival_ticks=0;
     uint8_t directions=0;
     bool custom_cursor=false;

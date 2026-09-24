@@ -104,6 +104,14 @@ class Emitter:
             # use the same loaded-scene flag as the saloon's position setup.
             if i.bytes.hex()!='a3605b':raise ValueError('Unexpected building return position')
             return ['if(!s.u16(s.ds,0x5b86))s.w16(s.ds,0x5b60,s.ax);',self.goto(ip+3,False)]
+        if (cs,ip)==(0x0000,0x0952):
+            # Clicking scenery in the original modal mouse selector returns 9,
+            # restarting the scene. With the persistent QoL pointer that can
+            # replay a cave entrance and save indoor X/Y as its map return
+            # position. A scenery click has no action; real panel buttons and
+            # the separate combat/dialog readers retain their original paths.
+            if i.bytes.hex()!='b80900':raise ValueError('Unexpected scenery click command')
+            return ['s.ax=s.qol_improvements && !s.combat_active?0:9;',self.goto(ip+3,False)]
         if (cs,ip)==(0x033f,0x0303):
             # Restore the outer loop's signed comparison at 0300. The supplied
             # EXE bypasses its intact animation with an unconditional jump.
