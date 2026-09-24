@@ -1,0 +1,19 @@
+# Load isolated evening saloon save in slot 1, then choose Sleep.
+18000 key 16384
+19500 mouse 208 85
+19560 buttons 1
+19620 buttons 0
+21200 ascii 49
+23600 mouse 155 80
+23660 buttons 1
+23720 buttons 0
+24200 mouse 100 147
+24500 capture 1900
+25000 buttons 1
+25060 buttons 0
+25900 capture 1901
+26100 mouse 180 147
+26600 capture 1902
+26800 mouse 69 181
+27300 capture 1903
+30500 capture 1904

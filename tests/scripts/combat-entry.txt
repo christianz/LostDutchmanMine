@@ -1,0 +1,41 @@
+# Load a healthy, armed wanted-criminal fixture; aim without a keyboard nudge.
+# Finish promptly so the opponent's ordinary damage cannot end the input test.
+18000 key 16384
+19500 mouse 208 85
+19560 buttons 1
+19620 buttons 0
+21200 ascii 49
+21500 capture 910
+22000 mouse 70 45
+22500 capture 911
+22800 mouse 245 35
+23300 capture 912
+23600 buttons 1
+23605 buttons 0
+24000 capture 913
+24200 buttons 1
+24700 capture 914
+24800 buttons 0
+25000 down 7 0
+25250 up 7 0
+25600 capture 915
+25800 down 44 0
+25860 up 44 0
+26200 capture 916
+26400 buttons 2
+26460 buttons 0
+26800 capture 917
+27000 down 4 0
+27250 up 4 0
+27500 mouse 95 50
+27800 capture 918
+28000 down 68 0
+28060 up 68 0
+28300 capture 919
+28800 capture 920
+29000 down 41 0
+29060 up 41 0
+29200 mouse 145 60
+29600 capture 921
+29800 focuslost
+30200 capture 922

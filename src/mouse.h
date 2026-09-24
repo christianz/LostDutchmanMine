@@ -29,7 +29,10 @@ public:
         else {sample_=pending_.front().point;pending_.pop_front();}
     }
     void clear() {
-        pending_.clear();current_.buttons=0;sample_=current_;
+        current_.buttons=0;discard_pending();
+    }
+    void discard_pending() {
+        pending_.clear();sample_=current_;
     }
     void warp(int x,int y) {
         move(x,y);sample_.x=current_.x;sample_.y=current_.y;

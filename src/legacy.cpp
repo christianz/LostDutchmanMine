@@ -200,6 +200,14 @@ void State::reset_combat_pointer() {
     combat_pointer=mouse.current();combat_mouse_fire=false;
 }
 void State::begin_combat() {
+    // A fight may start from a map/building hand cursor. Enter aiming once,
+    // while preserving deliberate hand/menu choices made during the fight.
+    if(qol_improvements && u16(ds,0x5302)==0 && u16(ds,0x53e0)>0) {
+        w16(ds,0x5d62,1);
+        // The click which entered the encounter is not a shot. Keep the held
+        // level as the baseline so a release and fresh press are required.
+        mouse.discard_pending();
+    }
     combat_active=true;combat_input_read=false;reset_combat_pointer();
 }
 void State::begin_combat_input() {
@@ -211,6 +219,11 @@ void State::begin_combat_input() {
 }
 void State::filter_combat_mouse() {
     const auto& point=mouse.sample();
+    if(combat_input_read && point.buttons && point.buttons==combat_pointer.buttons) {
+        // A press carried in from the previous screen must not reopen hand
+        // mode, even while the pointer still rests over its old panel button.
+        ax=0;return;
+    }
     if(combat_input_read && point.buttons==1 && point.y<112) {
         // The original mouse poll normally activates the hand. In the shooting
         // area, a left press instead fires once at its latched click position.

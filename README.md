@@ -75,8 +75,8 @@ signed branch conditions are reconstructed from the surrounding code; they have
 not been compared with an unmodified retail executable. The custom panning
 minigame is retired, and its creek artwork is no longer packaged or required.
 
-During shooting encounters, move the mouse over the scene to aim the original
-crosshair and **left-click** to fire one shot. **Right-click** opens the hand
+Mouse aiming is ready when an armed fight starts. Move over the scene to aim
+the original crosshair and **left-click** to fire one shot. **Right-click** opens the hand
 cursor for Run/status/menu selections; a direction key returns to aiming.
 WASD, arrows and numpad still aim, and **Space** still fires. A stationary mouse
 does not override keyboard aiming. Uncheck QoL improvements for the original

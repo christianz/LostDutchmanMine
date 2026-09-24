@@ -281,6 +281,10 @@ class Emitter:
             (0x0000,0x0a83):('cb','s.game_ui.end_menu(); s.game_ui.choosing=true;'),
             (0x0000,0x0ae4):('55','s.game_ui.begin_menu(); s.game_ui.mule_shop_visible=false;'),
             (0x0000,0x0b6b):('cb','s.game_ui.end_menu();'),
+            # Saloon sleep runs after its command dispatcher has returned.
+            # Suspend the panel for the entire noninteractive sleep routine.
+            (0x08c0,0x29b6):('b8a409','s.game_ui.begin_menu();'),
+            (0x08c0,0x2a8b):('cb','s.game_ui.end_menu();'),
             (0x08c0,0x1de2):('55','s.game_ui.mule_shop=true;'),
             (0x08c0,0x21b5):('cb','s.game_ui.mule_shop=false; s.game_ui.mule_shop_visible=false;'),
             (0x08c0,0x0189):('b80600','s.game_ui.mule_shop_visible=s.game_ui.mule_shop;'),

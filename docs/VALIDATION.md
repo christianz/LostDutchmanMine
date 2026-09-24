@@ -3,6 +3,34 @@
 Status: runnable development build. Full fidelity and complete gameplay are
 not yet certified. The original DOS program was neither launched nor modified.
 
+## Verified in update 14
+
+- Saloon sleep suspends native context-button and toolbar hover for its entire
+  noninteractive routine. The original black screen no longer acquires gold
+  outlines or shortcut hints. Mouse and keyboard Sleep tests wake at 09:00,
+  restore the saved town doorway and re-enable the toolbar without stale
+  Sleep targets. Health/inventory modal checks still pass.
+- An armed encounter starts with mouse aiming enabled even if it inherits
+  the previous screen's hand mode. Queued entry clicks are discarded; a held
+  entry click cannot fire or reopen hand mode over the old panel. New clicks,
+  right-click menus, keyboard aiming, Space, and QoL-off behavior remain valid.
+- The original scene test now runs both Native American and wanted-criminal
+  encounters, each entered from keyboard mode and from hand mode with a held
+  panel click. Mouse movement works without a direction-key nudge; a fresh
+  click passes original hit testing and consumes exactly one bullet.
+- Linux SDL before/after sleep captures reproduce the old gold outlines over
+  Exit and Cash and verify none remain during sleep. The toolbar highlights
+  again on waking. `tests/verify-sleep.py` checks pixels and saved doorway
+  coordinates from `tests/scripts/saloon-sleep.txt`.
+- A Linux SDL run loads an isolated, healthy wanted-criminal encounter and
+  immediately mouse-aims left/right, fires quick/held clicks, aims by keyboard,
+  fires with Space, uses right-click hand mode, and pauses/resumes with F11.
+  `tests/scripts/combat-entry.txt` and `tests/verify-combat.py` verify the sight
+  coordinates, exactly three bullets spent, and cleared focus/pause input.
+- All eleven relevant native executables pass: combat, combat scene, QoL,
+  assay, cave, keyboard, menu, mouse, menu scene, panning and panning scene.
+  Windows x64 cross-compilation passes; Windows runtime remains untested.
+
 ## Verified in update 13
 
 - Corrected an update 12 regression: the shared selector's result 9 also means

@@ -30,6 +30,21 @@ int main() {
             }
         };
         auto clear=[&](){s->mouse.clear();s->reset_combat_pointer();s->set_movement(0);s->keys.clear();s->w16(s->ds,0x5d62,1);};
+        for(bool held:{false,true}) {
+            clear();s->w16(s->ds,0x5d62,0);s->mouse.move(100,147);s->mouse.buttons(1);
+            if(!held)s->mouse.buttons(0);
+            s->begin_combat();
+            require(!poll() && s->u16(s->ds,0x5d62)==1,
+                    "Entry click held over the old panel reopened the hand cursor");
+            s->mouse.move(70,45);
+            require(!poll() && point(62,37) && s->u16(s->ds,0x5d62)==1,
+                    "Hand-mode encounter entry did not enable immediate aim or replayed its entry click");
+            require(!poll(),"Holding the entry click fired a shot");
+            s->mouse.buttons(0);require(!poll(),"Releasing the entry click fired a shot");
+            s->mouse.buttons(1);require(poll(),"Fresh press after encounter entry did not fire");
+        }
+        clear();s->mouse.move(160,100);s->reset_combat_pointer();
+        s->w16(s->ds,0x5b4a,160);s->w16(s->ds,0x5b4c,64);
         require(!poll() && point(160,64),"Entering combat must not jump to a stationary mouse");
         s->mouse.move(70,45);require(!poll() && point(62,37),"Mouse motion must position the original sight's centre");
         s->set_movement(8);require(!poll() && point(72,37),"Stationary mouse must not undo keyboard aiming");
@@ -57,6 +72,9 @@ int main() {
         clear();s->w16(s->ds,0x5302,0);s->w16(s->ds,0x53e0,0);s->mouse.move(110,60);s->mouse.buttons(1);
         require(!poll() && point(290,84),"No gun must preserve the original input path");
         clear();s->w16(s->ds,0x53e0,1);s->qol_improvements=false;s->mouse.move(70,45);
+        s->w16(s->ds,0x5d62,0);s->begin_combat();
+        require(s->u16(s->ds,0x5d62)==0,"QoL off changed the encounter entry mode");
+        s->w16(s->ds,0x5d62,1);
         require(!poll() && point(290,84),"QoL off must retain original aiming");
         s->mouse.buttons(1);require(!poll() && s->u16(s->ds,0x5d62)==0,"QoL off must retain mouse selection");
         clear();s->keys={0x3920};require(poll(),"Space must still call the original shooting routine");

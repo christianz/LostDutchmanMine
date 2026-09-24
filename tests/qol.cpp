@@ -102,6 +102,42 @@ void map_diagonals(const char* data) {
     }
     std::cout<<"PASS: all four world-map diagonals retain both axes with either last key and with auto-repeat, using original terrain steps\n";
 }
+void sleep_hover(const char* data) {
+    for(bool mouse:{false,true}) {
+        Game g(data);auto& s=g.s;s.custom_cursor=false;
+        s.w16(s.ds,0x5b5e,2);s.w16(s.ds,0x5e04,0);s.w16(s.ds,0x5b86,1);
+        s.w16(s.ds,0x5b4a,150);s.w16(s.ds,0x5b4c,63);s.w16(s.ds,0x5b60,80);
+        s.w16(s.ds,0x5328,22);
+        g.call(0x8c0,0x74);g.until([&]{return g.at(0xfa7,6);});
+        auto hover=[&](int x,int y) {
+            s.custom_cursor=false; // Building entry installs its original cursor.
+            ldm::Pixels normal,pointed;s.mouse.move(0,0);ldm::read_frame(s,normal);
+            s.mouse.move(x,y);ldm::read_frame(s,pointed);return normal!=pointed;
+        };
+        require(hover(100,147),"Saloon Sleep button does not highlight before sleeping");
+        if(mouse){s.mouse.move(100,147);s.mouse.buttons(1);s.mouse.buttons(0);}
+        else s.keys.push_back(0x1f73);
+        g.until([&]{return g.at(0x8c0,0x29b6);});g.step();
+        g.until([&]{return g.at(0x505,0xc);});
+        s.mouse.move(100,147);g.capture(mouse?"sleep-mouse":"sleep-key");
+        for(int i=0;i<4;i++) {
+            auto r=ldm::GameUI::action(i);
+            require(!hover(r.x+5,r.y+5),"Sleep highlights an inactive saloon button");
+        }
+        for(int i=0;i<6;i++) {
+            auto r=ldm::GameUI::toolbar(i);
+            require(!hover(r.x+5,r.y+5),"Sleep highlights an inactive toolbar button");
+        }
+        g.returned();
+        require(s.u16(s.ds,0x5328)==9 && s.u16(s.ds,0x5b5e)==0 &&
+                s.u16(s.ds,0x5b4a)==80,"Sleep did not wake at the original town doorway");
+        g.call(0,0x238);g.until([&]{return g.at(0xfa7,6);});
+        require(hover(69,181),"Waking up did not restore toolbar hover");
+        require(!hover(100,147),"Waking up restored a stale saloon Sleep target");
+        g.capture(mouse?"awake-mouse":"awake-key");
+    }
+    std::cout<<"PASS: saloon sleep by mouse/key suspends all hidden hover targets and restores the town toolbar on waking\n";
+}
 void building(const char* data) {
     for(bool qol:{false,true}) {
         Game g(data);auto& s=g.s;s.qol_improvements=qol;
@@ -207,6 +243,6 @@ void walking(const char* data,int scene) {
 }
 int main(int argc,char** argv) {
     if(argc!=2){std::cerr<<"Usage: test-qol <original game directory>\n";return 2;}
-    try {pointer(argv[1]);menu_hover(argv[1]);map_diagonals(argv[1]);building(argv[1]);mules(argv[1]);desert(argv[1]);walking(argv[1],0);walking(argv[1],1);walking(argv[1],2);}
+    try {sleep_hover(argv[1]);pointer(argv[1]);menu_hover(argv[1]);map_diagonals(argv[1]);building(argv[1]);mules(argv[1]);desert(argv[1]);walking(argv[1],0);walking(argv[1],1);walking(argv[1],2);}
     catch(const std::exception& e){std::cerr<<e.what()<<"\n";return 1;}
 }

@@ -65,6 +65,7 @@ QoL improvements enables clearer menus, restored panning and mouse aiming,
 checked by default. The six named toolbar buttons fit below the full logo.
 Hover for a gold outline and an F1-F6 shortcut hint.
 Menus suspend hover on the buttons underneath and restore it when closed.
+The black saloon sleep screen also suspends hover until you wake up.
 Health and food icons retain their live warning colours and critical-health
 flashing. Context buttons also accept clicks on their bevels. Uncheck QoL improvements
 to restore the original panel and click targets.
@@ -76,7 +77,8 @@ Only the cheapest unowned mule is available to buy. The others show SOLD OUT;
 buying the available one unlocks the next. Existing inventory rows are preserved.
 Loading inside the saloon preserves the correct street position for Exit,
 whether QoL is on or off.
-In shooting encounters, move the mouse to aim and left-click to fire one shot.
+Mouse aiming is ready when an armed fight starts. Move to aim and left-click
+to fire one shot. The click that entered the fight does not fire or reopen a menu.
 Right-click opens the hand for Run/status/menu choices; a direction key returns
 to aiming. WASD, arrows and numpad still aim; Space still fires. A stationary mouse
 does not undo keyboard aiming. Ammunition and hit rules stay the same. Uncheck

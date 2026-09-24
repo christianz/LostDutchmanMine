@@ -46,6 +46,9 @@ The native state loads data at paragraph 1000; DS is normally 82bd at runtime.
   toolbar hover is suspended while a dispatcher is active. The stack follows
   the original dialog screen save/restore lifetime; original click readers stay
   in control. Closing health/inventory restores the underlying river's hover.
+  Saloon sleep runs after command dispatch has returned, so its separate
+  `08c0:29b6/2a8b` lifetime also saves/clears/restores hover targets. This keeps
+  context outlines and toolbar hints off the black sleep screen.
 - At `0fa7:00dc`, a directional keyboard scan no longer replaces a nonzero held
   direction mask in SI. The original world-map diagonal branches already move
   both axes; an individual key press or OS repeat used to collapse them into
@@ -103,6 +106,12 @@ The native state loads data at paragraph 1000; DS is normally 82bd at runtime.
   ammunition and hit geometry. QoL off, hand menus, no gun and completed fights
   keep original input. Focus/settings clears reset the native pointer baseline.
   No new combat state enters original memory or saved-game layouts.
+  Armed, unfinished encounters with QoL enabled set the original DS:5d62
+  aiming flag on entry, so an inherited hand cursor cannot trap the first
+  mouse movement. Entry drops queued mouse edges but retains held levels as
+  the baseline. An already-held button cannot fire or reopen hand mode over
+  the previous screen's panel. A release and fresh press use the normal
+  shooting/menu paths; right-click choices during the fight remain available.
 - Optional panning hooks the supplied executable's unconditional reward jump at
   033f:0303 (bytes E9 0A 01), after its ownership check for DS:53dc. With QoL off,
   execution follows the original jump to 033f:0410. With QoL on, a native activity

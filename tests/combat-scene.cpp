@@ -7,7 +7,7 @@
 
 namespace {
 void require(bool ok,const char* message){if(!ok)throw std::runtime_error(message);}
-void capture(const ldm::State& s,const char* name) {
+void capture(const ldm::State& s,const std::string& name) {
     std::filesystem::create_directories("captures/combat");
     std::ofstream f(std::string("captures/combat/")+name+".ppm",std::ios::binary);
     f<<"P6\n320 200\n255\n";
@@ -20,6 +20,8 @@ void capture(const ldm::State& s,const char* name) {
 int main(int argc,char** argv) {
     if(argc!=2){std::cerr<<"Usage: test-combat-scene <original game directory>\n";return 2;}
     try {
+      for(bool wanted:{false,true})for(bool hand:{true,false}) {
+        const auto name=std::string(wanted?"wanted":"native")+(hand?"-from-hand":"-from-keys");
         auto s=std::make_unique<ldm::State>();
         s->data_dir=std::filesystem::absolute(argv[1]);s->save_dir=std::filesystem::absolute(".local/combat-scene-saves");
         s->load("recovered/load-image.bin",image_relocations,entry_cs,entry_ip,stack_ss,stack_sp);
@@ -31,20 +33,25 @@ int main(int argc,char** argv) {
             if(s->boundaries>=120000000)s->fail("Original startup did not reach town");
             step();
         }
-        s->keys.clear();s->mouse.clear();s->w16(s->ds,0x533c,1); // Original Native American encounter type.
-        s->w16(s->ds,0x4eec,0);s->w16(s->ds,0x5302,0);s->w16(s->ds,0x5b64,0);
+        s->keys.clear();s->mouse.clear();s->w16(s->ds,0x533c,wanted?0:1);
+        s->w16(s->ds,0x4eec,0);s->w16(s->ds,0x5302,0);s->w16(s->ds,0x5b64,wanted?10:0);
+        s->w16(s->ds,0x5d62,hand?0:1);
+        if(hand){s->mouse.move(100,147);s->mouse.buttons(1);}
         s->w16(s->ds,0x5e0c,1);s->w16(s->ds,0x53e0,1);s->w16(s->ds,0x53e2,20);
         s->sp=0x8000;s->push(0xffff);s->push(0xfffe);s->cs=ldm::LoadSegment+0x40a;s->ip=2;
         auto at_input=[&](){return s->cs==ldm::LoadSegment+0xfa7 && s->ip==6;};
         auto frame=[&](){auto start=s->boundaries;do{step();require(s->boundaries-start<2000000,"Encounter did not reach its next input");}while(!at_input());};
-        frame();frame();require(s->combat_active,"Original encounter hook did not activate");
-        capture(*s,"native-encounter-start");
+        frame();require(s->combat_active,"Original encounter hook did not activate");
+        capture(*s,name+"-start");
+        if(hand)frame(); // Still holding the previous screen's panel click.
         s->mouse.move(80,45);frame();
-        require(s->u16(s->ds,0x5b4a)==72 && s->u16(s->ds,0x5b4c)==37,"Native American encounter did not accept mouse aim");
-        capture(*s,"native-encounter-left");
+        require(s->u16(s->ds,0x5b4a)==72 && s->u16(s->ds,0x5b4c)==37,"Encounter did not accept mouse aim on its first input");
+        require(s->u16(s->ds,0x53e2)==20,"Entering the encounter fired without a new click");
+        capture(*s,name+"-left");
         s->mouse.move(245,75);frame();
         require(s->u16(s->ds,0x5b4a)==237 && s->u16(s->ds,0x5b4c)==67,"Original crosshair did not follow rightward aim");
-        capture(*s,"native-encounter-right");
+        capture(*s,name+"-right");
+        s->mouse.buttons(0);frame();
         // Original hit test compares sight x-8 with the 24-pixel target's x,
         // and sight y with target y. Aim at that target, then call its real shot.
         int target_x=s->u16(s->ss,uint16_t(s->bp-0x16));
@@ -57,6 +64,7 @@ int main(int argc,char** argv) {
         require(s->u16(s->ds,0x53e2)==19,"Mouse firing did not spend one original bullet");
         require(s->u16(s->ds,0x5312)==1,"Mouse aim did not hit through original hit testing");
         require(s->u16(s->ds,0x5d62)==1,"Mouse shot unexpectedly entered hand mode");
-        std::cout<<"PASS: original Native American encounter renders, mouse moves its original crosshair, and a click hits via original ammunition/hit logic (synthetic clock)\n";
+        std::cout<<"PASS: "<<name<<" accepts immediate mouse aim and a click hits through original ammunition/hit logic (synthetic clock)\n";
+      }
     }catch(const std::exception& e){std::cerr<<e.what()<<"\n";return 1;}
 }
