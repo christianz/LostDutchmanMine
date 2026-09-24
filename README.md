@@ -47,7 +47,8 @@ animation and mouse aiming in combat, and is checked by default. The six origina
 toolbar icons gain names, larger click targets and a gold hover outline. With the hand
 active, hovering also shows the relevant F1-F6 shortcut in the empty message
 strip. River and other contextual buttons accept clicks on their bevels too.
-Turning QoL off restores the original panel artwork and click targets.
+Health and food icons follow the original live warnings, including critical-health
+flashing. Turning QoL off restores the original panel artwork and click targets.
 At a river, choose Pan while carrying a pan. The prospector plays his original
 three-pose panning animation in the river scene, then receives one original gold
 bag with the river's original grade. F11 pauses it. Uncheck QoL improvements to

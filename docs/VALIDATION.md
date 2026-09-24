@@ -3,6 +3,24 @@
 Status: runnable development build. Full fidelity and complete gameplay are
 not yet certified. The original DOS program was neither launched nor modified.
 
+## Verified in update 9
+
+- Fixed the enhanced toolbar covering live health and food warnings with the
+  healthy defaults from the panel atlas. Its icons now use the original live
+  VGA framebuffer; the labels, hover feedback and click targets are retained.
+  No health calculation, timing or original game memory is changed.
+- The regression test reproduces the stuck-green icon before the fix. It boots
+  the original game, runs its actual health/food routine (`0652:1d5e`) and checks
+  health at 96, 64, 63, 32, 31 and 4, including both critical-flash phases and
+  recovery. Food warnings also change and recover. Original pixels with QoL off,
+  confined toolbar drawing and no rendering writes to game memory are covered.
+- A 28-second Linux desktop check loads an isolated low-health save through F6.
+  The labelled portrait is red, matching the original F2 health/food/water panel.
+  This check uses the SDL software renderer, with health 31 and food/water 30
+  in the fixture; it does not alter player saves.
+- The original menu input regression passes. Windows x64 cross-compilation
+  passes; independent Windows 11 runtime testing remains outstanding.
+
 ## Verified in update 8
 
 - The original panning animation replaces the custom minigame. The native

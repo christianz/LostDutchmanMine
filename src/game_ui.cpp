@@ -102,10 +102,12 @@ void GameUI::draw(Pixels& p,const State& s) const {
     for(int i=0;i<6;i++) {
         auto r=toolbar(i);bool hover=interactive && r.contains(mouse.x,mouse.y),pressed=hover && (mouse.buttons&1);
         button(p,s.palette,r,"",hover,pressed);
-        // Retain the original icon pixels, reduced only enough to fit a label.
+        // Read the live original framebuffer: the health and food icons change
+        // with the player's condition, and critical health flashes. The atlas
+        // only contains their healthy defaults. Reduce enough to fit a label.
         for(int y=0;y<22;y++)for(int x=0;x<26;x++)
             pixel::dot(p,r.x+7+x+(pressed?1:0),r.y+3+y+(pressed?1:0),
-                s.palette[atlas_[(166+y*26/22)*320+56+i*42+x*28/26]]);
+                s.palette[s.memory[0xa0000+(166+y*26/22)*320+56+i*42+x*28/26]]);
         text(p,r.x+20,r.y+25+(pressed?1:0),names[i],ink,true);
         if(hover) {
             // The top strip belongs to original status messages. A hint can use

@@ -64,7 +64,8 @@ soft glow and gentle edge shading. Preview it in the menu; the choice is saved.
 QoL improvements enables clearer menus, restored panning and mouse aiming,
 checked by default. The six toolbar icons have names and larger click targets.
 With the hand active, hover for a gold outline and an F1-F6 shortcut hint.
-Context buttons also accept clicks on their bevels. Uncheck QoL improvements
+Health and food icons retain their live warning colours and critical-health
+flashing. Context buttons also accept clicks on their bevels. Uncheck QoL improvements
 to restore the original panel and click targets.
 In shooting encounters, move the mouse to aim and left-click to fire one shot.
 Right-click opens the hand for Run/status/menu choices; a direction key returns
