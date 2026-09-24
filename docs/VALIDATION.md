@@ -3,6 +3,35 @@
 Status: runnable development build. Full fidelity and complete gameplay are
 not yet certified. The original DOS program was neither launched nor modified.
 
+## Verified in update 11
+
+- Health and inventory no longer show hover outlines for the scene's hidden
+  buttons. Mouse and keyboard status dispatch save/clear/restore the native
+  hover targets; inactive toolbar hover is also suspended. Native tests open
+  both dialogs through both routes and check that river hover returns on close.
+- The held direction mask survives an individual key press or OS repeat. WA,
+  WD, SA and SD now retain both axes in the original world-map movement code.
+  Native checks cover both last-key orders and repeat, the original terrain
+  increments, ordinary taps, Space/menu keys and WASD text entry.
+- Linux SDL desktop runs reproduce both issues on update 10 and pass with the
+  fixes. Health/inventory have no ghost gold outlines, and real river buttons
+  highlight again after closing. All four diagonals move both coordinates under
+  sustained key repeat; releasing one key retains the other axis, releasing
+  both stops movement, and focus loss clears movement.
+- Saloon speed selection now runs on every walking loop, rather than only at
+  room entry. Native scene checks cover faster held walking, unchanged movement
+  increments, the survival update cadence and restoration on key release.
+  The loaded-saloon desktop comparison moves 45 instead of 25 pixels in the
+  sampled 0.9-second hold. Over the full 2.7-second observation, survival ticks
+  advance by 15 after the fix and 16 before it (the original coarse clock).
+  Release and focus loss stop indoor movement.
+- SOLD OUT erases the full original name/price area and stops above the shop's
+  brown lower border. Rendering checks cover all three mule columns and all
+  sequential ownership states, including original border pixel preservation.
+- Nine relevant native test executables pass: keyboard, menu, mouse, menu scene,
+  QoL, panning, panning scene, combat and combat scene. Windows x64 cross-build
+  passes; Windows runtime testing remains outstanding.
+
 ## Verified in update 10
 
 - Toolbar buttons now occupy rows 167-198, leaving the full logo and weekday

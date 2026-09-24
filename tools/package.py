@@ -64,6 +64,7 @@ soft glow and gentle edge shading. Preview it in the menu; the choice is saved.
 QoL improvements enables clearer menus, restored panning and mouse aiming,
 checked by default. The six named toolbar buttons fit below the full logo.
 Hover for a gold outline and an F1-F6 shortcut hint.
+Menus suspend hover on the buttons underneath and restore it when closed.
 Health and food icons retain their live warning colours and critical-health
 flashing. Context buttons also accept clicks on their bevels. Uncheck QoL improvements
 to restore the original panel and click targets.
@@ -91,7 +92,8 @@ improvements stay available. The custom rock-and-wash minigame is retired.
 VGA starts automatically. Allow the original title/credits sequence to finish.
 Hold WASD, cursor keys or the numeric keypad to move; release to stop.
 Numpad 8/2/4/6 move up/down/left/right; 7/9/1/3 move diagonally. Num Lock may be
-on or off for movement. Combine WASD keys for diagonals. With Num Lock on, the
+on or off for movement. Combine WASD keys for diagonals; the world map retains
+both movement axes while keys repeat. With Num Lock on, the
 keypad enters numbers and selects save slots. Numpad Enter confirms. WASD letters
 still type normally in save names. WASD/numpad also navigate display settings.
 A movement key returns to walking when the hand cursor is active.

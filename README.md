@@ -47,6 +47,8 @@ animation and mouse aiming in combat, and is checked by default. The six origina
 toolbar icons gain names, larger click targets and a gold hover outline, fitted
 below the logo and weekday. Hovering shows the relevant F1-F6 shortcut in the empty message
 strip. River and other contextual buttons accept clicks on their bevels too.
+Opening a menu suspends hover on the buttons underneath; closing it restores
+the current scene's hover targets.
 Health and food icons follow the original live warnings, including critical-health
 flashing. Turning QoL off restores the original panel artwork and click targets.
 At a river, choose Pan while carrying a pan. The prospector plays his original
@@ -83,7 +85,9 @@ keyboard aiming and mouse selection behavior. Ammunition and hit rules are uncha
 VGA starts automatically, without the original graphics selector.
 Hold **WASD**, cursor keys or the numeric keypad to move; release to stop.
 Numpad **8/2/4/6** move up/down/left/right and **7/9/1/3** provide diagonals,
-with Num Lock on or off. Combine W/A/S/D for diagonal movement. With Num Lock on,
+with Num Lock on or off. Combine W/A/S/D for diagonal movement. Held combinations
+keep both axes on the world map even while a key repeats.
+With Num Lock on,
 the keypad also enters numbers and selects save slots; **numpad Enter** confirms.
 WASD stays ordinary text when entering a save name. The display menu accepts
 WASD and numpad 8/2/4/6 too. A movement key returns to walking when the hand

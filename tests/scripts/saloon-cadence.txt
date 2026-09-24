@@ -1,0 +1,18 @@
+18000 key 16384
+19500 mouse 208 85
+19560 buttons 1
+19620 buttons 0
+21200 ascii 54
+23600 mouse 155 80
+23660 buttons 1
+23720 buttons 0
+24500 capture 1600
+25000 down 4
+25900 capture 1601
+26500 up 4
+26700 capture 1602
+27200 capture 1603
+27500 down 7
+27900 focuslost
+28200 capture 1604
+28600 capture 1605

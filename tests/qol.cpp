@@ -59,6 +59,49 @@ void pointer(const char* data) {
     require(!s.world_click_pending,"Focus reset retained a click");
     std::cout<<"PASS: visible walking pointer, held direction plus one quick F6 click, QoL-off pointer and cleared input\n";
 }
+void menu_hover(const char* data) {
+    Game g(data);auto& s=g.s;s.custom_cursor=false;
+    s.w16(s.ds,0x5e04,0);s.w16(s.ds,0x5e08,1);
+    s.w16(s.ds,0x53dc,1);s.w16(s.ds,0x53e8,1);
+    g.call(0x33f,0xe);g.until([&]{return g.at(0xfa7,6);});
+    auto hover=[&](int x,int y) {
+        ldm::Pixels normal,pointed;s.mouse.move(0,0);ldm::read_frame(s,normal);
+        s.mouse.move(x,y);ldm::read_frame(s,pointed);return normal!=pointed;
+    };
+    require(hover(100,125),"River button does not highlight before opening a menu");
+    for(int menu:{1,3})for(bool mouse:{false,true}) {
+        auto name=std::string(menu==1?"health":"inventory")+(mouse?"-mouse":"-key");
+        if(mouse)g.call(0,0x93e,{181,uint16_t(69+menu*42)});
+        else g.call(0,0xae4,{0,0,uint16_t(0x3b+menu)});
+        g.until([&]{return g.at(0xfc5,0x38);});
+        s.mouse.move(100,125);g.capture("modal-"+name);
+        for(int i=0;i<4;i++) {
+            auto r=ldm::GameUI::action(i);
+            require(!hover(r.x+5,r.y+5),"A menu highlights a hidden river button");
+        }
+        require(!hover(69,181),"An inactive toolbar button highlights behind a menu");
+        s.keys.push_back(0x1c0d);g.returned();
+        require(hover(100,125),"Closing a menu did not restore river button hover");
+        g.capture("restored-"+name);
+    }
+    std::cout<<"PASS: health/inventory opened by mouse and keyboard hide underlying hover targets and restore river hover on close\n";
+}
+void map_diagonals(const char* data) {
+    Game g(data);auto& s=g.s;
+    s.w16(s.ds,0x5e04,0);s.w16(s.ds,0x5e06,1);
+    for(int mask:{5,9,6,10})for(int scan:{mask&1?0x48:0x50,mask&4?0x4b:0x4d})for(bool repeat:{false,true}) {
+        s.w16(s.ds,0x5b4a,160);s.w16(s.ds,0x5b4c,55);
+        s.w16(s.ds,0x5b56,0);s.w16(s.ds,0x5b58,0);
+        g.call(0,0x4da);g.until([&]{return g.at(0xfa7,6);});
+        int step=s.u16(s.ds,0x19a);
+        s.set_movement(mask);s.keys.push_back(uint32_t(scan<<8)|(repeat?ldm::KeyRepeat:0));
+        g.until([&]{return g.at(0,0x67e);}); // Before the next location/event check.
+        require(s.u16(s.ds,0x5b4a)==160+(mask&4?-2:2)*step &&
+                s.u16(s.ds,0x5b4c)==55+(mask&1?-1:1)*step,
+                "World-map diagonal lost an axis when a single key event arrived");
+    }
+    std::cout<<"PASS: all four world-map diagonals retain both axes with either last key and with auto-repeat, using original terrain steps\n";
+}
 void building(const char* data) {
     for(bool qol:{false,true}) {
         Game g(data);auto& s=g.s;s.qol_improvements=qol;
@@ -99,6 +142,12 @@ void mules(const char* data) {
         g.call(0x8c0,0x1de2);g.until([&]{return g.at(0x8c0,0x1c4);});
         require(s.game_ui.mule_shop_visible,"Mule availability labels missing at shop input");
         g.capture("mules-"+std::to_string(owned));
+        ldm::Pixels labels;s.custom_cursor=false;ldm::read_frame(s,labels);
+        for(int i=0;i<3;i++)if(!s.mule_available(i))
+            for(int y=85;y<96;y++)for(int x=26+i*100;x<94+i*100;x++)
+                require(labels[y*320+x]==s.palette[0],"Old mule lettering remains above SOLD OUT");
+        for(int x=0;x<320;x++)
+            require(labels[110*320+x]==s.palette[s.memory[0xa0000+110*320+x]],"SOLD OUT erases the shop's lower border");
     }
     s.keys.push_back(0x3b00);g.until([&]{return g.at(0x652,0xaa);});
     require(!s.game_ui.mule_shop_visible,"Mule labels cover a keyboard-opened status dialog");
@@ -122,7 +171,9 @@ void desert(const char* data) {
     require(!s.desert_view_active,"QoL off replaced the original timed preview");
     std::cout<<"PASS: Space close-up waits, ignores repeats, consumes dismissal, returns to map; classic timed preview preserved\n";
 }
-void walking(const char* data,bool mine) {
+void walking(const char* data,int scene) {
+    bool mine=scene==1,saloon=scene==2;
+    const char* name=mine?"mine":saloon?"saloon":"town";
     uint64_t elapsed[2]{};int clock[2]{},distance[2]{};
     for(int qol=0;qol<2;qol++) {
         Game g(data);auto& s=g.s;s.qol_improvements=qol;
@@ -131,6 +182,9 @@ void walking(const char* data,bool mine) {
             s.w16(s.ds,0x5b6a,0);s.w16(s.ds,0x5b68,0);
             s.w16(s.ds,0x5016,0x12);s.w16(s.ds,0x53e4,10);
             g.call(0xbb4,0x358);g.until([&]{return g.at(0xfa7,6);});
+        }else if(saloon) {
+            s.w16(s.ds,0x5e04,0);s.w16(s.ds,0x5b5e,2);
+            g.call(0x8c0,0x74);g.until([&]{return g.at(0xfa7,6);});
         }
         s.set_movement(8);s.w16(s.ds,0x5406,0);
         // One warm-up loop establishes the held-input cadence.
@@ -140,19 +194,19 @@ void walking(const char* data,bool mine) {
         for(int i=0;i<8;i++){g.step();g.until([&]{return g.at(0xfa7,6);});}
         elapsed[qol]=g.timers-start;clock[qol]=s.u16(s.ds,0x5406)-clock_start;
         distance[qol]=s.u16(s.ds,0x5b4a)+4*s.u16(s.ds,0x5b5a)-x;
-        g.capture(std::string(mine?"mine-walk":"town-walk")+(qol?"-qol":"-classic"));
+        g.capture(std::string(name)+"-walk"+(qol?"-qol":"-classic"));
         s.set_movement(0);g.step();g.until([&]{return g.at(0xfa7,6);});
         require(!s.walk_fast && !s.walk_extra_tick,"Key release did not restore ordinary timing");
     }
     require(distance[0]>0 && distance[0]==distance[1],"Faster walking changed original collision steps");
     require(elapsed[1]*4<elapsed[0]*3,"Held walking did not reduce frame delay");
     require(clock[0]==8 && clock[1]==4,"Faster walking accelerated the survival clock");
-    std::cout<<"PASS: "<<(mine?"mine":"town")<<" walking: "<<distance[1]<<" pixels in "<<elapsed[0]<<" -> "<<elapsed[1]
+    std::cout<<"PASS: "<<name<<" walking: "<<distance[1]<<" pixels in "<<elapsed[0]<<" -> "<<elapsed[1]
              <<" synthetic PIT ticks; clock "<<clock[0]<<" -> "<<clock[1]<<"; original collision steps and key-release cadence\n";
 }
 }
 int main(int argc,char** argv) {
     if(argc!=2){std::cerr<<"Usage: test-qol <original game directory>\n";return 2;}
-    try {pointer(argv[1]);building(argv[1]);mules(argv[1]);desert(argv[1]);walking(argv[1],false);walking(argv[1],true);}
+    try {pointer(argv[1]);menu_hover(argv[1]);map_diagonals(argv[1]);building(argv[1]);mules(argv[1]);desert(argv[1]);walking(argv[1],0);walking(argv[1],1);walking(argv[1],2);}
     catch(const std::exception& e){std::cerr<<e.what()<<"\n";return 1;}
 }

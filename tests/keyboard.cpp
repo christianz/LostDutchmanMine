@@ -14,8 +14,8 @@ int main() {
         s->ds=s->ss=0x82bd;s->sp=0x8000;
         s->w16(s->ds,0xa6c,0); // The original helper reads our held-direction byte.
         s->w16(s->ds,0x3118,ldm::LoadSegment+0x72ba);
-        auto read=[&](uint32_t event,bool movement) {
-            s->keys={event};s->set_movement(0);s->w16(s->ds,0x5a1a,0);
+        auto read=[&](uint32_t event,bool movement,uint8_t held=0) {
+            s->keys={event};s->set_movement(held);s->w16(s->ds,0x5a1a,0);
             if(movement)s->push(1);
             s->push(0xffff);s->push(0xfffe);
             s->cs=ldm::LoadSegment+0x0fa7;s->ip=movement?0x0066:0x003a;
@@ -60,6 +60,19 @@ int main() {
         require(ldm::input::movement(held)==8,"Opposing vertical keys must cancel independently");
         held[SDL_SCANCODE_KP_6]=true;held[SDL_SCANCODE_D]=false;
         require(ldm::input::movement(held)==8,"Releasing one alias must preserve another held key");
+        // The original reader starts with the held mask, then used to replace
+        // it with the last single key's scan, including OS auto-repeat.
+        for(int vertical:{0,2})for(int horizontal:{1,3})for(int last:{vertical,horizontal})for(int repeat:{0,1}) {
+            held.fill(false);held[wasd[vertical]]=held[wasd[horizontal]]=true;
+            key.keysym.scancode=wasd[last];key.keysym.sym=letters[last];key.keysym.mod=0;key.repeat=repeat;
+            auto event=ldm::input::key_event(key);auto mask=ldm::input::movement(held);
+            require(read(event,true,mask)==mask,"An individual key event overrides a held diagonal");
+            require(uint8_t(read(event,false,mask))==letters[last],"Held combinations leaked into text entry");
+        }
+        key.keysym.scancode=SDL_SCANCODE_SPACE;key.keysym.sym=SDLK_SPACE;key.repeat=0;
+        require(read(ldm::input::key_event(key),true,5)==0x80,"Held movement swallowed Space");
+        key.keysym.scancode=SDL_SCANCODE_F2;key.keysym.sym=SDLK_F2;
+        require(read(ldm::input::key_event(key),true,5)==0 && s->u16(s->ds,0xa6a)==0x3c,"Held movement swallowed a status-menu key");
         std::cout<<"PASS: original movement/text helpers preserve WASD taps and typing, Num Lock on/off, eight keypad directions, numeric slot input and Enter; diagonals/opposing aliases pass\n";
     }catch(const std::exception& e){std::cerr<<e.what()<<"\n";return 1;}
 }

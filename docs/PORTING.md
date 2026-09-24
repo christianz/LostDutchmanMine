@@ -40,6 +40,17 @@ The native state loads data at paragraph 1000; DS is normally 82bd at runtime.
 
 ## Details that matter
 
+- Mouse and keyboard status dispatchers (`0000:093e/0ae4`) save and clear native
+  context hover targets, restoring them at their common returns (`0a83/0b6b`).
+  Dialogs which draw their own buttons cannot inherit the river's targets, and
+  toolbar hover is suspended while a dispatcher is active. The stack follows
+  the original dialog screen save/restore lifetime; original click readers stay
+  in control. Closing health/inventory restores the underlying river's hover.
+- At `0fa7:00dc`, a directional keyboard scan no longer replaces a nonzero held
+  direction mask in SI. The original world-map diagonal branches already move
+  both axes; an individual key press or OS repeat used to collapse them into
+  one axis. Space, menu keys, taps without held input and text reads retain their
+  original paths. This input correction also applies with QoL disabled.
 - QoL world input captures a fresh mouse press at `0fa7:0011` without switching
   DS:5d62 away from walking. `0000:07f5` dispatches it through the original
   selector, using its latched coordinates at `0000:084b`. Idle legacy hand polls
@@ -64,6 +75,12 @@ The native state loads data at paragraph 1000; DS is normally 82bd at runtime.
   PIT interrupts, music and all other scene delays are unchanged. Releasing the
   key restores ordinary timing. Synthetic-clock and desktop timing tests are
   separate because synthetic instruction-count timing includes drawing work.
+  The saloon latch belongs at `08c0:0acb`, the loop's return target; placing it
+  at the one-time `0ac6` initialization left its held-speed choice stale.
+- Mule availability labels replace rows 85-109 of each original name/price
+  area. Original lettering extends above row 89, and row 110 is the brown shop
+  border. Keeping the erase rectangle between those boundaries avoids text
+  remnants and gaps in the border.
 - Optional mouse aiming brackets only the original encounter input call at
   040a:0288/028d. Its mouse-button result at 0fa7:0011 is filtered so left presses
   in the scene fire instead of activating the hand. The existing coherent mouse

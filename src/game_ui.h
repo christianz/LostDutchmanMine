@@ -2,6 +2,7 @@
 #include "display.h"
 #include <array>
 #include <string>
+#include <vector>
 
 namespace ldm {
 struct State;
@@ -20,6 +21,8 @@ public:
     unsigned context_buttons=0;
     void prepare(const State& state);
     void context(const State& state);
+    void begin_menu();
+    void end_menu();
     void map_click(State& state) const;
     void draw(Pixels& pixels,const State& state) const;
     void button(Pixels& pixels,const std::array<uint32_t,256>& palette,GameButton bounds,
@@ -31,6 +34,7 @@ public:
     static GameButton action(int i){return {i<2?72:152,i%2?138:118,75,19};}
 private:
     bool ready_=false;
+    std::vector<unsigned> context_stack_;
     std::array<uint8_t,64000> atlas_{};
     bool visible(const State& state) const;
 };

@@ -36,6 +36,15 @@ void GameUI::context(const State& s) {
     context_buttons=0;
     for(int i=0;i<4;i++)if(s.u8(s.ds,s.u16(s.ss,uint16_t(s.sp+4+i*2))))context_buttons|=1u<<i;
 }
+void GameUI::begin_menu() {
+    // Dialogs save and replace the original pixels. Match that lifetime for
+    // native hover targets, including dialogs which draw their buttons directly.
+    context_stack_.push_back(context_buttons);context_buttons=0;
+}
+void GameUI::end_menu() {
+    if(context_stack_.empty())return;
+    context_buttons=context_stack_.back();context_stack_.pop_back();
+}
 void GameUI::map_click(State& s) const {
     if(!s.qol_improvements || s.video_mode!=0x13)return;
     int x=s.u16(s.ss,uint16_t(s.sp+4)),y=s.u16(s.ss,uint16_t(s.sp+6));
@@ -104,7 +113,7 @@ void GameUI::draw(Pixels& p,const State& s) const {
     const char* hints[]={"Cash - F1","Health - F2","Food / Drink - F3","Tools / Pack - F4","Ammunition - F5","Save / Load / Quit - F6"};
     auto mouse=s.mouse.current();bool interactive=pointer_visible(s);
     for(int i=0;i<6;i++) {
-        auto r=toolbar(i);bool hover=interactive && r.contains(mouse.x,mouse.y),pressed=hover && (mouse.buttons&1);
+        auto r=toolbar(i);bool hover=interactive && context_stack_.empty() && r.contains(mouse.x,mouse.y),pressed=hover && (mouse.buttons&1);
         button(p,s.palette,r,"",hover,pressed);
         // Read the live original framebuffer: the health and food icons change
         // with the player's condition, and critical health flashes. The atlas
@@ -123,7 +132,8 @@ void GameUI::draw(Pixels& p,const State& s) const {
     for(int i=0;i<4;i++)if(interactive && (context_buttons&(1u<<i)) && action(i).contains(mouse.x,mouse.y))
         outline(p,action(i),(mouse.buttons&1)?cream:gold);
     if(mule_shop_visible)for(int i=0;i<3;i++)if(!s.mule_available(i)) {
-        pixel::rect(p,26+i*100,89,68,22,s.palette[0]);
+        // Original names start above row 89; row 110 is the shop's border.
+        pixel::rect(p,26+i*100,85,68,25,s.palette[0]);
         text(p,60+i*100,96,"SOLD OUT",cream,true);
     }
 }

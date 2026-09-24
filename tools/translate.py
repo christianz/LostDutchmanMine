@@ -225,6 +225,12 @@ class Emitter:
             code.insert(0,hook)
         if (cs,ip)==(0x0fa7,0x0011):
             code.insert(0,'s.filter_world_mouse();')
+        if (cs,ip)==(0x0fa7,0x00dc):
+            # SI already contains the combined held directions. A single key's
+            # scan (especially auto-repeat) must not replace that with one axis.
+            # Keep taps without held input, Space and menu keys on their paths.
+            if i.bytes.hex()!='23ff':raise ValueError('Unexpected held direction dispatch')
+            code.insert(0,'if(direction_scan(s.di) && (s.si&15))s.di=0;')
         pointer_sites = {
             (0x0000,0x07f5):('833e625d00',f'if(s.qol_improvements && s.world_click_pending) {{ {self.goto(0x07fc,False)} }}'),
             (0x0000,0x084b):('8d46fa',f'if(s.dispatch_world_click()) {{ {self.goto(0x08cc,False)} }}'),
@@ -238,7 +244,8 @@ class Emitter:
         # Twice as many original walking steps while a direction is held.
         # Advance the per-loop survival clock and mine hazard RNG every other
         # fast step; all other scenes, delays and the PIT/music remain original.
-        walk_starts={(0x0000,0x029d):'9a0800d605',(0x08c0,0x0ac6):'9a78000505',
+        # Saloon walking loops back to 0acb; 0ac6 runs only on initial entry.
+        walk_starts={(0x0000,0x029d):'9a0800d605',(0x08c0,0x0acb):'9ae6000505',
                      (0x0bb4,0x069b):'9ae6000505'}
         walk_updates={(0x0000,0x02bd),(0x08c0,0x0acb),(0x0bb4,0x069b)}
         walk_waits={(0x0000,0x02b0),(0x08c0,0x0b28),(0x0bb4,0x0741)}
@@ -265,9 +272,10 @@ class Emitter:
             (0x0505,0x0538):('9a65006512','s.game_ui.context_buttons=0;'),
             (0x0000,0x082e):('55','s.game_ui.choosing=true;'),
             (0x0000,0x093d):('cb','s.game_ui.choosing=false;'),
-            (0x0000,0x093e):('55','s.game_ui.map_click(s); s.game_ui.choosing=false; s.game_ui.mule_shop_visible=false;'),
-            (0x0000,0x0a83):('cb','s.game_ui.choosing=true;'),
-            (0x0000,0x0ae4):('55','s.game_ui.mule_shop_visible=false;'),
+            (0x0000,0x093e):('55','s.game_ui.map_click(s); s.game_ui.begin_menu(); s.game_ui.choosing=false; s.game_ui.mule_shop_visible=false;'),
+            (0x0000,0x0a83):('cb','s.game_ui.end_menu(); s.game_ui.choosing=true;'),
+            (0x0000,0x0ae4):('55','s.game_ui.begin_menu(); s.game_ui.mule_shop_visible=false;'),
+            (0x0000,0x0b6b):('cb','s.game_ui.end_menu();'),
             (0x08c0,0x1de2):('55','s.game_ui.mule_shop=true;'),
             (0x08c0,0x21b5):('cb','s.game_ui.mule_shop=false; s.game_ui.mule_shop_visible=false;'),
             (0x08c0,0x0189):('b80600','s.game_ui.mule_shop_visible=s.game_ui.mule_shop;'),
