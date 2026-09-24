@@ -62,11 +62,19 @@ CRT monitor offers Off, Soft and Classic: steady scanlines, phosphor texture,
 soft glow and gentle edge shading. Preview it in the menu; the choice is saved.
 
 QoL improvements enables clearer menus, restored panning and mouse aiming,
-checked by default. The six toolbar icons have names and larger click targets.
-With the hand active, hover for a gold outline and an F1-F6 shortcut hint.
+checked by default. The six named toolbar buttons fit below the full logo.
+Hover for a gold outline and an F1-F6 shortcut hint.
 Health and food icons retain their live warning colours and critical-health
 flashing. Context buttons also accept clicks on their bevels. Uncheck QoL improvements
 to restore the original panel and click targets.
+The pointer stays visible while walking: keyboard and mouse work together,
+and one click selects a toolbar or context action. Held movement in town,
+the saloon and mines is faster; survival time and mine hazard checks keep their
+original pace. Space opens a desert close-up; Space, Enter or Escape closes it.
+Only the cheapest unowned mule is available to buy. The others show SOLD OUT;
+buying the available one unlocks the next. Existing inventory rows are preserved.
+Loading inside the saloon preserves the correct street position for Exit,
+whether QoL is on or off.
 In shooting encounters, move the mouse to aim and left-click to fire one shot.
 Right-click opens the hand for Run/status/menu choices; a direction key returns
 to aiming. WASD, arrows and numpad still aim; Space still fires. A stationary mouse
@@ -93,7 +101,7 @@ To enter a building, align with its doorway and hold Up to walk inside.
 Save and load through F6. New saves go in Saves; the supplied originals in Game
 are read only. Back up Saves when moving or updating this build.
 Short mouse clicks are now preserved, including the click used to focus the
-window. One click restores the hand after keyboard movement.
+window. With QoL off, one click restores the hand after keyboard movement.
 
 This is a development build of a faithful port, not a fully validated release.
 Windows x64 is cross-compiled; independent Windows 11 testing remains outstanding.

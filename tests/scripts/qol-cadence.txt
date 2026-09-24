@@ -1,0 +1,10 @@
+18000 capture 1300
+18200 down 7
+19100 capture 1301
+20000 up 7
+20400 capture 1302
+20700 capture 1303
+21000 down 4
+21400 focuslost
+21700 capture 1304
+22100 capture 1305

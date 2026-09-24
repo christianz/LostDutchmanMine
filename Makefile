@@ -29,6 +29,8 @@ build/test-menu: $(filter-out build/probe.o,$(OBJECTS)) tests/menu.cpp
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $^ -o $@
 build/test-menu-scene: $(filter-out build/probe.o,$(OBJECTS)) build/session.o tests/menu-scene.cpp
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $^ -o $@
+build/test-qol: $(filter-out build/probe.o,$(OBJECTS)) build/session.o tests/qol.cpp
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $^ -o $@
 build/test-keyboard: $(filter-out build/probe.o,$(OBJECTS)) tests/keyboard.cpp src/keyboard.h src/keyboard_event.h
 	$(CXX) $(CPPFLAGS) -I$(SDL_INCLUDE) $(CXXFLAGS) $(filter %.o %.cpp,$^) -o $@
 build/test-console: $(filter-out build/probe.o,$(OBJECTS)) tests/console.cpp

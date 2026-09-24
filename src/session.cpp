@@ -14,7 +14,7 @@ void read_frame(const State& s,Pixels& pixels) {
         }
     }else pixels.fill(0xff000000);
     s.game_ui.draw(pixels,s);
-    if(s.custom_cursor && s.mouse_visibility>=0) {
+    if(s.custom_cursor && s.game_ui.pointer_visible(s)) {
         for(int y=0;y<16;y++)for(int x=0;x<16;x++) {
             int px=s.mouse.current().x-s.mouse_hot_x+x,py=s.mouse.current().y-s.mouse_hot_y+y;
             if(px<0 || px>=320 || py<0 || py>=200)continue;
@@ -60,6 +60,8 @@ void Session::run() {
             {std::lock_guard<std::mutex> lock(mutex_);commands.swap(commands_);}
             for(auto command:commands)switch(command.kind) {
                 case Kind::Key:
+                    if(state_.qol_improvements && (uint32_t(command.a)&KeyRepeat) &&
+                       (bios_key(uint32_t(command.a),false)>>8)==0x39)break;
                     if(!was_panning)state_.keys.push_back(uint32_t(command.a));
                     break;
                 case Kind::Release:
@@ -67,8 +69,8 @@ void Session::run() {
                 case Kind::Directions:directions=uint8_t(command.a);break;
                 case Kind::Mouse:state_.mouse.move(command.a,command.b);break;
                 case Kind::Buttons:if(!was_panning)state_.mouse.buttons(command.a);break;
-                case Kind::Clear:directions=0;state_.keys.clear();state_.mouse.clear();state_.reset_combat_pointer();break;
-                case Kind::Qol:state_.qol_improvements=command.a!=0;state_.reset_combat_pointer();break;
+                case Kind::Clear:directions=0;state_.keys.clear();state_.mouse.clear();state_.reset_combat_pointer();state_.reset_world_pointer();break;
+                case Kind::Qol:state_.qol_improvements=command.a!=0;state_.reset_combat_pointer();state_.reset_world_pointer();break;
             }
             while(timer_elapsed>=((state_.pit_divisor?state_.pit_divisor:65536)/1193182.0)) {
                 timer_elapsed-=(state_.pit_divisor?state_.pit_divisor:65536)/1193182.0;
@@ -90,6 +92,9 @@ void Session::run() {
                 next.directions=directions;next.custom_cursor=state_.custom_cursor;next.boundaries=state_.boundaries;
                 next.mouse_visibility=state_.mouse_visibility;next.mouse_mode=state_.u16(0x82bd,0x5d62);
                 next.mouse_x=state_.mouse.current().x;next.mouse_y=state_.mouse.current().y;
+                next.pointer_visible=state_.game_ui.pointer_visible(state_);
+                next.desert_view=state_.desert_view_active;next.map_view=state_.u16(0x82bd,0x5e06)!=0;
+                next.survival_ticks=state_.u16(0x82bd,0x5406);
                 next.panning_active=state_.panning_active;
                 next.gold_bags=state_.u16(0x82bd,0x53ea);next.qol_improvements=state_.qol_improvements;
                 next.combat_active=state_.combat_active;next.bullets=state_.u16(0x82bd,0x53e2);

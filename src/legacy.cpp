@@ -141,6 +141,48 @@ void State::timer_interrupt() {
     }
     timer_active=false;
 }
+void State::reset_world_pointer() {
+    world_pointer=mouse.current();world_click_pending=false;
+}
+void State::filter_world_mouse() {
+    const auto point=mouse.sample();
+    if(qol_improvements && !combat_active) {
+        if((point.buttons&1) && !(world_pointer.buttons&1)) {
+            world_click=point;world_click_pending=true;
+        }
+        // Walking and the pointer coexist. The command poll dispatches a fresh
+        // click through the original selector without entering its modal hand.
+        ax=0;
+    }
+    world_pointer=point;
+}
+bool State::dispatch_world_click() {
+    if(!qol_improvements || !world_click_pending)return false;
+    w16(ss,uint16_t(bp-2),world_click.x);w16(ss,uint16_t(bp-4),world_click.y);
+    w16(ss,uint16_t(bp-6),1);world_click_pending=false;
+    return true;
+}
+bool State::finish_desert_view() {
+    desert_view_active=true;
+    auto dismiss=std::find_if(keys.begin(),keys.end(),[](uint32_t key) {
+        auto scan=bios_key(key,false)>>8;
+        return !(key&KeyRepeat) && (scan==0x39 || scan==0x1c || scan==1);
+    });
+    if(dismiss==keys.end()) {waiting=true;return false;}
+    // The dismissal belongs to the close-up, never the next map input poll.
+    keys.clear();w16(ds,0x5a1a,0);mouse.clear();reset_world_pointer();
+    desert_view_active=false;waiting=false;
+    return true;
+}
+bool State::mule_available(int index) const {
+    if(index<0 || index>=3 || u16(ds,uint16_t(0x5d5a+index*2)))return false;
+    if(qol_improvements)for(int i=0;i<index;i++)if(!u16(ds,uint16_t(0x5d5a+i*2)))return false;
+    return true;
+}
+void State::begin_walk_tick() {
+    walk_fast=qol_improvements && (u8(LoadSegment+0x72ba,1)&15)!=0;
+    walk_extra_tick=walk_fast && !walk_extra_tick;
+}
 void State::begin_panning() {
     // Latch the preference for this action. The translated original routine
     // owns all animation, delays, inventory insertion and cleanup. With a full
@@ -148,10 +190,10 @@ void State::begin_panning() {
     bool room=false;
     for(int slot=1;slot<11;slot++)if(u16(ds,uint16_t(0x500e + slot*8))==0x2b)room=true;
     panning_active=qol_improvements && room && u16(ds,0x53dc)!=0;
-    if(panning_active){keys.clear();mouse.clear();set_movement(0);w16(ds,0x5a1a,0);}
+    if(panning_active){keys.clear();mouse.clear();reset_world_pointer();set_movement(0);w16(ds,0x5a1a,0);}
 }
 void State::finish_panning() {
-    if(panning_active){keys.clear();mouse.clear();set_movement(0);w16(ds,0x5a1a,0);}
+    if(panning_active){keys.clear();mouse.clear();reset_world_pointer();set_movement(0);w16(ds,0x5a1a,0);}
     panning_active=false;
 }
 void State::reset_combat_pointer() {

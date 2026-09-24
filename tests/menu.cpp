@@ -32,11 +32,12 @@ int select(int x,int y,bool qol,unsigned context=15) {
 int main() {
     try {
         for(int i=0;i<6;i++) {
-            for(int x:{52+i*42,91+i*42})for(int y:{162,198})
+            for(int x:{52+i*42,91+i*42})for(int y:{167,198})
                 require(select(x,y,true)==10+i,"Toolbar corner did not reach its original menu");
             require(select(69+i*42,181,false)==10+i,"Original icon interior no longer dispatches");
             require(select(52+i*42,198,false)==0,"QoL off retained an enlarged target");
             require(select(92+i*42,180,true)==0,"Gap between toolbar buttons must not select anything");
+            require(select(69+i*42,165,true)==0,"Logo below the title became a toolbar target");
         }
         for(int i=0;i<4;i++) {
             int x=i<2?72:152,y=i%2?138:118;

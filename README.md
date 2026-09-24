@@ -44,8 +44,8 @@ keeps the same mouse coordinates. CRT rendering adds GPU work at high resolution
 
 **QoL improvements** enables clearer in-game menus, the restored panning
 animation and mouse aiming in combat, and is checked by default. The six original
-toolbar icons gain names, larger click targets and a gold hover outline. With the hand
-active, hovering also shows the relevant F1-F6 shortcut in the empty message
+toolbar icons gain names, larger click targets and a gold hover outline, fitted
+below the logo and weekday. Hovering shows the relevant F1-F6 shortcut in the empty message
 strip. River and other contextual buttons accept clicks on their bevels too.
 Health and food icons follow the original live warnings, including critical-health
 flashing. Turning QoL off restores the original panel artwork and click targets.
@@ -54,7 +54,17 @@ three-pose panning animation in the river scene, then receives one original gold
 bag with the river's original grade. F11 pauses it. Uncheck QoL improvements to
 keep the supplied game's instant Pan action. The setting persists; an animation
 already in progress finishes under the choice it started with. Movement/display
-improvements remain available.
+improvements remain available. With QoL enabled, the pointer remains visible
+while walking and one click selects a toolbar or context action. Keyboard and
+mouse work together without switching modes. Town, saloon and mine walking
+respond faster while a direction is held; the survival clock and mine hazard
+checks retain their original pace. Space opens a desert close-up and a second
+Space returns to the map (Enter or Escape also closes it).
+
+Only the cheapest unowned mule can be bought with QoL enabled. Other mules show
+**SOLD OUT**; buying the available mule unlocks the next one. Existing mule
+ownership and inventory rows are preserved. Loading a save inside the saloon
+now preserves the street position used by Exit, with QoL either on or off.
 
 The supplied executable skips two intact animation loops. The native translator
 reconnects their surviving comparisons and bodies, preserving the original
@@ -81,7 +91,7 @@ cursor is active. Use the mouse
 for selections, F1-F6 for the status panel,
 Space for action and Alt+Enter for fullscreen. Align with a doorway and hold Up
 to walk into a building. Save/load is under F6.
-One click switches from keyboard movement to the hand cursor. Short clicks are
+With QoL off, one click switches from keyboard movement to the hand cursor. Short clicks are
 preserved until the game polls them, including the click used to focus its window.
 
 The executable finds `Game/` and `Saves/` alongside itself regardless of the
@@ -123,7 +133,7 @@ The verified Linux build in this workspace uses the Makefile with local SDL2
 headers and the system SDL2 shared library:
 
 ```sh
-make -j4 build/ldm-native build/test-assets build/test-arithmetic build/test-poker build/test-quit build/test-display build/test-mouse build/test-menu build/test-menu-scene build/test-keyboard build/test-console build/test-panning build/test-panning-scene build/test-combat build/test-combat-scene
+make -j4 build/ldm-native build/test-assets build/test-arithmetic build/test-poker build/test-quit build/test-display build/test-mouse build/test-menu build/test-menu-scene build/test-keyboard build/test-console build/test-panning build/test-panning-scene build/test-combat build/test-combat-scene build/test-qol
 build/test-arithmetic
 build/test-assets /path/to/LDM/LDMG
 build/test-poker
@@ -138,6 +148,7 @@ build/test-panning
 build/test-panning-scene /path/to/LDM
 build/test-combat
 build/test-combat-scene /path/to/LDM
+build/test-qol /path/to/LDM
 build/ldm-native --data /path/to/LDM --image recovered/load-image.bin --saves .local/saves
 ```
 

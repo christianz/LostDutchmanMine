@@ -40,6 +40,30 @@ The native state loads data at paragraph 1000; DS is normally 82bd at runtime.
 
 ## Details that matter
 
+- QoL world input captures a fresh mouse press at `0fa7:0011` without switching
+  DS:5d62 away from walking. `0000:07f5` dispatches it through the original
+  selector, using its latched coordinates at `0000:084b`. Idle legacy hand polls
+  return to walking; dialogs retain their own readers. The presented cursor is
+  also visible over the intact panel during walking, without changing the DOS
+  mouse visibility counter. Combat's aiming input stays separate.
+- `08c0:0088` preserves DS:5b60 when the original loaded-scene flag DS:5b86 is
+  set. The save already contains the correct exterior X; overwriting it with
+  loaded interior X caused invalid saloon exits. No save format change is needed.
+- Mule purchase guards at `08c0:2235/2273/22b1` use the three original ownership
+  flags at DS:5d5a/5d5c/5d5e. With QoL enabled, only the first zero flag can be
+  bought. Presentation adds SOLD OUT during the shop's input loop and suspends
+  those labels in status dialogs. It never fabricates ownership to hide stock.
+- The three generic desert preview delays at `05d6:0627/064f/06cf` become native
+  input waits with QoL on. A fresh Space/Enter/Escape consumes the dismissal and
+  rejoins the original map redraw. Desktop Space repeats are ignored; the loaded
+  game image is not patched. The active wait survives a QoL preference change.
+- Town, saloon and mine loops latch held movement and halve their walking wait
+  only with QoL enabled. Alternate fast steps skip the original per-loop health,
+  supplies and clock update; alternate mine steps also skip the random hazard
+  draw. Original position increments and collision/door logic remain intact.
+  PIT interrupts, music and all other scene delays are unchanged. Releasing the
+  key restores ordinary timing. Synthetic-clock and desktop timing tests are
+  separate because synthetic instruction-count timing includes drawing work.
 - Optional mouse aiming brackets only the original encounter input call at
   040a:0288/028d. Its mouse-button result at 0fa7:0011 is filtered so left presses
   in the scene fire instead of activating the hand. The existing coherent mouse

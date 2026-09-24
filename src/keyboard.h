@@ -100,7 +100,7 @@ inline uint32_t key_event(const SDL_KeyboardEvent& key) {
     if(scan==SDL_SCANCODE_KP_0)move=0x52; // Original Insert/action key.
     return keycode(key)|(move<<KeyMovementShift)|
         (move?(uint32_t(scan)<<KeySourceShift):0)|
-        (key.repeat && direction(scan)?KeyRepeat:0);
+        (key.repeat?KeyRepeat:0);
 }
 inline SDL_Keycode menu_key(const SDL_KeyboardEvent& key) {
     switch(direction(key.keysym.scancode)) {

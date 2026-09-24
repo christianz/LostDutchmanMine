@@ -39,6 +39,16 @@ struct State {
     bool movement_key_read=false;
     bool qol_improvements=true;
     GameUI game_ui;
+    MouseSample world_pointer,world_click;
+    bool world_click_pending=false;
+    void reset_world_pointer();
+    void filter_world_mouse();
+    bool dispatch_world_click();
+    bool desert_view_active=false;
+    bool finish_desert_view();
+    bool mule_available(int index) const;
+    bool walk_fast=false,walk_extra_tick=false;
+    void begin_walk_tick();
     bool panning_active=false;
     void begin_panning();
     void finish_panning();

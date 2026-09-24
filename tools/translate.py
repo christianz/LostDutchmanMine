@@ -92,6 +92,18 @@ class Emitter:
 
     def translate(self, cs,ip,i):
         self.cs,self.ip,self.ins=cs,ip,i
+        if cs==0x05d6 and ip in (0x0627,0x064f,0x06cf):
+            # A desert close-up used to be a timed preview. Space pressed while
+            # it was displayed stayed queued and opened another random preview.
+            if i.bytes.hex()!='9a0c000505':raise ValueError('Unexpected desert preview delay')
+            return ['if(s.qol_improvements || s.desert_view_active) {',
+                    'if(!s.finish_desert_view())return;',self.goto(ip+5,False),'}',
+                    f's.push(s.cs); s.push({ip+5}); s.cs=LoadSegment+0x0505; s.ip=0x000c; return;']
+        if (cs,ip)==(0x08c0,0x0088):
+            # DS:5b60 is already saved. On resume AX contains the *interior* X;
+            # use the same loaded-scene flag as the saloon's position setup.
+            if i.bytes.hex()!='a3605b':raise ValueError('Unexpected building return position')
+            return ['if(!s.u16(s.ds,0x5b86))s.w16(s.ds,0x5b60,s.ax);',self.goto(ip+3,False)]
         if (cs,ip)==(0x033f,0x0303):
             # Restore the outer loop's signed comparison at 0300. The supplied
             # EXE bypasses its intact animation with an unconditional jump.
@@ -211,14 +223,55 @@ class Emitter:
             expected,hook=combat_sites[cs,ip]
             if i.bytes.hex()!=expected:raise ValueError('Unexpected combat input layout')
             code.insert(0,hook)
+        if (cs,ip)==(0x0fa7,0x0011):
+            code.insert(0,'s.filter_world_mouse();')
+        pointer_sites = {
+            (0x0000,0x07f5):('833e625d00',f'if(s.qol_improvements && s.world_click_pending) {{ {self.goto(0x07fc,False)} }}'),
+            (0x0000,0x084b):('8d46fa',f'if(s.dispatch_world_click()) {{ {self.goto(0x08cc,False)} }}'),
+            (0x0000,0x08bf):('23c0',f'if(s.qol_improvements && !s.combat_active && !s.ax) {{ {self.goto(0x0914,False)} }}'),
+            (0x0fa7,0x0032):('c706045a0100','s.reset_world_pointer();'),
+        }
+        if (cs,ip) in pointer_sites:
+            expected,hook=pointer_sites[cs,ip]
+            if i.bytes.hex()!=expected:raise ValueError('Unexpected world pointer layout')
+            code.insert(0,hook)
+        # Twice as many original walking steps while a direction is held.
+        # Advance the per-loop survival clock and mine hazard RNG every other
+        # fast step; all other scenes, delays and the PIT/music remain original.
+        walk_starts={(0x0000,0x029d):'9a0800d605',(0x08c0,0x0ac6):'9a78000505',
+                     (0x0bb4,0x069b):'9ae6000505'}
+        walk_updates={(0x0000,0x02bd),(0x08c0,0x0acb),(0x0bb4,0x069b)}
+        walk_waits={(0x0000,0x02b0),(0x08c0,0x0b28),(0x0bb4,0x0741)}
+        if (cs,ip) in walk_updates:
+            if i.bytes.hex()!='9ae6000505':raise ValueError('Unexpected walking clock call')
+            code.insert(0,f'if(s.walk_extra_tick) {{ {self.goto(nxt,False)} }}')
+        if (cs,ip) in walk_starts:
+            if i.bytes.hex()!=walk_starts[cs,ip]:raise ValueError('Unexpected walking loop')
+            code.insert(0,'s.begin_walk_tick();')
+        if (cs,ip) in walk_waits:
+            if i.bytes.hex()!='9a8c000505':raise ValueError('Unexpected walking delay')
+            code.insert(0,'if(s.walk_fast)s.w16(s.ss,s.sp,(s.u16(s.ss,s.sp)+1)/2);')
+        if (cs,ip)==(0x0bb4,0x076d):
+            if i.bytes.hex()!='b83000':raise ValueError('Unexpected mine hazard poll')
+            code.insert(0,f'if(s.walk_extra_tick) {{ {self.goto(0x07a6,False)} }}')
+        mule_checks={0x2235:(0,'833e5a5d00'),0x2273:(1,'833e5c5d00'),0x22b1:(2,'833e5e5d00')}
+        if cs==0x08c0 and ip in mule_checks:
+            index,expected=mule_checks[ip]
+            if i.bytes.hex()!=expected:raise ValueError('Unexpected mule purchase guard')
+            code=[f's.alu(Op::Sub,s.mule_available({index})?0:1,0,16);']
         menu_sites = {
             (0x0505,0x096b):('cb','s.game_ui.prepare(s);'),
             (0x0505,0x032e):('55','s.game_ui.context(s);'),
             (0x0505,0x0538):('9a65006512','s.game_ui.context_buttons=0;'),
             (0x0000,0x082e):('55','s.game_ui.choosing=true;'),
             (0x0000,0x093d):('cb','s.game_ui.choosing=false;'),
-            (0x0000,0x093e):('55','s.game_ui.map_click(s); s.game_ui.choosing=false;'),
+            (0x0000,0x093e):('55','s.game_ui.map_click(s); s.game_ui.choosing=false; s.game_ui.mule_shop_visible=false;'),
             (0x0000,0x0a83):('cb','s.game_ui.choosing=true;'),
+            (0x0000,0x0ae4):('55','s.game_ui.mule_shop_visible=false;'),
+            (0x08c0,0x1de2):('55','s.game_ui.mule_shop=true;'),
+            (0x08c0,0x21b5):('cb','s.game_ui.mule_shop=false; s.game_ui.mule_shop_visible=false;'),
+            (0x08c0,0x0189):('b80600','s.game_ui.mule_shop_visible=s.game_ui.mule_shop;'),
+            (0x08c0,0x2065):('83c404','s.game_ui.mule_shop_visible=false;'),
         }
         if (cs,ip) in menu_sites:
             expected,hook=menu_sites[cs,ip]

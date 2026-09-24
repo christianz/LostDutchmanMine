@@ -59,6 +59,10 @@ bool GameUI::visible(const State& s) const {
     }
     return true;
 }
+bool GameUI::pointer_visible(const State& s) const {
+    return s.mouse_visibility>=0 || (s.qol_improvements && !s.combat_active &&
+        !s.panning_active && !s.desert_view_active && visible(s));
+}
 void GameUI::text(Pixels& p,int x,int y,const std::string& value,uint32_t c,bool centre) const {
     if(!font['A'*8+1]){pixel::text(p,x,y,value,c,centre);return;}
     auto span=[&](unsigned char ch) {
@@ -98,17 +102,17 @@ void GameUI::draw(Pixels& p,const State& s) const {
     if(!s.qol_improvements || !visible(s))return;
     const char* names[]={"Cash","Life","Food","Tools","Ammo","Game"};
     const char* hints[]={"Cash - F1","Health - F2","Food / Drink - F3","Tools / Pack - F4","Ammunition - F5","Save / Load / Quit - F6"};
-    auto mouse=s.mouse.current();bool interactive=choosing && s.mouse_visibility>=0;
+    auto mouse=s.mouse.current();bool interactive=pointer_visible(s);
     for(int i=0;i<6;i++) {
         auto r=toolbar(i);bool hover=interactive && r.contains(mouse.x,mouse.y),pressed=hover && (mouse.buttons&1);
         button(p,s.palette,r,"",hover,pressed);
         // Read the live original framebuffer: the health and food icons change
         // with the player's condition, and critical health flashes. The atlas
         // only contains their healthy defaults. Reduce enough to fit a label.
-        for(int y=0;y<22;y++)for(int x=0;x<26;x++)
-            pixel::dot(p,r.x+7+x+(pressed?1:0),r.y+3+y+(pressed?1:0),
-                s.palette[s.memory[0xa0000+(166+y*26/22)*320+56+i*42+x*28/26]]);
-        text(p,r.x+20,r.y+25+(pressed?1:0),names[i],ink,true);
+        for(int y=0;y<18;y++)for(int x=0;x<24;x++)
+            pixel::dot(p,r.x+8+x+(pressed?1:0),r.y+3+y+(pressed?1:0),
+                s.palette[s.memory[0xa0000+(166+y*26/18)*320+56+i*42+x*28/24]]);
+        text(p,r.x+20,r.y+22+(pressed?1:0),names[i],ink,true);
         if(hover) {
             // The top strip belongs to original status messages. A hint can use
             // it only while it is entirely blank; it never covers game text.
@@ -118,5 +122,9 @@ void GameUI::draw(Pixels& p,const State& s) const {
     }
     for(int i=0;i<4;i++)if(interactive && (context_buttons&(1u<<i)) && action(i).contains(mouse.x,mouse.y))
         outline(p,action(i),(mouse.buttons&1)?cream:gold);
+    if(mule_shop_visible)for(int i=0;i<3;i++)if(!s.mule_available(i)) {
+        pixel::rect(p,26+i*100,89,68,22,s.palette[0]);
+        text(p,60+i*100,96,"SOLD OUT",cream,true);
+    }
 }
 }

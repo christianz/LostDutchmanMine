@@ -3,6 +3,40 @@
 Status: runnable development build. Full fidelity and complete gameplay are
 not yet certified. The original DOS program was neither launched nor modified.
 
+## Verified in update 10
+
+- Toolbar buttons now occupy rows 167-198, leaving the full logo and weekday
+  intact. Tests retain the original warning colours, flashing and QoL-off pixels.
+- With QoL on, the hand is visible during walking. A fresh click is routed to
+  the original command selector while held keyboard input continues. One quick
+  F6 click opens its menu; no activation click is needed. Combat retains its
+  existing aiming/hand controls. Focus reset clears pending clicks.
+- Only the cheapest unowned mule can be bought; the other choices say SOLD OUT.
+  Tests execute the original purchase routine for every ownership combination
+  and choice with QoL on/off (48 cases), checking cash and all three inventory
+  rows. Existing non-sequential ownership is preserved.
+- The building-entry code now honours the original loaded-scene flag before
+  storing the street return position. The saved street X was being overwritten
+  with the interior X. An isolated copy of the user's slot 6 reproduces X=210
+  outside the saloon before the fix; after loading and clicking Exit the desktop
+  restores X=240, Y=59. Down reaches Y=73 and street movement continues. The
+  native check covers normal entry and loaded exit with QoL both on and off.
+- A desert close-up waits for a fresh Space, Enter or Escape. The dismissal is
+  consumed before map input resumes. Native and Linux desktop checks cover two
+  Space presses, key repeat, staying open beyond the old timeout, and remaining
+  on the map afterward. QoL off retains the original timed preview.
+- Held town/saloon/mine movement halves the original walking delay. Original
+  collision steps are retained; the per-loop survival update and mine hazard
+  RNG run every other fast step. A Linux desktop sample moved 54 rather than
+  30 pixels after 0.9 seconds of held input. The 2.4-second observation advanced
+  survival ticks by 14 in both modes. Key release and focus loss stop movement.
+- All 15 native test executables pass, including the new `test-qol` integration
+  checks using the original translated routines and initialized graphics.
+  Linux SDL desktop checks pass for the saved saloon, desert toggle, movement
+  cadence, quick mouse menu/quit actions, WASD/keypad controls and the WASD42
+  save-name/load round trip. Windows x64 cross-compilation
+  passes; independent Windows 11 runtime testing remains outstanding.
+
 ## Verified in update 9
 
 - Fixed the enhanced toolbar covering live health and food warnings with the

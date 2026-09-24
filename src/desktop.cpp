@@ -185,6 +185,8 @@ int main(int argc,char**argv) {
                         <<",\"video_mode\":"<<frame.video_mode<<",\"held_directions\":"<<unsigned(frame.directions)<<",\"boundaries\":"<<frame.boundaries
                         <<",\"mouse_visibility\":"<<frame.mouse_visibility<<",\"mouse_mode\":"<<frame.mouse_mode
                         <<",\"mouse_x\":"<<frame.mouse_x<<",\"mouse_y\":"<<frame.mouse_y
+                        <<",\"pointer_visible\":"<<frame.pointer_visible<<",\"desert_view\":"<<frame.desert_view
+                        <<",\"map_view\":"<<frame.map_view<<",\"survival_ticks\":"<<frame.survival_ticks
                         <<",\"panning_active\":"<<frame.panning_active
                         <<",\"gold_bags\":"<<frame.gold_bags<<",\"qol\":"<<frame.qol_improvements
                         <<",\"combat\":"<<frame.combat_active<<",\"bullets\":"<<frame.bullets<<"}\n";

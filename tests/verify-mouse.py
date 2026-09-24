@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Quick clicks must restore the hand, open F6 and quit without retries."""
+"""The pointer stays visible while walking; one toolbar click opens F6."""
 import json
 import os
 from pathlib import Path
@@ -18,9 +18,9 @@ Path('.local/mouse-test.log').write_text(run.stdout)
 assert run.returncode == 0, run.stdout
 assert 'mode 3, PIT=0' in run.stdout, run.stdout
 states = [json.loads(Path(f'captures/{n}.json').read_text()) for n in (400, 401, 402)]
-assert states[0]['mouse_visibility'] < 0 and states[0]['mouse_mode'] == 1, states[0]
+assert states[0]['pointer_visible'] and states[0]['mouse_mode'] == 1, states[0]
 for state in states[1:]:
-    assert state['mouse_visibility'] >= 0 and state['mouse_mode'] == 0, state
+    assert state['pointer_visible'], state
     for key in ('x', 'y', 'town_page', 'building'):
         assert state[key] == states[0][key], (key, states)
-print(f'PASS: single quick clicks restore the hand, open F6 and quit; player unchanged, exit at {elapsed:.2f}s')
+print(f'PASS: visible walking pointer, single quick F6/quit clicks, unchanged player, exit at {elapsed:.2f}s')

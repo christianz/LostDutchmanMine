@@ -11,9 +11,9 @@ frames={n:json.loads((root/f'{n}.json').read_text()) for n in (*range(500,516),5
 def position(frame):
     return tuple(frame[k] for k in ('x','y','town_page','building'))
 
-assert frames[501]['mouse_mode']==0 and frames[501]['mouse_visibility']>=0,frames[501]
+assert frames[501]['pointer_visible'],frames[501]
 assert frames[502]['held_directions']==8 and frames[502]['x']>frames[501]['x'],frames[502]
-assert frames[502]['mouse_mode']==1 and frames[502]['mouse_visibility']<0,'Movement must return from the hand to keyboard mode'
+assert frames[502]['mouse_mode']==1 and frames[502]['pointer_visible'],'Keyboard movement must keep the pointer available'
 assert frames[503]['x']>frames[502]['x'],'Held D must continue without OS repeat'
 assert position(frames[503])==position(frames[504]),'Releasing D must stop movement'
 assert frames[505]['held_directions']==5,'W+A must produce an up-left diagonal'
@@ -31,4 +31,4 @@ assert frames[531]['x']<frames[530]['x'],'A must move away from the saved positi
 assert position(frames[530])==position(frames[532]),'Keypad load must restore the saved position'
 assert (saves/'LDMSAVE8.SAV').stat().st_size==6066,'Original save format changed'
 assert b'WASD42' in (saves/'LDMSAVE.LDM').read_bytes(),'WASD letters/keypad digits did not survive text entry'
-print('PASS: WASD/Num Lock on-off movement, diagonals, hand-to-keyboard, release/focus/opposing keys, repeat cleanup across Num Lock change, native menu navigation and WASD42 save/load via keypad')
+print('PASS: WASD/Num Lock on-off movement, diagonals, visible pointer while walking, release/focus/opposing keys, repeat cleanup across Num Lock change, native menu navigation and WASD42 save/load via keypad')

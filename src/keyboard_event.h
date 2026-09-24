@@ -3,7 +3,7 @@
 
 namespace ldm {
 // Low 16 bits retain the original BIOS character/scan pair. Native-only tags:
-// bit 16 marks a movement repeat, bits 17-23 hold its alternative movement scan,
+// bit 16 marks an auto-repeat, bits 17-23 hold its alternative movement scan,
 // bits 24-30 identify the physical key for release even if Num Lock changes.
 constexpr uint32_t KeyRepeat=1u<<16;
 constexpr unsigned KeyMovementShift=17,KeySourceShift=24;

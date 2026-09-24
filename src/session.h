@@ -12,6 +12,8 @@ struct Snapshot {
     uint64_t sequence=0,boundaries=0;
     int video_mode=3,x=0,y=0,town_page=0,building=0;
     int mouse_visibility=-1,mouse_mode=1,mouse_x=160,mouse_y=100;
+    bool pointer_visible=false,desert_view=false,map_view=false;
+    int survival_ticks=0;
     uint8_t directions=0;
     bool custom_cursor=false;
     bool panning_active=false;

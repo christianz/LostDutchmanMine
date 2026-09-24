@@ -29,7 +29,7 @@ int main(int argc,char** argv) {
             if(s->boundaries>=next_timer){next_timer=s->boundaries+1000;s->timer_interrupt();}
         }
         require(s->game_ui.ready(),"Original initialization did not prepare the panel skin");
-        s->custom_cursor=false;s->qol_improvements=false;
+        s->custom_cursor=false;s->qol_improvements=false;s->mouse.move(0,0);
         ldm::Pixels original,enhanced;ldm::read_frame(*s,original);capture(original,"original");
         for(size_t i=0;i<original.size();i++)require(original[i]==s->palette[s->memory[0xa0000+i]],"QoL off changed the original VGA frame");
         auto memory=s->memory;s->qol_improvements=true;ldm::read_frame(*s,enhanced);capture(enhanced,"labels");
@@ -37,6 +37,7 @@ int main(int argc,char** argv) {
         for(int y=0;y<200;y++)for(int x=0;x<320;x++)if(enhanced[y*320+x]!=original[y*320+x]) {
             bool inside=false;for(int i=0;i<6;i++)inside|=ldm::GameUI::toolbar(i).contains(x,y);
             require(inside,"Toolbar repaint covered original scenery or context actions");
+            require(y>=167,"Toolbar repaint covered the logo or weekday");
             require(std::find(s->palette.begin(),s->palette.begin()+16,enhanced[y*320+x])!=s->palette.begin()+16,"Panel atlas escaped the original 16-colour blitter palette");
             ++changed;
         }
@@ -44,7 +45,7 @@ int main(int argc,char** argv) {
         s->game_ui.choosing=true;s->mouse_visibility=0;s->mouse.move(281,196);
         ldm::read_frame(*s,enhanced);capture(enhanced,"hover");
         require(s->memory==memory,"Native menu rendering wrote into original game memory");
-        s->game_ui.choosing=false;
+        s->game_ui.choosing=false;s->mouse.move(0,0);
         // Run the original health/food update, including its thresholds and
         // critical-health flash. This catches an overlay hiding live warnings
         // behind the healthy artwork stored in PANL_VGA.
@@ -68,10 +69,10 @@ int main(int argc,char** argv) {
             require(s->memory==unchanged,"Toolbar rendering changed original health or framebuffer data");
             // A clear background pixel in the original portrait must remain
             // its warning colour after the icon is fitted above the label.
-            require(enhanced[170*320+103]==original[171*320+100],"Labelled Life icon hides the original health warning colour");
+            require(enhanced[174*320+104]==original[171*320+100],"Labelled Life icon hides the original health warning colour");
             std::vector<uint32_t> food;
-            for(int y=165;y<187;y++)for(int x=143;x<169;x++)food.push_back(enhanced[y*320+x]);
-            return std::pair<uint32_t,std::vector<uint32_t>>{enhanced[170*320+103],food};
+            for(int y=170;y<188;y++)for(int x=144;x<168;x++)food.push_back(enhanced[y*320+x]);
+            return std::pair<uint32_t,std::vector<uint32_t>>{enhanced[174*320+104],food};
         };
         auto healthy=status(96,"healthy");
         auto green_edge=status(63,"64");
