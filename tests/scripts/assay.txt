@@ -1,0 +1,38 @@
+# Load isolated assay-office slot 1; open Assay and sell one bag from each of two rows.
+18000 key 16384
+19500 mouse 208 85
+19560 buttons 1
+19620 buttons 0
+21200 ascii 49
+23600 mouse 155 80
+23660 buttons 1
+23720 buttons 0
+24500 capture 1800
+25000 mouse 108 147
+25060 buttons 1
+25120 buttons 0
+26000 capture 1801
+26200 mouse 217 98
+26260 buttons 1
+26320 buttons 0
+27200 capture 1802
+# Clicking the emptied slot again must not create another payout.
+27400 buttons 1
+27460 buttons 0
+28200 capture 1803
+28500 mouse 108 127
+28560 buttons 1
+28620 buttons 0
+29500 capture 1804
+29700 mouse 217 98
+29760 buttons 1
+29820 buttons 0
+30700 capture 1805
+31000 mouse 108 147
+31060 buttons 1
+31120 buttons 0
+32000 capture 1806
+32300 mouse 188 147
+32360 buttons 1
+32420 buttons 0
+34000 capture 1807

@@ -57,13 +57,16 @@ The native state loads data at paragraph 1000; DS is normally 82bd at runtime.
   return to walking; dialogs retain their own readers. The presented cursor is
   also visible over the intact panel during walking, without changing the DOS
   mouse visibility counter. Combat's aiming input stays separate.
-- At `0000:0952`, scenery clicks return no action with the persistent QoL
-  pointer. The original return code 9 unwinds the main dispatcher and restarts
-  the active scene. In caves that replayed the entrance and saved interior
-  DS:5b4a/5b4c over the exterior DS:5b60/5b62; exiting then restored the wrong
-  map position. Keeping the scene running preserves its original entry/exit
-  state. Classic mouse mode, combat and real panel-button actions keep their
-  original dispatch. No save-format or coordinate correction is needed.
+- At `0000:0801`, the walking command poll discards result 9 from its mouse
+  selector when the QoL pointer is active outside combat. Otherwise that result
+  restarts the active scene: in caves, it replayed the entrance and saved
+  interior DS:5b4a/5b4c over the exterior DS:5b60/5b62. Keeping the scene running
+  preserves the original entry/exit state. The shared selector at `0000:0952`
+  must still return 9: buildings call it through `08c0:0259` and interpret it
+  as item selection, including a gold bag at the assay office. Update 12
+  incorrectly suppressed that shared result; update 13 scopes the filter to
+  the walking caller. Classic mouse mode, combat and panel commands keep their
+  original results. No save-format or coordinate correction is needed.
 - `08c0:0088` preserves DS:5b60 when the original loaded-scene flag DS:5b86 is
   set. The save already contains the correct exterior X; overwriting it with
   loaded interior X caused invalid saloon exits. No save format change is needed.

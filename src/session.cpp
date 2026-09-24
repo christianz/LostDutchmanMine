@@ -100,6 +100,8 @@ void Session::run() {
                 next.survival_ticks=state_.u16(0x82bd,0x5406);
                 next.panning_active=state_.panning_active;
                 next.gold_bags=state_.u16(0x82bd,0x53ea);next.qol_improvements=state_.qol_improvements;
+                next.cash=state_.u16(0x82bd,0x53f0)|(uint32_t(state_.u16(0x82bd,0x53f2))<<16);
+                next.assay_pounds=state_.u16(0x82bd,0x5b82);next.assay_grade=state_.u16(0x82bd,0x59d0);
                 next.combat_active=state_.combat_active;next.bullets=state_.u16(0x82bd,0x53e2);
                 {std::lock_guard<std::mutex> lock(frame_mutex_);next.sequence=frame_.sequence+1;frame_=std::move(next);}
                 published=now;

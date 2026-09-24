@@ -48,8 +48,8 @@ void GameUI::end_menu() {
 void GameUI::map_click(State& s) const {
     if(!s.qol_improvements || s.video_mode!=0x13)return;
     int x=s.u16(s.ss,uint16_t(s.sp+4)),y=s.u16(s.ss,uint16_t(s.sp+6));
-    // Only the world's own selector calls this hook, after its release/debounce
-    // check. Inventory, poker, save names and other dialogs keep their readers.
+    // The shared scene/building selector calls this hook after its input check.
+    // Only panel targets are remapped; building item coordinates pass through.
     for(int i=0;i<6;i++)if(toolbar(i).contains(x,y)) {
         s.w16(s.ss,uint16_t(s.sp+4),69+i*42);s.w16(s.ss,uint16_t(s.sp+6),181);return;
     }

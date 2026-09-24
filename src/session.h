@@ -20,6 +20,8 @@ struct Snapshot {
     bool custom_cursor=false;
     bool panning_active=false;
     int gold_bags=0;
+    uint32_t cash=0;
+    int assay_pounds=0,assay_grade=0;
     bool qol_improvements=true;
     bool combat_active=false;
     int bullets=0;

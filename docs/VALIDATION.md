@@ -3,6 +3,31 @@
 Status: runnable development build. Full fidelity and complete gameplay are
 not yet certified. The original DOS program was neither launched nor modified.
 
+## Verified in update 13
+
+- Corrected an update 12 regression: the shared selector's result 9 also means
+  item selection in buildings. Suppressing it globally prevented gold bags
+  from reaching the assay routine. The filter now belongs only to the walking
+  command poll; building selections retain their original result.
+- `test-assay` reproduces the rejected bag click on update 12. With the fix,
+  real mouse clicks assay eight bags across the player's pack and all three
+  mule rows, with QoL on and off. Checks cover the six original bag types,
+  weight/grade rules, exactly one matching cash payout per bag, non-ore items,
+  repeated empty-slot clicks, Next/Done/Exit, and the saved town doorway.
+- Linux SDL before/after runs load identical isolated assay-office saves.
+  Update 12 leaves all bags untouched; update 13 consumes the chosen player
+  and mule bags and displays their weight, grade and value. Capture metadata
+  verifies cash increments equal weight times grade times 10, and that empty
+  slots and Done/Exit do not repeat payouts. The fixture preserves the original
+  cash encoding at DS:5b72, from which loading reconstructs the wallet.
+- All eight native cave scenarios still pass. A fresh desktop run confirms
+  clicking inside stays in the cave and exit restores the exact world-map
+  position and scroll. `tests/verify-assay.py` checks the combined desktop
+  evidence from `tests/scripts/assay.txt` and `cave-roundtrip.txt`.
+- Eleven relevant native test executables pass: assay, cave, keyboard, menu,
+  mouse, menu scene, QoL, panning, panning scene, combat and combat scene.
+  Windows x64 cross-compilation passes; Windows runtime remains untested.
+
 ## Verified in update 12
 
 - Clicking cave scenery with the QoL pointer no longer restarts the scene.

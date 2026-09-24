@@ -191,6 +191,7 @@ int main(int argc,char**argv) {
                         <<",\"return_x\":"<<frame.return_x<<",\"return_y\":"<<frame.return_y
                         <<",\"panning_active\":"<<frame.panning_active
                         <<",\"gold_bags\":"<<frame.gold_bags<<",\"qol\":"<<frame.qol_improvements
+                        <<",\"cash\":"<<frame.cash<<",\"assay_pounds\":"<<frame.assay_pounds<<",\"assay_grade\":"<<frame.assay_grade
                         <<",\"combat\":"<<frame.combat_active<<",\"bullets\":"<<frame.bullets<<"}\n";
                 }else throw std::runtime_error("Unknown script event");
             }

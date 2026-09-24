@@ -104,14 +104,6 @@ class Emitter:
             # use the same loaded-scene flag as the saloon's position setup.
             if i.bytes.hex()!='a3605b':raise ValueError('Unexpected building return position')
             return ['if(!s.u16(s.ds,0x5b86))s.w16(s.ds,0x5b60,s.ax);',self.goto(ip+3,False)]
-        if (cs,ip)==(0x0000,0x0952):
-            # Clicking scenery in the original modal mouse selector returns 9,
-            # restarting the scene. With the persistent QoL pointer that can
-            # replay a cave entrance and save indoor X/Y as its map return
-            # position. A scenery click has no action; real panel buttons and
-            # the separate combat/dialog readers retain their original paths.
-            if i.bytes.hex()!='b80900':raise ValueError('Unexpected scenery click command')
-            return ['s.ax=s.qol_improvements && !s.combat_active?0:9;',self.goto(ip+3,False)]
         if (cs,ip)==(0x033f,0x0303):
             # Restore the outer loop's signed comparison at 0300. The supplied
             # EXE bypasses its intact animation with an unconditional jump.
@@ -241,6 +233,11 @@ class Emitter:
             code.insert(0,'if(direction_scan(s.di) && (s.si&15))s.di=0;')
         pointer_sites = {
             (0x0000,0x07f5):('833e625d00',f'if(s.qol_improvements && s.world_click_pending) {{ {self.goto(0x07fc,False)} }}'),
+            # Only the walking command poll treats selector result 9 as a
+            # scene restart. Suppress it here to preserve cave return X/Y.
+            # Buildings call the shared selector directly and need result 9
+            # to select items, notably gold bags in the assay office.
+            (0x0000,0x0801):('eb29','if(s.qol_improvements && !s.combat_active && s.ax==9)s.ax=0;'),
             (0x0000,0x084b):('8d46fa',f'if(s.dispatch_world_click()) {{ {self.goto(0x08cc,False)} }}'),
             (0x0000,0x08bf):('23c0',f'if(s.qol_improvements && !s.combat_active && !s.ax) {{ {self.goto(0x0914,False)} }}'),
             (0x0fa7,0x0032):('c706045a0100','s.reset_world_pointer();'),

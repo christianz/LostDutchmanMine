@@ -6,7 +6,7 @@
 
 namespace {
 void require(bool ok,const char* message){if(!ok)throw std::runtime_error(message);}
-// Run the original world selector, stopping at a real status-menu entry or
+// Run the shared scene/building selector, stopping at a real status-menu entry or
 // its far return. This catches changes to the legacy ABI and action routing.
 int select(int x,int y,bool qol,unsigned context=15,bool combat=false) {
     auto s=std::make_unique<ldm::State>();
@@ -47,7 +47,7 @@ int main() {
             require(select(x,y,false)==0,"QoL off changed a contextual edge");
             require(select(x,y,true,0)==0,"An absent contextual button gained a new target");
         }
-        require(select(100,100,true)==0,"Persistent-pointer scenery click restarts the scene");
+        require(select(100,100,true)==9,"Shared selector lost the item-selection command");
         require(select(100,100,false)==9 && select(100,100,true,15,true)==9,
                 "Classic or combat scene click routing changed");
         require(select(150,150,true)==0,"Space between context columns became clickable");
