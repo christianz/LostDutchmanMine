@@ -8,7 +8,7 @@ folder = Path(sys.argv[1]) if len(sys.argv) > 1 else Path('captures')
 s = {n: json.loads((folder/f'{n}.json').read_text()) for n in range(910, 923)}
 def point(n):
     return s[n]['x'], s[n]['y']
-assert all(f['combat'] and not f['panning_phase'] for f in s.values())
+assert all(f['combat'] and not f['panning_active'] for f in s.values())
 assert point(910) == (160, 64)
 assert point(911) == (62, 37) and point(912) == (237, 27)
 bullets = s[910]['bullets']

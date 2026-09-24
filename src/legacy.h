@@ -3,7 +3,6 @@
 #include "keyboard_event.h"
 #include "mouse.h"
 #include "game_ui.h"
-#include "panning.h"
 #include <array>
 #include <cstdint>
 #include <cstdio>
@@ -40,8 +39,9 @@ struct State {
     bool movement_key_read=false;
     bool qol_improvements=true;
     GameUI game_ui;
-    Panning panning;
-    void pan_action();
+    bool panning_active=false;
+    void begin_panning();
+    void finish_panning();
     bool combat_active=false,combat_input_read=false,combat_mouse_fire=false;
     MouseSample combat_pointer;
     void begin_combat();

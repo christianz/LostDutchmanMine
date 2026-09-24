@@ -59,7 +59,7 @@ int main(int argc,char**argv) {
         s->data_dir=std::filesystem::absolute(data);s->save_dir=std::filesystem::absolute(save);
         if(std::filesystem::weakly_canonical(s->data_dir)==std::filesystem::weakly_canonical(s->save_dir))throw std::runtime_error("Save directory must differ from the original game directory");
         s->load(image,image_relocations,entry_cs,entry_ip,stack_ss,stack_sp);
-        s->qol_improvements=settings.qol;s->panning.art_path(app_dir/"panning-creek.ppm");
+        s->qol_improvements=settings.qol;
         for(unsigned char c:keys){SDL_KeyboardEvent key{};key.keysym.sym=c;s->keys.push_back(keycode(key));}
         SDL_SetMainReady();SDL_SetHint(SDL_HINT_WINDOWS_DPI_AWARENESS,"permonitorv2");
         SDL_SetHint(SDL_HINT_MOUSE_FOCUS_CLICKTHROUGH,"1");
@@ -185,14 +185,13 @@ int main(int argc,char**argv) {
                         <<",\"video_mode\":"<<frame.video_mode<<",\"held_directions\":"<<unsigned(frame.directions)<<",\"boundaries\":"<<frame.boundaries
                         <<",\"mouse_visibility\":"<<frame.mouse_visibility<<",\"mouse_mode\":"<<frame.mouse_mode
                         <<",\"mouse_x\":"<<frame.mouse_x<<",\"mouse_y\":"<<frame.mouse_y
-                        <<",\"panning_phase\":"<<frame.panning_phase<<",\"panning_round\":"<<frame.panning_round
-                        <<",\"panning_loosened\":"<<frame.panning_loosened<<",\"panning_gold\":"<<frame.panning_gold
+                        <<",\"panning_active\":"<<frame.panning_active
                         <<",\"gold_bags\":"<<frame.gold_bags<<",\"qol\":"<<frame.qol_improvements
                         <<",\"combat\":"<<frame.combat_active<<",\"bullets\":"<<frame.bullets<<"}\n";
                 }else throw std::runtime_error("Unknown script event");
             }
             if(elapsed_ms>=next_frame || !screen_capture.empty()) {
-                SDL_ShowCursor(menu || (!frame.custom_cursor && !frame.panning_phase)?SDL_ENABLE:SDL_DISABLE);
+                SDL_ShowCursor(menu || !frame.custom_cursor?SDL_ENABLE:SDL_DISABLE);
                 if(menu)view.menu(frame.pixels,draft,startup_menu,selected,message);else view.game(frame.pixels,settings);
                 if(!screen_capture.empty())view.capture(screen_capture);
                 SDL_RenderPresent(renderer);

@@ -29,7 +29,7 @@ int main(int argc,char** argv) {
         }
         require(s->game_ui.ready(),"Original initialization did not prepare the panel skin");
         s->custom_cursor=false;s->qol_improvements=false;
-        ldm::Pixels original,enhanced,panned;ldm::read_frame(*s,original);capture(original,"original");
+        ldm::Pixels original,enhanced;ldm::read_frame(*s,original);capture(original,"original");
         for(size_t i=0;i<original.size();i++)require(original[i]==s->palette[s->memory[0xa0000+i]],"QoL off changed the original VGA frame");
         auto memory=s->memory;s->qol_improvements=true;ldm::read_frame(*s,enhanced);capture(enhanced,"labels");
         int changed=0;
@@ -42,20 +42,7 @@ int main(int argc,char** argv) {
         require(changed>500,"Toolbar enhancement did not render");
         s->game_ui.choosing=true;s->mouse_visibility=0;s->mouse.move(281,196);
         ldm::read_frame(*s,enhanced);capture(enhanced,"hover");
-        s->panning.art_path("resources/panning/creek.ppm");s->panning.begin();
-        ldm::read_frame(*s,panned);capture(panned,"pan-start");
-        for(int y=112;y<200;y++)for(int x=0;x<320;x++)
-            if(x<51 || (x>=236 && y<162) || x>=307)
-                require(panned[y*320+x]==original[y*320+x],"Panning changed the original thermometer, clock or surround");
-        require(panned[158*320+150]==s->palette[9],"Panning plaque did not use the original brown");
-        for(int round=0;round<3;round++) {
-            for(int swing=0;swing<5;swing++)for(int tick=0;tick<96;tick++)s->panning.update(1./120,swing%2?8:4);
-            if(!round){ldm::read_frame(*s,panned);capture(panned,"pan-ready");}
-            s->panning.key(0x3920);
-            for(int tick=0;tick<216;tick++)s->panning.update(1./120,0);
-        }
-        ldm::read_frame(*s,panned);capture(panned,"pan-result");
-        require(s->memory==memory,"Native menu rendering or panning wrote into original game memory");
-        std::cout<<"PASS: original startup loads the 16-colour panel/font, labelled toolbar stays in bounds, QoL off is pixel exact, and panning preserves the clock/thermometer and VGA memory\n";
+        require(s->memory==memory,"Native menu rendering wrote into original game memory");
+        std::cout<<"PASS: original startup loads the 16-colour panel/font, labelled toolbar stays in bounds, and QoL off is pixel exact without writing game memory\n";
     }catch(const std::exception& e){std::cerr<<e.what()<<"\n";return 1;}
 }

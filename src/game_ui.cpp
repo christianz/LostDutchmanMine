@@ -94,20 +94,6 @@ void GameUI::button(Pixels& p,const std::array<uint32_t,256>& pal,GameButton r,
     }
     text(p,r.x+r.w/2+(pressed?1:0),r.y+(r.h-8)/2+(pressed?1:0),label,ink,true);
 }
-void GameUI::panning_panel(Pixels& p,const std::array<uint32_t,256>& pal) const {
-    // Keep the current temperature, clock and weekday from the river frame.
-    // Erase its contextual choices inside the original red plaque.
-    uint32_t brown=ready_?pal[atlas_[155*320+225]]:0xff684b00;
-    pixel::rect(p,71,115,157,46,brown);
-    // Tile the unoccupied wood between the old icons beneath four wider controls.
-    if(ready_)for(int y=162;y<199;y++)for(int x=51;x<307;x++)
-        p[y*320+x]=pal[atlas_[y*320+89+(x-51)%5]];
-    // A small nameplate, like the weekday plate, keeps the control hint clear
-    // of the wood grain and the red frame above it.
-    pixel::rect(p,54,162,249,10,brown);
-    pixel::line(p,54,162,302,162,ready_?pal[10]:cream);
-    pixel::line(p,54,171,302,171,ink);
-}
 void GameUI::draw(Pixels& p,const State& s) const {
     if(!s.qol_improvements || !visible(s))return;
     const char* names[]={"Cash","Life","Food","Tools","Ammo","Game"};

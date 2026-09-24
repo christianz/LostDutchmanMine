@@ -93,10 +93,16 @@ class Emitter:
     def translate(self, cs,ip,i):
         self.cs,self.ip,self.ins=cs,ip,i
         if (cs,ip)==(0x033f,0x0303):
-            # The supplied executable jumps directly to the panning reward.
-            # Optional native play rejoins that reward or the original cleanup.
+            # Restore the outer loop's signed comparison at 0300. The supplied
+            # EXE bypasses its intact animation with an unconditional jump.
+            # QoL is latched at entry; the original counter/RNG/timing stay intact.
             if i.bytes.hex()!='e90a01':raise ValueError('Unexpected panning reward layout')
-            return ['s.pan_action(); return;']
+            return ['s.ip=s.panning_active && s.flag(SF)!=s.flag(OF)?0x0308:0x0410; return;']
+        if (cs,ip)==(0x033f,0x039e):
+            # The second bypass skips all three frames. Reconnect the surviving
+            # cmp [bp-4],312 to its original body at 03a0 -> 0316.
+            if i.bytes.hex()!='eb03':raise ValueError('Unexpected panning frame loop layout')
+            return [f'if(s.flag(SF)==s.flag(OF)) {{ {self.goto(0x03a3,False)} }}',self.goto(0x03a0,False)]
         if (cs,ip)==(0x1265,0x0693):
             # Choose VGA before the original SELECT.BIN load/draw/input block.
             # Rejoin the original accepted-'3' path, retaining its initialization.
@@ -186,6 +192,14 @@ class Emitter:
             # click survives batching and all three reads agree on its point.
             if i.bytes.hex()!='55':raise ValueError('Unexpected mouse polling layout')
             code.insert(0,'s.mouse.poll();')
+        panning_sites = {
+            (0x033f,0x02cc):('55','s.begin_panning();'),
+            (0x033f,0x0432):('5f','s.finish_panning();'),
+        }
+        if (cs,ip) in panning_sites:
+            expected,hook=panning_sites[cs,ip]
+            if i.bytes.hex()!=expected:raise ValueError('Unexpected panning entry/return layout')
+            code.insert(0,hook)
         combat_sites = {
             (0x040a,0x0002):('55','s.begin_combat();'),
             (0x040a,0x0288):('9a0600a70f','s.begin_combat_input();'),

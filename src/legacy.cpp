@@ -141,18 +141,18 @@ void State::timer_interrupt() {
     }
     timer_active=false;
 }
-void State::pan_action() {
-    // Called after the original ownership check and prologue. Rejoin either
-    // its normal inventory insertion or its cleanup; the save layout is unchanged.
-    if(panning.done()) {
-        ip=panning.take_result()?0x0410:0x0427;
-        keys.clear();mouse.clear();set_movement(0);w16(ds,0x5a1a,0);return;
-    }
+void State::begin_panning() {
+    // Latch the preference for this action. The translated original routine
+    // owns all animation, delays, inventory insertion and cleanup. With a full
+    // pack, go straight to its original message instead of making the user wait.
     bool room=false;
     for(int slot=1;slot<11;slot++)if(u16(ds,uint16_t(0x500e + slot*8))==0x2b)room=true;
-    if(qol_improvements && room && video_mode==0x13) {
-        panning.begin();keys.clear();mouse.clear();set_movement(0);w16(ds,0x5a1a,0);
-    }else ip=0x0410; // Original behavior, including its pack-full message.
+    panning_active=qol_improvements && room && u16(ds,0x53dc)!=0;
+    if(panning_active){keys.clear();mouse.clear();set_movement(0);w16(ds,0x5a1a,0);}
+}
+void State::finish_panning() {
+    if(panning_active){keys.clear();mouse.clear();set_movement(0);w16(ds,0x5a1a,0);}
+    panning_active=false;
 }
 void State::reset_combat_pointer() {
     combat_pointer=mouse.current();combat_mouse_fire=false;

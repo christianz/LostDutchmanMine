@@ -1,9 +1,45 @@
-# Native port validation — 2026-09-23
+# Native port validation — 2026-09-24
 
 Status: runnable development build. Full fidelity and complete gameplay are
 not yet certified. The original DOS program was neither launched nor modified.
 
-## Verified
+## Verified in update 8
+
+- The original panning animation replaces the custom minigame. The native
+  translator reconnects two bypassed loops at `033f:0303` and `033f:039e`, using
+  the surviving comparisons and original sprite, page, presentation and delay
+  routines. No original file or loaded image byte is patched. The signed branch
+  conditions are reconstructed from the surrounding code, not verified against
+  an unmodified retail executable.
+- Original-code checks cover all three gold grades, one reward per action,
+  no-pan/full-pack handling and original stack cleanup. A scene test runs the
+  initialized sprite/timer routines and observes all three poses, the middle
+  return pose, 5-9 cycles, deferred reward, restored player position, cleared
+  input and a latched QoL choice. It uses a synthetic clock, not wall-clock timing.
+- A 77-second Linux desktop scenario loads an isolated river save through F6,
+  clicks Pan on its bevel and plays the animation. F11 pauses execution; keyboard
+  and repeated Pan clicks during playback do not move the player or queue an
+  extra reward. Walking works afterward. Disabling QoL restores the instant
+  reward; enabling it again restores the animation. Original save/load preserves
+  three bags, position, the PANGOLD name and the 6,066-byte save format.
+- A real X11 mouse click on Pan's bevel starts the restored animation at
+  3840x2160 with Classic CRT and an 85% picture. Captures verify animation
+  before the reward and one bag afterward, with the original position restored.
+  This is Linux/OpenGL on a virtual display, not a physical monitor test.
+- All 14 focused native checks pass: arithmetic, assets, poker, quit, display,
+  mouse, menu, menu scene, keyboard, console, panning, panning scene, combat and
+  combat scene. The Windows x64 cross-build passes. Windows 11 runtime testing
+  of this update remains outstanding.
+- The custom panning source is removed from the build. Its artwork is retained
+  as archived source but is no longer packaged or loaded. QoL, display and save
+  configuration formats remain compatible with existing installations.
+
+## Verified in previous updates
+
+The interactive panning and creek-art checks below describe updates 5-7. Those
+features are superseded by the restored animation in update 8; they are retained
+here as historical validation, not claims about the current panning controls.
+
 
 - Update 7 adds optional named toolbar icons, hover outlines and F1-F6 hints,
   plus larger targets for the toolbar and contextual button bevels. The original
@@ -204,9 +240,9 @@ as Windows Server 2025, not Windows 11. No Windows 11 runtime claim is made.
 ## Reproduce focused checks
 
 ```sh
-make -j4 build/ldm-native build/test-assets build/test-arithmetic build/test-poker build/test-quit build/test-display build/test-mouse build/test-keyboard build/test-console build/test-panning build/test-combat build/test-combat-scene
+make -j4 build/ldm-native build/test-assets build/test-arithmetic build/test-poker build/test-quit build/test-display build/test-mouse build/test-keyboard build/test-console build/test-panning build/test-panning-scene build/test-combat build/test-combat-scene
 build/test-arithmetic
-build/test-assets /nas/tmp/LDM/LDMG
+build/test-assets /path/to/original-game/LDMG
 build/test-poker
 build/test-quit
 build/test-display
@@ -214,48 +250,49 @@ build/test-mouse
 build/test-keyboard
 build/test-console
 build/test-panning
+build/test-panning-scene /path/to/original-game
 build/test-combat
-build/test-combat-scene /nas/tmp/LDM
-python3 tests/make-combat-fixture.py /nas/tmp/LDM/LDMSAVE1.SAV .local/combat-test/Saves
+build/test-combat-scene /path/to/original-game
+python3 tests/make-combat-fixture.py /path/to/original-game/LDMSAVE1.SAV .local/combat-test/Saves
 SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy build/ldm-native \
-  --data /nas/tmp/LDM --image recovered/load-image.bin \
+  --data /path/to/original-game --image recovered/load-image.bin \
   --saves .local/combat-test/Saves --config .local/combat-test/display.ini \
   --seconds 39 --script tests/scripts/combat.txt
 python3 tests/verify-combat.py
 python3 tests/verify-quit.py
 python3 tests/verify-mouse.py
-python3 tests/make-river-fixture.py /nas/tmp/LDM/LDMSAVE1.SAV .local/panning-test/Saves
+python3 tests/make-river-fixture.py /path/to/original-game/LDMSAVE1.SAV .local/panning-test/Saves
 SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy build/ldm-native \
-  --data /nas/tmp/LDM --image recovered/load-image.bin \
+  --data /path/to/original-game --image recovered/load-image.bin \
   --saves .local/panning-test/Saves --config .local/panning-test/display.ini \
-  --seconds 81 --script tests/scripts/panning.txt
+  --seconds 77 --script tests/scripts/panning.txt
 python3 tests/verify-panning.py
 SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy build/ldm-native \
-  --data /nas/tmp/LDM --image recovered/load-image.bin \
+  --data /path/to/original-game --image recovered/load-image.bin \
   --saves .local/saloon-drinks/Saves --seconds 69 \
   --script tests/scripts/saloon-drinks.txt
 python3 tests/verify-saloon.py
 SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy build/ldm-native \
-  --data /nas/tmp/LDM --image recovered/load-image.bin \
+  --data /path/to/original-game --image recovered/load-image.bin \
   --saves .local/movement-saves --seconds 23 \
   --script tests/scripts/held-movement.txt
 python3 tests/verify-movement.py
 SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy build/ldm-native \
-  --data /nas/tmp/LDM --image recovered/load-image.bin \
+  --data /path/to/original-game --image recovered/load-image.bin \
   --saves .local/keyboard-controls/Saves --config .local/keyboard-controls/display.ini \
   --seconds 33 --script tests/scripts/keyboard-controls.txt
 SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy build/ldm-native \
-  --data /nas/tmp/LDM --image recovered/load-image.bin \
+  --data /path/to/original-game --image recovered/load-image.bin \
   --saves .local/keyboard-save/Saves --seconds 43 \
   --script tests/scripts/keyboard-save.txt
 python3 tests/verify-keyboard.py
 SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy build/ldm-native \
-  --data /nas/tmp/LDM --image recovered/load-image.bin \
+  --data /path/to/original-game --image recovered/load-image.bin \
   --saves .local/display-test/Saves --config .local/display-test/display.ini \
   --settings --seconds 25 --script tests/scripts/display-menu.txt
 python3 tests/verify-display-menu.py .local/display-test/display.ini
 SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy build/ldm-native \
-  --data /nas/tmp/LDM --image recovered/load-image.bin \
+  --data /path/to/original-game --image recovered/load-image.bin \
   --saves .local/roundtrip-saves --seconds 43 \
   --script tests/scripts/save-roundtrip.txt
 ```

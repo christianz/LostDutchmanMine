@@ -11,16 +11,12 @@ if(NOT LDM_GENERATED)
 endif()
 find_package(SDL2 2.26 REQUIRED)
 find_package(Threads REQUIRED)
-add_library(ldm-core STATIC ${LDM_GENERATED} src/legacy.cpp src/game_ui.cpp src/assets.cpp src/panning.cpp src/audio.cpp
+add_library(ldm-core STATIC ${LDM_GENERATED} src/legacy.cpp src/game_ui.cpp src/assets.cpp src/audio.cpp
     third_party/ymfm/ymfm_opl.cpp third_party/ymfm/ymfm_adpcm.cpp third_party/ymfm/ymfm_pcm.cpp)
 target_include_directories(ldm-core PUBLIC src build/generated PRIVATE third_party/ymfm)
 target_link_libraries(ldm-core PUBLIC Threads::Threads)
 add_executable(LostDutchmanMine src/desktop.cpp src/display.cpp src/presentation.cpp src/session.cpp)
 target_link_libraries(LostDutchmanMine PRIVATE ldm-core SDL2::SDL2)
-add_custom_command(TARGET LostDutchmanMine POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    "${CMAKE_SOURCE_DIR}/resources/panning/creek.ppm"
-    "$<TARGET_FILE_DIR:LostDutchmanMine>/panning-creek.ppm")
 add_custom_command(TARGET LostDutchmanMine POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
     "${CMAKE_SOURCE_DIR}/resources/ldm-icon.bmp"
@@ -57,6 +53,8 @@ add_executable(test-console tests/console.cpp)
 target_link_libraries(test-console PRIVATE ldm-core)
 add_executable(test-panning tests/panning.cpp)
 target_link_libraries(test-panning PRIVATE ldm-core)
+add_executable(test-panning-scene tests/panning-scene.cpp)
+target_link_libraries(test-panning-scene PRIVATE ldm-core)
 add_executable(test-combat tests/combat.cpp)
 target_link_libraries(test-combat PRIVATE ldm-core)
 add_executable(test-combat-scene tests/combat-scene.cpp)

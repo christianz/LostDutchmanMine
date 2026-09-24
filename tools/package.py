@@ -30,7 +30,6 @@ shutil.copy2(executable, out/('LostDutchmanMine.exe' if args.platform == 'window
 shutil.copy2(root/'resources/ldm-icon.bmp', out/'LostDutchmanMine.bmp')
 shutil.copy2(root/'resources/ldm.ico', out/'LostDutchmanMine.ico')
 shutil.copy2(root/'resources/ui-font.bmp', out/'ui-font.bmp')
-shutil.copy2(root/'resources/panning/creek.ppm', out/'panning-creek.ppm')
 shutil.copy2(root/'recovered/load-image.bin', out/'Game/port-data.bin')
 for name in ('LDMG', 'LDM.CAP', 'LDMSAVE.LDM'):
     source = args.data/name
@@ -62,7 +61,7 @@ Turn off Show at startup to skip the menu next time. F11 always remains availabl
 CRT monitor offers Off, Soft and Classic: steady scanlines, phosphor texture,
 soft glow and gentle edge shading. Preview it in the menu; the choice is saved.
 
-QoL improvements enables clearer menus, interactive panning and mouse aiming,
+QoL improvements enables clearer menus, restored panning and mouse aiming,
 checked by default. The six toolbar icons have names and larger click targets.
 With the hand active, hover for a gold outline and an F1-F6 shortcut hint.
 Context buttons also accept clicks on their bevels. Uncheck QoL improvements
@@ -73,16 +72,12 @@ to aiming. WASD, arrows and numpad still aim; Space still fires. A stationary mo
 does not undo keyboard aiming. Ammunition and hit rules stay the same. Uncheck
 QoL improvements to restore the original keyboard aiming/mouse selection behavior.
 
-At a river,
-choose Pan while carrying a pan. Rock left/right with A/D, arrows, numpad 4/6,
-the onscreen buttons, or drag the pan. Wash when the loosen bar turns gold using
-Space, Enter or the Wash button. Three careful washes preserve the gold; washing
-too soon can lose it. Take Gold puts one original gold bag in your pack. Escape
-abandons a pan. F11 pauses it. Uncheck QoL improvements for the original instant
-Pan action; the choice persists and applies to the next pan. Keep panning-creek.ppm
-beside the executable. Other movement and display improvements stay available.
-Panning shares the original wood, red plaque, silver buttons, lettering and hand
-cursor. The river's clock and thermometer stay in place during the activity.
+At a river, choose Pan while carrying a pan. The prospector plays the original
+panning animation in the river scene, then puts one gold bag in your pack. The
+original sprites, timing and river's gold grade are preserved. F11 pauses the
+animation. Uncheck QoL improvements for the supplied game's instant Pan action;
+the choice persists and applies to the next pan. Other movement and display
+improvements stay available. The custom rock-and-wash minigame is retired.
 
 VGA starts automatically. Allow the original title/credits sequence to finish.
 Hold WASD, cursor keys or the numeric keypad to move; release to stop.

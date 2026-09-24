@@ -14,7 +14,8 @@ struct Snapshot {
     int mouse_visibility=-1,mouse_mode=1,mouse_x=160,mouse_y=100;
     uint8_t directions=0;
     bool custom_cursor=false;
-    int panning_phase=0,panning_round=0,panning_loosened=0,panning_gold=0,gold_bags=0;
+    bool panning_active=false;
+    int gold_bags=0;
     bool qol_improvements=true;
     bool combat_active=false;
     int bullets=0;

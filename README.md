@@ -42,26 +42,25 @@ live preview and is saved with your other preferences. It is off by default;
 Soft is subtle and Classic is stronger. It leaves the settings text sharp and
 keeps the same mouse coordinates. CRT rendering adds GPU work at high resolutions.
 
-**QoL improvements** enables clearer in-game menus, the new panning minigame and
-mouse aiming in combat, and is checked by default. The six original toolbar
-icons gain names, larger click targets and a gold hover outline. With the hand
+**QoL improvements** enables clearer in-game menus, the restored panning
+animation and mouse aiming in combat, and is checked by default. The six original
+toolbar icons gain names, larger click targets and a gold hover outline. With the hand
 active, hovering also shows the relevant F1-F6 shortcut in the empty message
 strip. River and other contextual buttons accept clicks on their bevels too.
 Turning QoL off restores the original panel artwork and click targets.
-At a river, choose Pan while carrying a pan. Rock it left and right using A/D,
-arrows, numpad 4/6, the onscreen buttons, or by dragging the pan. When the loosen
-bar turns gold, press Space/Enter or click Wash. Complete three washes and take
-the gold. Rinsing too early can wash the flakes away; Escape abandons a pan.
-Successful panning gives one original gold bag with the river's original grade.
-Uncheck QoL improvements to keep the original instant Pan action. The setting
-persists and can also be changed with F11; a pan already in progress finishes
-under the choice it started with. Movement/display improvements remain available.
+At a river, choose Pan while carrying a pan. The prospector plays his original
+three-pose panning animation in the river scene, then receives one original gold
+bag with the river's original grade. F11 pauses it. Uncheck QoL improvements to
+keep the supplied game's instant Pan action. The setting persists; an animation
+already in progress finishes under the choice it started with. Movement/display
+improvements remain available.
 
-The new creek artwork and animated pan are drawn at the game's 320x200 resolution
-and pass through the same scaling, colour and CRT options. The view stays steady.
-Panning uses the original wooden surround, red-bordered plaque, silver buttons,
-pixel lettering and hand cursor. The river's clock and thermometer remain in
-place while the game is paused for the activity.
+The supplied executable skips two intact animation loops. The native translator
+reconnects their surviving comparisons and bodies, preserving the original
+sprites, page blits, timer waits, random cycle count and inventory reward. The
+signed branch conditions are reconstructed from the surrounding code; they have
+not been compared with an unmodified retail executable. The custom panning
+minigame is retired, and its creek artwork is no longer packaged or required.
 
 During shooting encounters, move the mouse over the scene to aim the original
 crosshair and **left-click** to fire one shot. **Right-click** opens the hand
@@ -87,8 +86,7 @@ preserved until the game polls them, including the click used to focus its windo
 The executable finds `Game/` and `Saves/` alongside itself regardless of the
 working directory. The supplied saved games remain in `Game/`; writes go to
 `Saves/` with copy-on-write for files opened in read/write mode. Keep `Saves/`
-and `display.ini` when updating. Keep `ui-font.bmp` and `panning-creek.ppm`
-beside the executable.
+and `display.ini` when updating. Keep `ui-font.bmp` beside the executable.
 There is no installer, administrator requirement, Python runtime,
 DOS executable, DOSBox, CPU interpreter or VM in the playable bundle.
 
@@ -124,7 +122,7 @@ The verified Linux build in this workspace uses the Makefile with local SDL2
 headers and the system SDL2 shared library:
 
 ```sh
-make -j4 build/ldm-native build/test-assets build/test-arithmetic build/test-poker build/test-quit build/test-display build/test-mouse build/test-menu build/test-menu-scene build/test-keyboard build/test-console build/test-panning build/test-combat build/test-combat-scene
+make -j4 build/ldm-native build/test-assets build/test-arithmetic build/test-poker build/test-quit build/test-display build/test-mouse build/test-menu build/test-menu-scene build/test-keyboard build/test-console build/test-panning build/test-panning-scene build/test-combat build/test-combat-scene
 build/test-arithmetic
 build/test-assets /path/to/LDM/LDMG
 build/test-poker
@@ -136,6 +134,7 @@ build/test-menu-scene /path/to/LDM
 build/test-keyboard
 build/test-console
 build/test-panning
+build/test-panning-scene /path/to/LDM
 build/test-combat
 build/test-combat-scene /path/to/LDM
 build/ldm-native --data /path/to/LDM --image recovered/load-image.bin --saves .local/saves
