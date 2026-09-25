@@ -183,13 +183,24 @@ void State::begin_walk_tick() {
     walk_fast=qol_improvements && (u8(LoadSegment+0x72ba,1)&15)!=0;
     walk_extra_tick=walk_fast && !walk_extra_tick;
 }
+bool State::has_pan() const {
+    // Tools use the interleaved player/mule rows at DS:500e; DS:5bd4 is food.
+    // Slot zero is the carrier icon. Only owned mules provide usable slots.
+    // The separate pan counter can be stale after a rejected full-pack buy.
+    for(int row=0;row<4;row++) {
+        if(row && !u16(ds,uint16_t(0x5d58+row*2)))continue;
+        for(int slot=1;slot<11;slot++)
+            if(u16(ds,uint16_t(0x500e + slot*8+row*2))==0xf)return true;
+    }
+    return false;
+}
 void State::begin_panning() {
     // Latch the preference for this action. The translated original routine
     // owns all animation, delays, inventory insertion and cleanup. With a full
     // pack, go straight to its original message instead of making the user wait.
     bool room=false;
     for(int slot=1;slot<11;slot++)if(u16(ds,uint16_t(0x500e + slot*8))==0x2b)room=true;
-    panning_active=qol_improvements && room && u16(ds,0x53dc)!=0;
+    panning_active=qol_improvements && room && has_pan();
     if(panning_active){keys.clear();mouse.clear();reset_world_pointer();set_movement(0);w16(ds,0x5a1a,0);}
 }
 void State::finish_panning() {

@@ -35,6 +35,7 @@ int main(int argc,char** argv) {
         for(int quality:{0,1,2}) {
             s->qol_improvements=true;s->w16(s->ds,0x53dc,1);s->w16(s->ds,0x53ea,0);
             for(int slot=1;slot<11;slot++)s->w16(s->ds,uint16_t(0x500e + slot*8),0x2b);
+            s->w16(s->ds,0x505e,0xf); // Actual pan, leaving the first reward slot free.
             s->keys.clear();s->mouse.clear();s->set_movement(0);
             s->sp=0x8000;s->push(quality);s->push(0xffff);s->push(0xfffe);
             s->cs=ldm::LoadSegment+0x033f;s->ip=0x02cc;

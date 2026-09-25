@@ -43,6 +43,8 @@ build/test-panning: $(filter-out build/probe.o,$(OBJECTS)) tests/panning.cpp
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $^ -o $@
 build/test-panning-scene: $(filter-out build/probe.o,$(OBJECTS)) tests/panning-scene.cpp
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $^ -o $@
+build/test-pan-inventory: $(filter-out build/probe.o,$(OBJECTS)) build/session.o tests/pan-inventory.cpp
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $^ -o $@
 build/test-combat: $(filter-out build/probe.o,$(OBJECTS)) tests/combat.cpp
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $^ -o $@
 build/test-combat-scene: $(filter-out build/probe.o,$(OBJECTS)) tests/combat-scene.cpp

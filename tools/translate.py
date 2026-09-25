@@ -198,6 +198,11 @@ class Emitter:
             code=[f's.string_op("{op[:4]}",{size},{rep},{source});']
         elif m=='nop':pass
         else:raise ValueError(f'Unsupported instruction {cs:04x}:{ip:04x}: {m} {i.op_str}')
+        if cs==0x033f and ip in (0x00d8,0x02d5):
+            # Both the river's Pan label and the action itself require an
+            # actual carried pan, including when QoL animation is disabled.
+            if i.bytes.hex()!='833edc5300':raise ValueError('Unexpected pan ownership guard')
+            code=['s.alu(Op::Sub,s.has_pan()?1:0,0,16);']
         if (cs,ip)==(0x0fc5,0x0038):
             # This original helper reads buttons, Y and X through three BIOS
             # calls. Latch one desktop event for the whole helper so a short

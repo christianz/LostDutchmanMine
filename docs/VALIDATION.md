@@ -1,7 +1,29 @@
-# Native port validation — 2026-09-24
+# Native port validation — 2026-09-25
 
 Status: runnable development build. Full fidelity and complete gameplay are
 not yet certified. The original DOS program was neither launched nor modified.
+
+## Verified in update 15
+
+- Pan now requires item 0x0f in the player's tool inventory or an owned mule's
+  tool row. The separate equipment count is insufficient: the original shop
+  increments it even when a full pack rejects the pan. Both the river's label
+  check and the Pan routine now use actual inventory, with QoL on and off.
+- The panning test reproduces the previous phantom-pan reward and now checks
+  stale positive/zero counts, first/last slots in all four rows, owned/unowned
+  mules, carrier/food-table exclusions, full packs and all three gold grades.
+- `test-pan-inventory` executes the original rejected full-pack purchase,
+  successful purchase and last-pan discard. Mouse and P cannot pan without
+  the item, including immediately after discarding it while the river's old
+  button is still drawn. Re-entering the river removes the unavailable label.
+- Three Linux SDL runs compare identical no-pan saves before/after and a save
+  with a real pan. The old build collects two gold bags without the item; the
+  fixed build neither animates nor awards gold. A real pan still completes
+  both mouse- and P-triggered animations and collects two bags. Captures from
+  `tests/scripts/pan-inventory.txt` pass `tests/verify-pan-inventory.py`.
+- Panning, panning scene, pan inventory and the full QoL test executable pass.
+  Windows x64 cross-compilation passes; Windows runtime remains untested.
+  This update also includes update 14's sleep-hover and combat-entry fixes.
 
 ## Verified in update 14
 

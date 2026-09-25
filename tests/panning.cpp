@@ -11,7 +11,11 @@ std::unique_ptr<ldm::State> state(bool enabled,int pans=1,bool full=false,int qu
     s->load("recovered/load-image.bin",image_relocations,entry_cs,entry_ip,stack_ss,stack_sp);
     s->ds=s->ss=0x82bd;s->sp=0x8000;s->video_mode=0x13;s->qol_improvements=enabled;
     s->w16(s->ds,0x53dc,pans);s->w16(s->ds,0x53ea,0);
-    for(int slot=1;slot<11;slot++)s->w16(s->ds,uint16_t(0x500e + slot*8),full?0x10:0x2b);
+    for(int row=0;row<4;row++) {
+        if(row)s->w16(s->ds,uint16_t(0x5d58+row*2),0);
+        for(int slot=1;slot<11;slot++)s->w16(s->ds,uint16_t(0x500e + slot*8+row*2),full?0x10:0x2b);
+    }
+    if(pans)s->w16(s->ds,0x505e,0xf); // A pan in the last player slot.
     s->push(quality);s->push(0xffff);s->push(0xfffe);
     s->cs=ldm::LoadSegment+0x033f;s->ip=0x02cc;
     return s;
@@ -27,6 +31,27 @@ void run_to_boundary(ldm::State& s) {
 }
 int main() {
     try {
+        for(bool enabled:{false,true}) {
+            auto missing=state(enabled);missing->w16(missing->ds,0x505e,0x2b);
+            run_to_boundary(*missing);
+            require(missing->cs==0xffff && !missing->panning_active && missing->u16(missing->ds,0x53ea)==0,
+                    "Stale pan counter permits panning without an inventory pan");
+            require(missing->sp==0x7ffe,"Rejected Pan did not preserve the caller argument");
+            auto unrelated=state(enabled,0);
+            unrelated->w16(unrelated->ds,0x500e,0xf);unrelated->w16(unrelated->ds,0x5bdc,0xf);
+            run_to_boundary(*unrelated);
+            require(unrelated->cs==0xffff && !unrelated->panning_active && unrelated->u16(unrelated->ds,0x53ea)==0,
+                    "Carrier icons or the food table must not count as an inventory pan");
+            for(int row=0;row<4;row++)for(int slot:{1,10})for(bool owned:{false,true}) {
+                auto s=state(enabled,0);
+                s->w16(s->ds,uint16_t(0x500e + slot*8+row*2),0xf);
+                if(row)s->w16(s->ds,uint16_t(0x5d58+row*2),owned);
+                run_to_boundary(*s);
+                bool allowed=row==0 || owned;
+                require(s->panning_active==(enabled && allowed) && s->u16(s->ds,0x53ea)==(!enabled && allowed),
+                        "Pan eligibility does not match an actual player/owned-mule inventory slot");
+            }
+        }
         for(int quality:{0,1,2}) {
             auto s=state(false,1,false,quality);run_to_boundary(*s);
             require(s->cs==0xffff && s->ip==0xfffe && s->sp==0x7ffe,"Instant Pan must preserve the original return and caller argument");
@@ -40,6 +65,6 @@ int main() {
         require(missing->sp==0x7ffe,"No-pan return must preserve the caller argument");
         auto full=state(true,1,true);run_to_boundary(*full);
         require(!full->panning_active && full->u16(full->ds,0x53ea)==0 && full->cs==ldm::LoadSegment+0x0652 && full->ip==0x01c2,"Full pack must reach the original message without animating or awarding gold");
-        std::cout<<"PASS: restored original drawing path, immediate QoL-off rewards in all three grades, no pan/full pack and original stack cleanup\n";
+        std::cout<<"PASS: actual player/owned-mule pans, stale counters, missing pans, original animation, all three instant grades, full pack and stack cleanup with QoL on/off\n";
     }catch(const std::exception& e){std::cerr<<e.what()<<"\n";return 1;}
 }

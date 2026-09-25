@@ -112,6 +112,13 @@ The native state loads data at paragraph 1000; DS is normally 82bd at runtime.
   the baseline. An already-held button cannot fire or reopen hand mode over
   the previous screen's panel. A release and fresh press use the normal
   shooting/menu paths; right-click choices during the fight remain available.
+- Pan availability at `033f:00d8` and action guard at `033f:02d5` require a
+  real item 0x0f in DS:500e's interleaved tool rows. Slot zero is excluded,
+  and rows 1-3 require their DS:5d5a/5d5c/5d5e mule ownership flag. DS:5bd4
+  is a separate food inventory. The original DS:53dc counter can increase on
+  a failed full-pack shop purchase, so it cannot establish ownership. The
+  native animation eligibility uses the same inventory check; both original
+  guards are corrected even with QoL off. No inventory or save data is rewritten.
 - Optional panning hooks the supplied executable's unconditional reward jump at
   033f:0303 (bytes E9 0A 01), after its ownership check for DS:53dc. With QoL off,
   execution follows the original jump to 033f:0410. With QoL on, a native activity

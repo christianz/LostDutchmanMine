@@ -84,7 +84,8 @@ to aiming. WASD, arrows and numpad still aim; Space still fires. A stationary mo
 does not undo keyboard aiming. Ammunition and hit rules stay the same. Uncheck
 QoL improvements to restore the original keyboard aiming/mouse selection behavior.
 
-At a river, choose Pan while carrying a pan. The prospector plays the original
+At a river, Pan requires a pan in your pack or an owned mule's inventory.
+Discarding your last pan prevents further panning. The prospector plays the original
 panning animation in the river scene, then puts one gold bag in your pack. The
 original sprites, timing and river's gold grade are preserved. F11 pauses the
 animation. Uncheck QoL improvements for the supplied game's instant Pan action;

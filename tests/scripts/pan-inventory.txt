@@ -1,0 +1,16 @@
+# Load isolated river slot 1 with a stale pan counter; only one fixture has a real pan.
+18000 key 16384
+19500 mouse 208 85
+19560 buttons 1
+19620 buttons 0
+21200 ascii 49
+24500 capture 2000
+25000 mouse 100 147
+25060 buttons 1
+25120 buttons 0
+26000 capture 2001
+37000 capture 2002
+# Keyboard P must obey the same inventory requirement.
+38000 key 6512
+39000 capture 2003
+50000 capture 2004

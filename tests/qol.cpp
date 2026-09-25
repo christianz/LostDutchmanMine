@@ -63,6 +63,7 @@ void menu_hover(const char* data) {
     Game g(data);auto& s=g.s;s.custom_cursor=false;
     s.w16(s.ds,0x5e04,0);s.w16(s.ds,0x5e08,1);
     s.w16(s.ds,0x53dc,1);s.w16(s.ds,0x53e8,1);
+    s.w16(s.ds,0x505e,0xf);
     g.call(0x33f,0xe);g.until([&]{return g.at(0xfa7,6);});
     auto hover=[&](int x,int y) {
         ldm::Pixels normal,pointed;s.mouse.move(0,0);ldm::read_frame(s,normal);

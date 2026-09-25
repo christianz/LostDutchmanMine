@@ -50,6 +50,7 @@ struct State {
     bool walk_fast=false,walk_extra_tick=false;
     void begin_walk_tick();
     bool panning_active=false;
+    bool has_pan() const;
     void begin_panning();
     void finish_panning();
     bool combat_active=false,combat_input_read=false,combat_mouse_fire=false;
