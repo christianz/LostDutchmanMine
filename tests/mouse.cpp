@@ -44,6 +44,11 @@ int main() {
         s->mouse.buttons(1,old);require(read().buttons==1,"A physically held button expired");
         s->mouse.clear();s->mouse.buttons(1);s->mouse.buttons(0);s->mouse.buttons(2);s->mouse.buttons(0);
         for(int mask:{1,0,2,0})require(read().buttons==mask,"Consecutive clicks were reordered");
+        for(bool qol:{false,true}) {
+            s->qol_improvements=qol;s->mouse.move(33,44);s->ax=4;s->cx=480;s->dx=140;s->interrupt(0x33);
+            require(s->mouse.current().x==(qol?33:240) && s->mouse.current().y==(qol?44:140),
+                    "Legacy cursor parking must be ignored only with QoL enabled");
+        }
         std::cout<<"PASS: original mouse helper preserves quick clicks, coherent coordinates, holds and order; clears focus loss and stale clicks\n";
     }catch(const std::exception& e){std::cerr<<e.what()<<"\n";return 1;}
 }

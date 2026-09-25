@@ -61,7 +61,7 @@ Turn off Show at startup to skip the menu next time. F11 always remains availabl
 CRT monitor offers Off, Soft and Classic: steady scanlines, phosphor texture,
 soft glow and gentle edge shading. Preview it in the menu; the choice is saved.
 
-QoL improvements enables clearer menus, restored panning and mouse aiming,
+QoL improvements enables clearer menus, an arrow pointer and smooth mouse aiming,
 checked by default. The six named toolbar buttons fit below the full logo.
 Hover for a gold outline and an F1-F6 shortcut hint.
 Menus suspend hover on the buttons underneath and restore it when closed.
@@ -69,17 +69,19 @@ The black saloon sleep screen also suspends hover until you wake up.
 Health and food icons retain their live warning colours and critical-health
 flashing. Context buttons also accept clicks on their bevels. Uncheck QoL improvements
 to restore the original panel and click targets.
-The pointer stays visible while walking: keyboard and mouse work together,
-and one click selects a toolbar or context action. Held movement in town,
+The arrow stays visible while walking: keyboard and mouse work together,
+and keyboard movement leaves the pointer where you put it.
+One click selects a toolbar or context action. Held movement in town,
 the saloon and mines is faster; survival time and mine hazard checks keep their
 original pace. Space opens a desert close-up; Space, Enter or Escape closes it.
 Only the cheapest unowned mule is available to buy. The others show SOLD OUT;
 buying the available one unlocks the next. Existing inventory rows are preserved.
 Loading inside the saloon preserves the correct street position for Exit,
 whether QoL is on or off.
-Mouse aiming is ready when an armed fight starts. Move to aim and left-click
+Mouse aiming is ready when an armed fight starts. The original sight follows
+mouse motion between encounter ticks. Move to aim and left-click
 to fire one shot. The click that entered the fight does not fire or reopen a menu.
-Right-click opens the hand for Run/status/menu choices; a direction key returns
+Right-click opens the pointer for Run/status/menu choices; a direction key returns
 to aiming. WASD, arrows and numpad still aim; Space still fires. A stationary mouse
 does not undo keyboard aiming. Ammunition and hit rules stay the same. Uncheck
 QoL improvements to restore the original keyboard aiming/mouse selection behavior.
@@ -88,9 +90,12 @@ At a river, Pan requires a pan in your pack or an owned mule's inventory.
 Discarding your last pan prevents further panning. The prospector plays the original
 panning animation in the river scene, then puts one gold bag in your pack. The
 original sprites, timing and river's gold grade are preserved. F11 pauses the
-animation. Uncheck QoL improvements for the supplied game's instant Pan action;
-the choice persists and applies to the next pan. Other movement and display
-improvements stay available. The custom rock-and-wash minigame is retired.
+animation. The restored action applies with QoL on or off; changing display
+preferences cannot interrupt it. The custom rock-and-wash minigame is retired.
+Hold Space while using the pick to keep mining at the original stroke rate;
+release to stop. This works in both modes. Focus loss and settings release it.
+
+Windows launches only the game window. Startup failures still show an error dialog.
 
 VGA starts automatically. Allow the original title/credits sequence to finish.
 Hold WASD, cursor keys or the numeric keypad to move; release to stop.

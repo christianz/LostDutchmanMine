@@ -25,6 +25,9 @@ struct Snapshot {
     bool qol_improvements=true;
     bool combat_active=false;
     int bullets=0;
+    int sight_x=0,sight_y=0;
+    bool mining_space_held=false;
+    int mining_strokes=0;
 };
 void read_frame(const State& state,Pixels& pixels);
 // The game has a dedicated clock. A blocking GPU present, slow monitor or open
@@ -37,6 +40,7 @@ public:
     void key(uint32_t code);
     void release_repeat(uint16_t physical_key);
     void directions(uint8_t mask);
+    void space(bool held);
     void mouse(int x,int y);
     void buttons(int mask);
     void clear_input();
@@ -46,7 +50,7 @@ public:
     void snapshot(Snapshot& output);
     void stop();
 private:
-    enum class Kind { Key,Release,Directions,Mouse,Buttons,Clear,Qol };
+    enum class Kind { Key,Release,Directions,Space,Mouse,Buttons,Clear,Qol };
     struct Command {Kind kind;int a=0,b=0;};
     State& state_;
     std::mutex mutex_,frame_mutex_;

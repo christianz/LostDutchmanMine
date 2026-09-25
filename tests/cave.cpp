@@ -11,6 +11,7 @@ struct Game {
     std::unique_ptr<ldm::State> state=std::make_unique<ldm::State>();
     ldm::State& s=*state;
     uint64_t next_timer=1000;
+    int pick_frames=0;
     int x=135,y=61,scroll_x=0,scroll_y=0;
     explicit Game(const char* data) {
         s.data_dir=std::filesystem::absolute(data);
@@ -43,6 +44,7 @@ struct Game {
                s.u16(s.ss,uint16_t(s.sp+2))==ldm::LoadSegment+0xbb4;
     }
     void step() {
+        if(at(0xbb4,0x1047))++pick_frames;
         ldm::native_step(s);
         if(s.boundaries>=next_timer){next_timer=s.boundaries+1000;s.timer_interrupt();}
     }
@@ -120,14 +122,42 @@ void no_light(const char* data,bool lamp) {
     g.position_restored();
     std::cout<<"PASS: rejected cave entry without "<<(lamp?"oil":"lamp")<<" restores exact map position\n";
 }
+void held_pick(const char* data,bool qol) {
+    Game g(data);auto& s=g.s;
+    s.keys.push_back(0x3920);g.step();g.until([&]{return g.input() && g.word(0x5e0a);});
+    s.qol_improvements=qol;
+    g.set(0x501e,0x15); // A pick, leaving the lamp in its existing slot.
+    g.set(0x5b4a,160);g.set(0x5b4c,50);g.set(0x5d62,1);g.set(0x93a,0);
+    s.mining_space_held=true;s.keys.push_back(0x3920);
+    g.step();g.until([&]{return g.pick_frames>=5;});
+    g.capture(qol?"held-pick-qol":"held-pick-classic");
+    s.mining_space_held=false;
+    g.until([&]{return g.input() && s.u16(s.ss,s.sp)==0x06bd;});
+    int strokes=g.pick_frames;
+    require(strokes==5,"Releasing Space allowed an extra pick stroke");
+    for(int i=0;i<3;i++)g.next_input();
+    require(g.pick_frames==strokes,"Mining continued after release");
+    s.keys.push_back(0x3920);g.step();g.until([&]{return g.input() && s.u16(s.ss,s.sp)==0x06bd;});
+    require(g.pick_frames==strokes+1,"A Space tap must still make one stroke");
+    std::cout<<"PASS: held Space makes five original pick strokes; release stops and a tap makes one, with QoL "<<qol<<'\n';
+}
 }
 int main(int argc,char** argv) {
     try {
-        require(argc==2 || argc==3,"Usage: test-cave GAME-DIRECTORY [FRESH-FIXTURE-DIRECTORY]");
-        if(argc==3){Game g(argv[1]);g.fixture(argv[2]);return 0;}
+        require(argc>=2 && argc<=4,"Usage: test-cave GAME-DIRECTORY [FRESH-MAP-FIXTURE [FRESH-MINING-FIXTURE]]");
+        if(argc>=3) {
+            Game g(argv[1]);g.fixture(argv[2]);
+            if(argc==4) {
+                g.s.keys.push_back(0x3920);g.step();g.until([&]{return g.input() && g.word(0x5e0a);});
+                g.set(0x501e,0x15);g.set(0x5b4a,160);g.set(0x5b4c,50);
+                g.fixture(argv[3]);
+            }
+            return 0;
+        }
         for(bool preview:{false,true})for(bool held:{false,true})round_trip(argv[1],preview,held);
         for(bool qol:{false,true})resume(argv[1],qol);
         for(bool lamp:{false,true})no_light(argv[1],lamp);
+        for(bool qol:{false,true})held_pick(argv[1],qol);
         return 0;
     }catch(const std::exception& e){std::cerr<<"FAIL: "<<e.what()<<'\n';return 1;}
 }

@@ -107,7 +107,7 @@ class Emitter:
         if (cs,ip)==(0x033f,0x0303):
             # Restore the outer loop's signed comparison at 0300. The supplied
             # EXE bypasses its intact animation with an unconditional jump.
-            # QoL is latched at entry; the original counter/RNG/timing stay intact.
+            # Always restore it; the original counter/RNG/timing stay intact.
             if i.bytes.hex()!='e90a01':raise ValueError('Unexpected panning reward layout')
             return ['s.ip=s.panning_active && s.flag(SF)!=s.flag(OF)?0x0308:0x0410; return;']
         if (cs,ip)==(0x033f,0x039e):
@@ -222,12 +222,23 @@ class Emitter:
             (0x040a,0x0288):('9a0600a70f','s.begin_combat_input();'),
             (0x0fa7,0x0011):('258000','s.filter_combat_mouse();'),
             (0x040a,0x028d):('e97800','s.finish_combat_input();'),
+            (0x040a,0x059f):('833e025300','s.combat_sight_visible=s.combat_sight_pending;'),
             (0x040a,0x0768):('5f','s.combat_active=false; s.combat_input_read=false;'),
         }
         if (cs,ip) in combat_sites:
             expected,hook=combat_sites[cs,ip]
             if i.bytes.hex()!=expected:raise ValueError('Unexpected combat input layout')
             code.insert(0,hook)
+        if cs==0x040a and ip in (0x08f1,0x0e4f):
+            # Retain the original background/enemy drawing. Only the sight is
+            # moved to display cadence, using the very same resident sprite.
+            if i.bytes.hex()!='9a8a0ec50f':raise ValueError('Unexpected combat sight blit')
+            code.insert(0,f's.combat_sight_pending=s.qol_improvements; if(s.combat_sight_pending) {{ {self.goto(nxt,False)} }}')
+        if (cs,ip)==(0x0bb4,0x1113):
+            # This is the original pick loop's continuation poll, not the map
+            # or cave entrance. Repeat at its own stroke cadence while held.
+            if i.bytes.hex()!='3d8000':raise ValueError('Unexpected mining continuation')
+            code.insert(0,'if(!s.ax && s.mining_space_held && s.u16(s.ds,0x5d62)==1)s.ax=0x80;')
         if (cs,ip)==(0x0fa7,0x0011):
             code.insert(0,'s.filter_world_mouse();')
         if (cs,ip)==(0x0fa7,0x00dc):

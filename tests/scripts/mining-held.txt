@@ -1,0 +1,25 @@
+# Load an isolated cave save with a pick and a valid mining stance.
+18000 key 16384
+19500 mouse 208 85
+19560 buttons 1
+19620 buttons 0
+21200 ascii 49
+24500 capture 4000
+25000 down 44 0
+25800 capture 4001
+26400 capture 4002
+26600 up 44 0
+27200 capture 4003
+27600 down 44 0
+28300 capture 4004
+28400 focuslost
+29000 capture 4005
+29400 down 44 0
+29900 down 68 0
+29960 up 68 0
+30200 capture 4006
+30600 capture 4007
+30800 down 41 0
+30860 up 41 0
+31500 capture 4008
+31600 up 44 0

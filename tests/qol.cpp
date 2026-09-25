@@ -59,6 +59,16 @@ void pointer(const char* data) {
     require(!s.world_click_pending,"Focus reset retained a click");
     std::cout<<"PASS: visible walking pointer, held direction plus one quick F6 click, QoL-off pointer and cleared input\n";
 }
+void pointer_parking(const char* data) {
+    Game g(data);auto& s=g.s;
+    for(bool qol:{false,true}) {
+        s.qol_improvements=qol;s.mouse.move(33,44);
+        g.call(0x505,0x30e);g.returned(); // The real selector's cursor setup.
+        require(s.mouse.current().x==(qol?33:240) && s.mouse.current().y==(qol?44:140),
+                "Selector setup must park only the classic hand cursor");
+    }
+    std::cout<<"PASS: original selector parks the classic hand at the clock; QoL keeps the physical pointer position\n";
+}
 void menu_hover(const char* data) {
     Game g(data);auto& s=g.s;s.custom_cursor=false;
     s.w16(s.ds,0x5e04,0);s.w16(s.ds,0x5e08,1);
@@ -95,11 +105,13 @@ void map_diagonals(const char* data) {
         s.w16(s.ds,0x5b56,0);s.w16(s.ds,0x5b58,0);
         g.call(0,0x4da);g.until([&]{return g.at(0xfa7,6);});
         int step=s.u16(s.ds,0x19a);
+        s.mouse.move(33,44);
         s.set_movement(mask);s.keys.push_back(uint32_t(scan<<8)|(repeat?ldm::KeyRepeat:0));
         g.until([&]{return g.at(0,0x67e);}); // Before the next location/event check.
         require(s.u16(s.ds,0x5b4a)==160+(mask&4?-2:2)*step &&
                 s.u16(s.ds,0x5b4c)==55+(mask&1?-1:1)*step,
                 "World-map diagonal lost an axis when a single key event arrived");
+        require(s.mouse.current().x==33 && s.mouse.current().y==44,"Map movement relocated the pointer");
     }
     std::cout<<"PASS: all four world-map diagonals retain both axes with either last key and with auto-repeat, using original terrain steps\n";
 }
@@ -244,6 +256,6 @@ void walking(const char* data,int scene) {
 }
 int main(int argc,char** argv) {
     if(argc!=2){std::cerr<<"Usage: test-qol <original game directory>\n";return 2;}
-    try {sleep_hover(argv[1]);pointer(argv[1]);menu_hover(argv[1]);map_diagonals(argv[1]);building(argv[1]);mules(argv[1]);desert(argv[1]);walking(argv[1],0);walking(argv[1],1);walking(argv[1],2);}
+    try {sleep_hover(argv[1]);pointer(argv[1]);pointer_parking(argv[1]);menu_hover(argv[1]);map_diagonals(argv[1]);building(argv[1]);mules(argv[1]);desert(argv[1]);walking(argv[1],0);walking(argv[1],1);walking(argv[1],2);}
     catch(const std::exception& e){std::cerr<<e.what()<<"\n";return 1;}
 }

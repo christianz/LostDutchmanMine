@@ -30,6 +30,7 @@ public:
     void text(Pixels& pixels,int x,int y,const std::string& value,uint32_t colour,bool centre=false) const;
     bool ready() const{return ready_;}
     bool pointer_visible(const State& state) const;
+    bool menu_open() const{return !context_stack_.empty();}
     static GameButton toolbar(int i){return {52+i*42,167,40,32};}
     static GameButton action(int i){return {i<2?72:152,i%2?138:118,75,19};}
 private:

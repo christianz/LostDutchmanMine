@@ -195,12 +195,12 @@ bool State::has_pan() const {
     return false;
 }
 void State::begin_panning() {
-    // Latch the preference for this action. The translated original routine
-    // owns all animation, delays, inventory insertion and cleanup. With a full
+    // The translated original routine owns animation, delays, inventory
+    // insertion and cleanup in both display modes. With a full
     // pack, go straight to its original message instead of making the user wait.
     bool room=false;
     for(int slot=1;slot<11;slot++)if(u16(ds,uint16_t(0x500e + slot*8))==0x2b)room=true;
-    panning_active=qol_improvements && room && has_pan();
+    panning_active=room && has_pan();
     if(panning_active){keys.clear();mouse.clear();reset_world_pointer();set_movement(0);w16(ds,0x5a1a,0);}
 }
 void State::finish_panning() {
@@ -219,7 +219,20 @@ void State::begin_combat() {
         // level as the baseline so a release and fresh press are required.
         mouse.discard_pending();
     }
-    combat_active=true;combat_input_read=false;reset_combat_pointer();
+    combat_active=true;combat_input_read=false;
+    combat_sight_pending=combat_sight_visible=false;reset_combat_pointer();
+}
+MouseSample State::combat_aim() const {
+    // Preview motion every display frame; only the original input/shot path
+    // commits aim and consumes clicks. A stationary mouse yields to the keys.
+    auto point=mouse.current();
+    constexpr auto data=LoadSegment+0x72bd;
+    if(qol_improvements && combat_active && u16(data,0x5d62)==1 &&
+       u16(data,0x5302)==0 && u16(data,0x53e0)>0 &&
+       point.y<112 && !(point.buttons&2) &&
+       (point.x!=combat_pointer.x || point.y!=combat_pointer.y))
+        return {std::clamp(point.x-8,20,290),std::clamp(point.y-8,20,94-int(u16(data,0x112))),0};
+    return {int(u16(data,0x5b4a)),int(u16(data,0x5b4c)),0};
 }
 void State::begin_combat_input() {
     // Only the encounter's aiming read opts in. Its hand cursor, status menus,
@@ -277,7 +290,9 @@ void State::interrupt(uint8_t number) {
         case 7:case 8:case 0xa:case 0xf:return;
         case 9:mouse_hot_x=int16_t(bx);mouse_hot_y=int16_t(cx);for(unsigned i=0;i<32;i++)mouse_mask[i]=u16(es,uint16_t(dx+i*2));custom_cursor=true;return;
         case 3:bx=mouse.sample().buttons;cx=uint16_t(mouse.sample().x*2);dx=uint16_t(mouse.sample().y);return;
-        case 4:mouse.warp(cx/2,dx);return;
+        // DOS parks its hidden hand beside the clock when opening selectors.
+        // With a persistent desktop pointer only physical motion positions it.
+        case 4:if(!qol_improvements)mouse.warp(cx/2,dx);return;
         case 0xb:cx=dx=0;return;
         default:break;
         }

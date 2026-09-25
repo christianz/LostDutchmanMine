@@ -47,7 +47,7 @@ build/test-pan-inventory: $(filter-out build/probe.o,$(OBJECTS)) build/session.o
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $^ -o $@
 build/test-combat: $(filter-out build/probe.o,$(OBJECTS)) tests/combat.cpp
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $^ -o $@
-build/test-combat-scene: $(filter-out build/probe.o,$(OBJECTS)) tests/combat-scene.cpp
+build/test-combat-scene: $(filter-out build/probe.o,$(OBJECTS)) build/session.o tests/combat-scene.cpp
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $^ -o $@
 build/legacy.o: build/generated/image_info.h
 build/ldm-native: $(filter-out build/probe.o,$(OBJECTS)) build/desktop.o build/session.o build/display.o build/presentation.o | build/LostDutchmanMine.bmp build/ui-font.bmp

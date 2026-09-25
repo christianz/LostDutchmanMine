@@ -1,4 +1,4 @@
-#include "legacy.h"
+#include "session.h"
 #include "image_info.h"
 #include <fstream>
 #include <iostream>
@@ -11,10 +11,31 @@ void capture(const ldm::State& s,const std::string& name) {
     std::filesystem::create_directories("captures/combat");
     std::ofstream f(std::string("captures/combat/")+name+".ppm",std::ios::binary);
     f<<"P6\n320 200\n255\n";
-    for(int i=0;i<64000;i++) {
-        auto c=s.palette[s.memory[0xa0000+i]];
+    ldm::Pixels pixels;ldm::read_frame(s,pixels);
+    for(auto c:pixels) {
         char rgb[]={char(c>>16),char(c>>8),char(c)};f.write(rgb,3);
     }
+}
+void compare_original_sight(ldm::State& s) {
+    // Repaint just the original sight/presentation on the same background.
+    // Use a separate stack, then restore the suspended encounter registers.
+    auto registers=std::array<uint16_t,14>{s.ax,s.bx,s.cx,s.dx,s.si,s.di,s.bp,s.sp,s.cs,s.ip,s.ds,s.ss,s.es,s.flags};
+    auto call=[&](int cs,int ip,std::initializer_list<uint16_t> args) {
+        s.sp=0x7000;for(auto p=args.end();p!=args.begin();)s.push(*--p);
+        s.push(0xffff);s.push(0xfffe);s.cs=ldm::LoadSegment+cs;s.ip=ip;
+        auto start=s.boundaries;
+        while(s.cs!=0xffff){ldm::native_step(s);require(s.boundaries-start<100000,"Original sight comparison did not return");}
+    };
+    ldm::Pixels displayed;ldm::read_frame(s,displayed);
+    auto aim=s.combat_aim();
+    call(0xfc5,0xe8a,{1,0,12,0,120,160,uint16_t(aim.x),uint16_t(aim.y),16,16});
+    call(0x505,0x254,{});
+    for(int y=0;y<16;y++)for(int x=0;x<16;x++) {
+        int at=(aim.y+y)*320+aim.x+x;
+        require(displayed[at]==s.palette[s.memory[0xa0000+at]],"Display-rate crosshair differs from original sprite/blitter");
+    }
+    s.ax=registers[0];s.bx=registers[1];s.cx=registers[2];s.dx=registers[3];s.si=registers[4];s.di=registers[5];
+    s.bp=registers[6];s.sp=registers[7];s.cs=registers[8];s.ip=registers[9];s.ds=registers[10];s.ss=registers[11];s.es=registers[12];s.flags=registers[13];
 }
 }
 int main(int argc,char** argv) {
@@ -51,6 +72,20 @@ int main(int argc,char** argv) {
         s->mouse.move(245,75);frame();
         require(s->u16(s->ds,0x5b4a)==237 && s->u16(s->ds,0x5b4c)==67,"Original crosshair did not follow rightward aim");
         capture(*s,name+"-right");
+        auto boundaries=s->boundaries;
+        auto bullets=s->u16(s->ds,0x53e2),clock=s->u16(s->ds,0x5406);
+        ldm::Pixels before,moved;ldm::read_frame(*s,before);
+        s->mouse.move(100,40);ldm::read_frame(*s,moved);
+        require(s->combat_aim().x==92 && s->combat_aim().y==32 && before!=moved,
+                "Crosshair still waits for an encounter tick after mouse motion");
+        require(s->boundaries==boundaries && s->u16(s->ds,0x53e2)==bullets && s->u16(s->ds,0x5406)==clock &&
+                s->u16(s->ds,0x5b4a)==237 && s->u16(s->ds,0x5b4c)==67,
+                "Display-rate motion advanced shots, aim simulation or the world clock");
+        s->game_ui.begin_menu();ldm::read_frame(*s,before);
+        s->mouse.move(190,30);ldm::read_frame(*s,moved);
+        require(before==moved,"Crosshair drew over an open status menu");s->game_ui.end_menu();
+        s->mouse.move(245,75);
+        compare_original_sight(*s);
         s->mouse.buttons(0);frame();
         // Original hit test compares sight x-8 with the 24-pixel target's x,
         // and sight y with target y. Aim at that target, then call its real shot.
@@ -64,7 +99,7 @@ int main(int argc,char** argv) {
         require(s->u16(s->ds,0x53e2)==19,"Mouse firing did not spend one original bullet");
         require(s->u16(s->ds,0x5312)==1,"Mouse aim did not hit through original hit testing");
         require(s->u16(s->ds,0x5d62)==1,"Mouse shot unexpectedly entered hand mode");
-        std::cout<<"PASS: "<<name<<" accepts immediate mouse aim and a click hits through original ammunition/hit logic (synthetic clock)\n";
+        std::cout<<"PASS: "<<name<<" displays immediate aim without advancing the encounter, matches the original sight pixels, hides it under menus, and hits through original ammunition/hit logic\n";
       }
     }catch(const std::exception& e){std::cerr<<e.what()<<"\n";return 1;}
 }

@@ -24,7 +24,9 @@ icon=out/'icon.o'
 subprocess.run([str(zig),'rc','/i',str(root/'resources'),'/fo',str(icon),'--',str(root/'resources/windows.rc')],cwd=root,env=env,check=True)
 objects.append(icon)
 exe=out/'LostDutchmanMine.exe'
-subprocess.run(common+[str(o) for o in objects]+[str(sdl/'lib/libSDL2.dll.a'),'-o',str(exe)],cwd=root,env=env,check=True)
+# GUI subsystem: normal launches have only the game window. Fatal startup
+# errors already use SDL_ShowSimpleMessageBox in desktop.cpp.
+subprocess.run(common+[str(o) for o in objects]+[str(sdl/'lib/libSDL2.dll.a'),'-Wl,--subsystem,windows','-Wl,--entry,mainCRTStartup','-o',str(exe)],cwd=root,env=env,check=True)
 shutil.copy2(root/'resources/ldm-icon.bmp',out/'LostDutchmanMine.bmp')
 shutil.copy2(root/'resources/ui-font.bmp',out/'ui-font.bmp')
 print('Built',exe,exe.stat().st_size,'bytes')

@@ -122,12 +122,13 @@ int main(int argc,char**argv) {
             if(pressed && key.keysym.sym==SDLK_F11){if(!key.repeat)open_menu();return;}
             auto scan=key.keysym.scancode;
             if(scan>SDL_SCANCODE_UNKNOWN && scan<SDL_NUM_SCANCODES)held[scan]=pressed;
+            if(scan==SDL_SCANCODE_SPACE)session->space(pressed);
             session->directions(movement(held));auto bios=ldm::input::key_event(key);
             if(pressed) {
                 if(key.keysym.sym==SDLK_RETURN && (key.keysym.mod&KMOD_ALT)) {
                     if(!key.repeat){settings.window=settings.window==3?last_window:3;view.apply(settings,true);release_input();}
                 }else if(bios)session->key(bios);
-            }else if(direction(scan))session->release_repeat(scan);
+            }else if(direction(scan) || scan==SDL_SCANCODE_SPACE)session->release_repeat(scan);
         };
         auto pointer=[&](int wx,int wy,bool press,int button,bool motion) {
             if(menu) {
@@ -192,7 +193,9 @@ int main(int argc,char**argv) {
                         <<",\"panning_active\":"<<frame.panning_active
                         <<",\"gold_bags\":"<<frame.gold_bags<<",\"qol\":"<<frame.qol_improvements
                         <<",\"cash\":"<<frame.cash<<",\"assay_pounds\":"<<frame.assay_pounds<<",\"assay_grade\":"<<frame.assay_grade
-                        <<",\"combat\":"<<frame.combat_active<<",\"bullets\":"<<frame.bullets<<"}\n";
+                        <<",\"combat\":"<<frame.combat_active<<",\"bullets\":"<<frame.bullets
+                        <<",\"sight_x\":"<<frame.sight_x<<",\"sight_y\":"<<frame.sight_y
+                        <<",\"mining_space_held\":"<<frame.mining_space_held<<",\"mining_strokes\":"<<frame.mining_strokes<<"}\n";
                 }else throw std::runtime_error("Unknown script event");
             }
             if(elapsed_ms>=next_frame || !screen_capture.empty()) {

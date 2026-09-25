@@ -32,8 +32,8 @@ int main(int argc,char** argv) {
         }
         // Use the original initialized sprites, page buffers and timer handler.
         // The desktop scenario separately exercises the river's real Pan button.
-        for(int quality:{0,1,2}) {
-            s->qol_improvements=true;s->w16(s->ds,0x53dc,1);s->w16(s->ds,0x53ea,0);
+        for(bool qol:{false,true})for(int quality:{0,1,2}) {
+            s->qol_improvements=qol;s->w16(s->ds,0x53dc,1);s->w16(s->ds,0x53ea,0);
             for(int slot=1;slot<11;slot++)s->w16(s->ds,uint16_t(0x500e + slot*8),0x2b);
             s->w16(s->ds,0x505e,0xf); // Actual pan, leaving the first reward slot free.
             s->keys.clear();s->mouse.clear();s->set_movement(0);
@@ -52,8 +52,8 @@ int main(int argc,char** argv) {
                     ++frames[frame];++shown;
                     require(s->panning_active && s->u16(s->ds,0x53ea)==0,"Reward must wait for the entire original animation");
                     if(!switched) {
-                        // The current animation finishes under its entry setting.
-                        s->qol_improvements=false;switched=true;
+                        // Changing presentation preferences cannot interrupt it.
+                        s->qol_improvements=!qol;switched=true;
                         s->keys.push_back(0x3920);s->mouse.buttons(1);s->set_movement(8);
                     }
                 }
@@ -64,8 +64,8 @@ int main(int argc,char** argv) {
             require(s->ip==0xfffe && s->sp==0x7ffe && !s->panning_active,"Animation did not restore the original stack and return");
             require(s->u16(s->ds,0x53ea)==1 && s->u16(s->ds,0x5016)==0x20+quality && s->u16(s->ds,0x501e)==0x2b,"Animation must award exactly one original graded bag");
             require(s->u16(s->ds,0x5b4c)==55 && s->keys.empty() && s->mouse.current().buttons==0,"Animation left a displaced player or stale input");
-            std::cout<<"Grade "<<quality<<": "<<shown<<" original poses, "<<(ticks-start_ticks)<<" timer ticks, one bag\n";
+            std::cout<<"QoL "<<qol<<", grade "<<quality<<": "<<shown<<" original poses, "<<(ticks-start_ticks)<<" timer ticks, one bag\n";
         }
-        std::cout<<"PASS: original sprite/presentation/timer routines, finite animation, deferred graded reward, latched QoL and input cleanup (synthetic clock)\n";
+        std::cout<<"PASS: original sprite/presentation/timer routines, finite animation, deferred graded reward and input cleanup with QoL on/off (synthetic clock)\n";
     }catch(const std::exception& e){std::cerr<<e.what()<<"\n";return 1;}
 }

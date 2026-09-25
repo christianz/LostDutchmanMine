@@ -112,6 +112,22 @@ The native state loads data at paragraph 1000; DS is normally 82bd at runtime.
   the baseline. An already-held button cannot fire or reopen hand mode over
   the previous screen's panel. A release and fresh press use the normal
   shooting/menu paths; right-click choices during the fight remain available.
+- With QoL enabled, the sight blits at `040a:08f1/0e4f` are replaced by a
+  display-frame overlay of the same resident sprite: page 1, (120,160), 16x16,
+  using the `1265:0427` transparency rules. `040a:059f` latches visibility after
+  presentation. Fresh desktop motion previews aim without advancing enemies,
+  survival, shooting or RNG; the input poll still commits the sampled click
+  position for the original hit test. Stationary mice yield to keyboard aiming.
+  Status menus, completed fights and scene exits suppress the overlay.
+- QoL uses a small outlined arrow with its tip at the hit-test coordinate.
+  Original INT 33h/04h cursor parking is ignored in this mode; the original
+  selectors otherwise warp the now-visible pointer to (240,140). Classic mode
+  keeps the original mask, hotspot and programmatic positioning.
+- Held Space is tracked separately from keyboard repeat and read only at the
+  original mining continuation `0bb4:1113`. An idle poll continues its existing
+  pick animation at the original delay; direction/menu commands still interrupt.
+  Release, focus loss and settings clear the held state. This does not inject
+  repeat Space into map, cave-entry, combat or menu input.
 - Pan availability at `033f:00d8` and action guard at `033f:02d5` require a
   real item 0x0f in DS:500e's interleaved tool rows. Slot zero is excluded,
   and rows 1-3 require their DS:5d5a/5d5c/5d5e mule ownership flag. DS:5bd4
@@ -119,19 +135,15 @@ The native state loads data at paragraph 1000; DS is normally 82bd at runtime.
   a failed full-pack shop purchase, so it cannot establish ownership. The
   native animation eligibility uses the same inventory check; both original
   guards are corrected even with QoL off. No inventory or save data is rewritten.
-- Optional panning hooks the supplied executable's unconditional reward jump at
-  033f:0303 (bytes E9 0A 01), after its ownership check for DS:53dc. With QoL off,
-  execution follows the original jump to 033f:0410. With QoL on, a native activity
-  holds that boundary until collection/cancel. Success rejoins 0410, using the
-  original inventory insertion at 0652:0184 and its gold counter at DS:53ea;
-  failure/cancel rejoins cleanup at 033f:0427. River grade remains the original
-  caller argument. A full pack takes the original message path before play.
-- `Panning` owns transient input/animation only. It draws into the published
-  framebuffer, leaving VGA memory and the original save format untouched. The
-  session routes input to it while engaged and clears pending movement/clicks
-  at both transitions. The original timer/music continues; F11 pauses both it
-  and the activity. A QoL setting change affects the next pan. The setting is
-  separate from movement and presentation controls; picture presets preserve it.
+- Panning always restores the supplied executable's two bypassed loops at
+  `033f:0303/039e`, using their surviving signed comparisons. The original
+  sprites, blits, timer delays and random 5-9 cycles execute in both QoL modes.
+  Reward follows the animation at `033f:0410`, using original inventory
+  insertion at `0652:0184`, gold count DS:53ea and the caller's river grade.
+  A full pack takes the original message path without animation. Native
+  `panning_active` only gates input while that original routine is running;
+  both boundaries clear queued movement/clicks. F11 pauses execution. Changing
+  the QoL preference cannot interrupt the action or alter its reward.
 - River QA uses an isolated copy of the supplied slot 1, changing only scene and
   position fields in the eight save blocks read/written by 0e5a:0380/0140. It
   loads through the original F6 dialog and enters the activity via the original

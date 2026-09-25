@@ -42,8 +42,8 @@ live preview and is saved with your other preferences. It is off by default;
 Soft is subtle and Classic is stronger. It leaves the settings text sharp and
 keeps the same mouse coordinates. CRT rendering adds GPU work at high resolutions.
 
-**QoL improvements** enables clearer in-game menus, the restored panning
-animation and mouse aiming in combat, and is checked by default. The six original
+**QoL improvements** enables clearer in-game menus, an arrow pointer and smooth
+mouse aiming in combat, and is checked by default. The six original
 toolbar icons gain names, larger click targets and a gold hover outline, fitted
 below the logo and weekday. Hovering shows the relevant F1-F6 shortcut in the empty message
 strip. River and other contextual buttons accept clicks on their bevels too.
@@ -53,15 +53,17 @@ Health and food icons follow the original live warnings, including critical-heal
 flashing. Turning QoL off restores the original panel artwork and click targets.
 At a river, choose Pan while carrying a pan. The prospector plays his original
 three-pose panning animation in the river scene, then receives one original gold
-bag with the river's original grade. F11 pauses it. Uncheck QoL improvements to
-keep the supplied game's instant Pan action. The setting persists; an animation
-already in progress finishes under the choice it started with. Movement/display
-improvements remain available. With QoL enabled, the pointer remains visible
+bag with the river's original grade. This restored action applies with QoL on or
+off. F11 pauses it, and changing display preferences cannot interrupt it.
+With QoL enabled, the arrow pointer remains visible
 while walking and one click selects a toolbar or context action. Keyboard and
-mouse work together without switching modes. Town, saloon and mine walking
+mouse work together without switching modes, and keyboard movement leaves the
+pointer where you put it. Town, saloon and mine walking
 respond faster while a direction is held; the survival clock and mine hazard
 checks retain their original pace. Space opens a desert close-up and a second
-Space returns to the map (Enter or Escape also closes it).
+Space returns to the map (Enter or Escape also closes it). Hold Space while using
+the pick to keep mining at the original stroke rate; release it to stop. This
+works with QoL on or off, and opening settings or losing focus releases the key.
 
 Only the cheapest unowned mule can be bought with QoL enabled. Other mules show
 **SOLD OUT**; buying the available mule unlocks the next one. Existing mule
@@ -76,11 +78,15 @@ not been compared with an unmodified retail executable. The custom panning
 minigame is retired, and its creek artwork is no longer packaged or required.
 
 Mouse aiming is ready when an armed fight starts. Move over the scene to aim
-the original crosshair and **left-click** to fire one shot. **Right-click** opens the hand
-cursor for Run/status/menu selections; a direction key returns to aiming.
+the original crosshair and **left-click** to fire one shot. Its display follows
+mouse motion between encounter ticks. **Right-click** opens the pointer for
+Run/status/menu selections; a direction key returns to aiming.
 WASD, arrows and numpad still aim, and **Space** still fires. A stationary mouse
 does not override keyboard aiming. Uncheck QoL improvements for the original
 keyboard aiming and mouse selection behavior. Ammunition and hit rules are unchanged.
+
+The Windows executable opens only the game window. Startup failures still show
+an error dialog.
 
 VGA starts automatically, without the original graphics selector.
 Hold **WASD**, cursor keys or the numeric keypad to move; release to stop.

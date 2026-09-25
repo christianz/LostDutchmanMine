@@ -3,6 +3,45 @@
 Status: runnable development build. Full fidelity and complete gameplay are
 not yet certified. The original DOS program was neither launched nor modified.
 
+## Verified in update 16
+
+- QoL aiming now composites the original crosshair at display cadence instead
+  of waiting for the encounter's six-tick loop. Native tests cover Native
+  American and wanted-criminal fights entered from both hand and key modes.
+  They compare the sight pixel-for-pixel with the original blitter, verify
+  movement without advancing simulation or ammunition, hide it under menus,
+  and hit a target through the original shooting routine.
+- Before/after Linux SDL captures sample twelve mouse moves after 25 ms. All
+  twelve new captures show the requested point; the old build is behind in ten.
+  Nine new captures show the updated sight before the simulation commits aim.
+  The existing combat script also passes quick/held firing, keyboard aiming,
+  Space, right-click selection, F11 pause/resume and focus-loss checks.
+- QoL uses an outlined arrow with its tip at the input coordinate and ignores
+  DOS cursor parking. Classic mode retains its hand, hotspot and warps. The
+  original selector's setup reproduces parking at (240,140) in classic mode
+  and preserves the actual mouse point with QoL. Numpad desktop runs with Num
+  Lock on/off retain the pointer at (65,55) throughout four movements. Those
+  particular movement scripts did not reproduce the old snap by themselves.
+- Panning now animates in both modes. Original-scene tests check all three
+  grades with QoL on/off, all poses, original delays, exactly one deferred
+  reward, input cleanup and a preference change during playback. A classic
+  desktop run plays the animation and yields one bag despite additional
+  keyboard/mouse input during it. Actual pan ownership is still required.
+- Holding physical Space continues the original mining loop at its original
+  rate in both modes. Native checks perform five strokes, stop on release,
+  then perform one tapped stroke. Desktop captures show four then eight
+  strokes during one hold, and stopping on release, focus loss and settings.
+  F11 pauses the counter and resume does not retain held Space.
+- Twelve native executables pass: combat, combat scene, mouse, keyboard, menu,
+  menu scene, cave, assay, QoL, panning, panning scene and pan inventory.
+  Eight isolated SDL runs pass `tests/verify-input-update.py` and the existing
+  combat verifier. Captures use original game assets and isolated save folders.
+- Windows x64 cross-compiles with an explicit GUI subsystem and
+  `mainCRTStartup` entry point. PE inspection confirms subsystem 2; `-mwindows`
+  alone did not change the subsystem with this Zig toolchain. Fatal interactive
+  startup errors retain the existing SDL error dialog. Windows runtime has
+  not been tested. No public publication or NAS delivery is implied.
+
 ## Verified in update 15
 
 - Pan now requires item 0x0f in the player's tool inventory or an owned mule's

@@ -1,0 +1,17 @@
+# The restored panning loop must also play when QoL is off.
+18000 key 16384
+19500 mouse 208 85
+19560 buttons 1
+19620 buttons 0
+21200 ascii 49
+24500 capture 4200
+25000 key 6512
+25800 capture 4201
+# Inputs during the animation must not start another action.
+26200 down 44 0
+26400 up 44 0
+27000 key 6512
+27200 buttons 1
+27210 buttons 0
+28000 capture 4202
+37000 capture 4203

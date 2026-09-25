@@ -1,0 +1,20 @@
+# Hold numpad keys with Num Lock both on and off; physical pointer stays put.
+18000 key 16384
+19500 mouse 208 85
+19560 buttons 1
+19620 buttons 0
+21200 ascii 49
+24000 mouse 65 55
+24200 capture 4100
+24500 down 96 4096
+24800 up 96 4096
+25000 capture 4101
+25200 down 94 0
+25500 up 94 0
+25700 capture 4102
+25900 down 89 4096
+26200 up 89 4096
+26400 capture 4103
+26600 down 97 0
+26900 up 97 0
+27100 capture 4104

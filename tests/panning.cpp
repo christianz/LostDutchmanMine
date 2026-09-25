@@ -48,15 +48,14 @@ int main() {
                 if(row)s->w16(s->ds,uint16_t(0x5d58+row*2),owned);
                 run_to_boundary(*s);
                 bool allowed=row==0 || owned;
-                require(s->panning_active==(enabled && allowed) && s->u16(s->ds,0x53ea)==(!enabled && allowed),
+                require(s->panning_active==allowed && s->u16(s->ds,0x53ea)==0,
                         "Pan eligibility does not match an actual player/owned-mule inventory slot");
             }
         }
-        for(int quality:{0,1,2}) {
-            auto s=state(false,1,false,quality);run_to_boundary(*s);
-            require(s->cs==0xffff && s->ip==0xfffe && s->sp==0x7ffe,"Instant Pan must preserve the original return and caller argument");
-            require(!s->panning_active && s->u16(s->ds,0x53ea)==1,"QoL off must award one bag immediately");
-            require(s->u16(s->ds,0x5016)==0x20+quality && s->u16(s->ds,0x501e)==0x2b,"Instant Pan must retain the original river grade and single reward");
+        for(int quality:{0,1,2})for(bool enabled:{false,true}) {
+            auto s=state(enabled,1,false,quality);run_to_boundary(*s);
+            require(s->panning_active && s->u16(s->ds,0x53ea)==0 && s->cs==ldm::LoadSegment+0x0fc5,
+                    "Every grade must animate before awarding gold with QoL on or off");
         }
         auto animated=state(true);run_to_boundary(*animated);
         require(animated->panning_active && animated->u16(animated->ds,0x53ea)==0 && animated->cs==ldm::LoadSegment+0x0fc5,"Pan must reach the original background blitter before awarding gold");
@@ -65,6 +64,6 @@ int main() {
         require(missing->sp==0x7ffe,"No-pan return must preserve the caller argument");
         auto full=state(true,1,true);run_to_boundary(*full);
         require(!full->panning_active && full->u16(full->ds,0x53ea)==0 && full->cs==ldm::LoadSegment+0x0652 && full->ip==0x01c2,"Full pack must reach the original message without animating or awarding gold");
-        std::cout<<"PASS: actual player/owned-mule pans, stale counters, missing pans, original animation, all three instant grades, full pack and stack cleanup with QoL on/off\n";
+        std::cout<<"PASS: actual player/owned-mule pans, stale counters, missing pans, original animation, all three grades, full pack and stack cleanup with QoL on/off\n";
     }catch(const std::exception& e){std::cerr<<e.what()<<"\n";return 1;}
 }

@@ -1,0 +1,31 @@
+# Mouse motion must display before the next encounter input/draw tick.
+18000 key 16384
+19500 mouse 208 85
+19560 buttons 1
+19620 buttons 0
+21200 ascii 49
+21500 capture 2999
+22000 mouse 70 30
+22025 capture 3000
+22075 mouse 84 40
+22100 capture 3001
+22150 mouse 98 50
+22175 capture 3002
+22225 mouse 112 60
+22250 capture 3003
+22300 mouse 126 30
+22325 capture 3004
+22375 mouse 140 40
+22400 capture 3005
+22450 mouse 154 50
+22475 capture 3006
+22525 mouse 168 60
+22550 capture 3007
+22600 mouse 182 30
+22625 capture 3008
+22675 mouse 196 40
+22700 capture 3009
+22750 mouse 210 50
+22775 capture 3010
+22825 mouse 224 60
+22850 capture 3011
