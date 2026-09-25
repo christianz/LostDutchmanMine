@@ -6,8 +6,13 @@
 21200 ascii 49
 24500 capture 4000
 25000 down 44 0
+25500 repeat 44 0
+25700 repeat 44 0
 25800 capture 4001
+26100 repeat 44 0
+26300 repeat 44 0
 26400 capture 4002
+26580 repeat 44 0
 26600 up 44 0
 27200 capture 4003
 27600 down 44 0

@@ -31,6 +31,8 @@ not yet certified. The original DOS program was neither launched nor modified.
   rate in both modes. Native checks perform five strokes, stop on release,
   then perform one tapped stroke. Desktop captures show four then eight
   strokes during one hold, and stopping on release, focus loss and settings.
+  Scripted OS key repeats, including one just before release, cannot queue
+  additional swings; classic text/menu key-repeat handling is preserved.
   F11 pauses the counter and resume does not retain held Space.
 - Twelve native executables pass: combat, combat scene, mouse, keyboard, menu,
   menu scene, cave, assay, QoL, panning, panning scene and pan inventory.

@@ -89,7 +89,7 @@ void Session::run() {
             {std::lock_guard<std::mutex> lock(mutex_);commands.swap(commands_);}
             for(auto command:commands)switch(command.kind) {
                 case Kind::Key:
-                    if((state_.qol_improvements || state_.u16(0x82bd,0x5e0a)) && (uint32_t(command.a)&KeyRepeat) &&
+                    if(state_.qol_improvements && (uint32_t(command.a)&KeyRepeat) &&
                        (bios_key(uint32_t(command.a),false)>>8)==0x39)break;
                     if(!was_panning)state_.keys.push_back(uint32_t(command.a));
                     break;
