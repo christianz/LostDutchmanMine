@@ -10,6 +10,7 @@
     clippy::cast_precision_loss,
     reason = "screen coordinates are far below 2^24, where f32 represents them exactly"
 )]
+#![windows_subsystem = "windows"]
 
 mod presentation;
 mod simulation;
