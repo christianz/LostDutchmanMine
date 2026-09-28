@@ -19,6 +19,28 @@ const VGA_MODE: u8 = 0x13;
 /// The startup menu lets the game run this long, and until it shows VGA.
 const WARMUP_MS: u64 = 350;
 
+/// A mouse button.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Button {
+    /// The primary button.
+    Left,
+    /// The secondary button.
+    Right,
+    /// Any other; the game has no use for it.
+    Other,
+}
+
+impl Button {
+    /// The button's bit in the game's button mask.
+    const fn bit(self) -> u8 {
+        match self {
+            Button::Left => 1,
+            Button::Right => 2,
+            Button::Other => 0,
+        }
+    }
+}
+
 /// The open settings menu.
 #[derive(Clone, Debug)]
 struct Menu {
@@ -124,6 +146,43 @@ impl Controller {
         self.held.fill(false);
         self.buttons = 0;
         self.inputs.push(InputKind::Clear);
+    }
+
+    /// The pointer moved to `at` in game pixels: inside the picture, or
+    /// clamped to its nearest edge, which the game follows either way.
+    pub fn pointer_moved(&mut self, at: (i32, i32)) {
+        if self.menu.is_none() {
+            self.inputs.push(InputKind::Mouse { x: at.0, y: at.1 });
+        }
+    }
+
+    /// A mouse button went down or up with the pointer at `at`. Only a press
+    /// inside the picture reaches the game; any release does.
+    pub fn pointer(&mut self, at: (i32, i32), inside: bool, button: Option<(Button, bool)>) {
+        if self.menu.is_some() {
+            return;
+        }
+        if inside {
+            self.inputs.push(InputKind::Mouse { x: at.0, y: at.1 });
+        }
+        if let Some((button, pressed)) = button.filter(|(button, _)| button.bit() != 0) {
+            if pressed && inside {
+                self.buttons |= button.bit();
+            } else {
+                self.buttons &= !button.bit();
+            }
+            self.inputs.push(InputKind::Buttons(self.buttons));
+        }
+    }
+
+    /// The pointer is over menu item `hit` (on its left arrow when the flag is
+    /// set), or over nothing: hovering selects, and a left press acts.
+    pub fn menu_pointer(&mut self, hit: Option<(MenuItem, bool)>, left_press: bool) {
+        let Some((item, on_left_arrow)) = hit else { return };
+        self.select(item);
+        if left_press {
+            self.action(item, if on_left_arrow { -1 } else { 1 });
+        }
     }
 
     /// A key went down (`pressed`) or up.

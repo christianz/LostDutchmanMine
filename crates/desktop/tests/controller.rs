@@ -111,3 +111,34 @@ fn losing_focus_releases_everything() {
     press(&mut c, scancode::D, 0);
     assert_eq!(c.take_inputs()[0], InputKind::Directions(8), "W is no longer held");
 }
+
+#[test]
+fn the_pointer_moves_over_the_picture_and_presses_only_inside_it() {
+    use desktop::controller::Button;
+    let mut c = playing();
+    c.pointer((100, 50), true, None);
+    assert_eq!(c.take_inputs(), [InputKind::Mouse { x: 100, y: 50 }]);
+    c.pointer((100, 50), true, Some((Button::Left, true)));
+    assert_eq!(c.take_inputs(), [InputKind::Mouse { x: 100, y: 50 }, InputKind::Buttons(1)]);
+    c.pointer((0, 50), false, Some((Button::Right, true)));
+    assert_eq!(c.take_inputs(), [InputKind::Buttons(1)], "outside, a press only releases");
+    c.pointer((100, 50), true, Some((Button::Left, false)));
+    assert_eq!(c.take_inputs(), [InputKind::Mouse { x: 100, y: 50 }, InputKind::Buttons(0)]);
+    c.pointer_moved((319, 60));
+    assert_eq!(c.take_inputs(), [InputKind::Mouse { x: 319, y: 60 }], "motion tracks the edge");
+}
+
+#[test]
+fn menu_clicks_select_and_change_rows() {
+    use desktop::menu::MenuItem;
+    let mut c = playing();
+    press(&mut c, scancode::F11, 0);
+    c.take_inputs();
+    c.menu_pointer(Some((MenuItem::Brightness, false)), false);
+    assert_eq!(c.selected(), Some(MenuItem::Brightness), "hover selects");
+    c.menu_pointer(Some((MenuItem::Brightness, true)), true);
+    assert_eq!(c.preview().brightness, 90, "a click on the left arrow steps down");
+    c.menu_pointer(None, true);
+    assert_eq!(c.selected(), Some(MenuItem::Brightness), "a click on nothing does nothing");
+    assert!(c.take_inputs().is_empty(), "the game hears nothing while the menu is open");
+}
