@@ -1,6 +1,7 @@
 #include "session.h"
 #include <algorithm>
 #include <chrono>
+#include <cstdio>
 
 namespace ldm {
 void read_frame(const State& s,Pixels& pixels) {
@@ -52,7 +53,17 @@ void read_frame(const State& s,Pixels& pixels) {
         }
     }
 }
-Session::Session(State& s):state_(s),thread_([this]{run();}) {}
+uint64_t state_hash(const State& s) {
+    uint64_t hash=14695981039346656037ULL;
+    auto byte=[&](uint8_t b){hash=(hash^b)*1099511628211ULL;};
+    for(uint16_t r:{s.ax,s.bx,s.cx,s.dx,s.si,s.di,s.bp,s.sp,s.cs,s.ds,s.es,s.ss,s.ip,s.flags}){byte(uint8_t(r));byte(uint8_t(r>>8));}
+    for(auto b:s.memory)byte(b);
+    for(auto colour:s.palette)for(int shift=0;shift<32;shift+=8)byte(uint8_t(colour>>shift));
+    return hash;
+}
+Session::Session(State& s,SessionMode mode):state_(s),mode_(mode) {
+    if(mode_==SessionMode::Threaded)thread_=std::thread([this]{run();});
+}
 Session::~Session(){stop();}
 void Session::stop(){stopping_=true;if(thread_.joinable())thread_.join();}
 void Session::send(Command command){std::lock_guard<std::mutex> lock(mutex_);commands_.push_back(command);}
@@ -67,14 +78,93 @@ void Session::qol(bool enabled){send({Kind::Qol,enabled});}
 void Session::pause(bool paused){paused_=paused;}
 bool Session::finished(){return done_;}
 void Session::snapshot(Snapshot& output) {
+    if(mode_==SessionMode::Deterministic){output=capture();return;}
     std::lock_guard<std::mutex> lock(frame_mutex_);
     if(error_)std::rethrow_exception(error_);
     output=frame_;
 }
+void Session::set_trace(std::ostream* out){trace_=out;}
+void Session::write_trace() {
+    char hash[17];std::snprintf(hash,sizeof hash,"%016llx",static_cast<unsigned long long>(state_hash(state_)));
+    *trace_<<"ms="<<quanta_<<" blocks="<<state_.boundaries<<" ticks="<<state_.ticks<<" hash="<<hash<<'\n';
+    traced_=quanta_;
+}
+void Session::finish_trace() {
+    if(trace_ && traced_!=quanta_)write_trace();
+    if(trace_)trace_->flush();
+}
+void Session::step() {
+    if(!state_.running){done_=true;return;}
+    // Distribute the PIT and OPL input clocks exactly over emulated milliseconds.
+    const uint64_t q=quanta_;
+    state_.emulated_ms=q;
+    quantum(1193182*(q+1)/1000-1193182*q/1000,3579545*(q+1)/1000-3579545*q/1000);
+    ++quanta_;
+    if(trace_ && quanta_%100==0)write_trace();
+    if(!state_.running)done_=true;
+}
+void Session::quantum(uint64_t pit_clocks,uint64_t opl_clocks) {
+    state_.mouse.set_time(state_.emulated_ms);
+    bool was_panning=state_.panning_active;
+    std::vector<Command> commands;
+    {std::lock_guard<std::mutex> lock(mutex_);commands.swap(commands_);}
+    for(auto command:commands)switch(command.kind) {
+        case Kind::Key:
+            if(state_.qol_improvements && (uint32_t(command.a)&KeyRepeat) &&
+               (bios_key(uint32_t(command.a),false)>>8)==0x39)break;
+            if(!was_panning)state_.keys.push_back(uint32_t(command.a));
+            break;
+        case Kind::Release:
+            state_.keys.erase(std::remove_if(state_.keys.begin(),state_.keys.end(),[&](uint32_t key){return repeat_from(key,unsigned(command.a));}),state_.keys.end());break;
+        case Kind::Directions:directions_=uint8_t(command.a);break;
+        case Kind::Space:state_.mining_space_held=!was_panning && command.a!=0;break;
+        case Kind::Mouse:state_.mouse.move(command.a,command.b);break;
+        case Kind::Buttons:if(!was_panning)state_.mouse.buttons(command.a);break;
+        case Kind::Clear:directions_=0;state_.mining_space_held=false;state_.keys.clear();state_.mouse.clear();state_.reset_combat_pointer();state_.reset_world_pointer();break;
+        case Kind::Qol:state_.qol_improvements=command.a!=0;state_.reset_combat_pointer();state_.reset_world_pointer();break;
+    }
+    pit_clocks_+=pit_clocks;
+    for(uint64_t period;pit_clocks_>=(period=state_.pit_divisor?state_.pit_divisor:65536);) {
+        pit_clocks_-=period;
+        state_.timer_interrupt();
+    }
+    if(opl_clocks)state_.audio.advance_clock(unsigned(opl_clocks));
+    state_.set_movement(was_panning?0:directions_);
+    for(int i=0;i<4096 && state_.running;i++) {
+        native_step(state_);if(state_.waiting)break;
+    }
+    if(was_panning!=state_.panning_active) {
+        directions_=0;state_.mining_space_held=false;state_.set_movement(0);state_.keys.clear();state_.mouse.clear();
+    }
+    state_.audio.speaker((state_.ports[0x61]&3)==3?1193182u/(state_.speaker_divisor?state_.speaker_divisor:65536):0);
+}
+Snapshot Session::capture() const {
+    Snapshot next;
+    read_frame(state_,next.pixels);next.video_mode=state_.video_mode;
+    next.x=state_.u16(0x82bd,0x5b4a);next.y=state_.u16(0x82bd,0x5b4c);
+    next.town_page=state_.u16(0x82bd,0x5b5a);next.building=state_.u16(0x82bd,0x5b5e);
+    next.directions=directions_;next.custom_cursor=state_.custom_cursor;next.boundaries=state_.boundaries;
+    next.mouse_visibility=state_.mouse_visibility;next.mouse_mode=state_.u16(0x82bd,0x5d62);
+    next.mouse_x=state_.mouse.current().x;next.mouse_y=state_.mouse.current().y;
+    next.pointer_visible=state_.game_ui.pointer_visible(state_);
+    next.desert_view=state_.desert_view_active;next.map_view=state_.u16(0x82bd,0x5e06)!=0;
+    next.cave_view=state_.u16(0x82bd,0x5e0a)!=0;
+    next.map_scroll_x=state_.u16(0x82bd,0x5b56);next.map_scroll_y=state_.u16(0x82bd,0x5b58);
+    next.return_x=state_.u16(0x82bd,0x5b60);next.return_y=state_.u16(0x82bd,0x5b62);
+    next.survival_ticks=state_.u16(0x82bd,0x5406);
+    next.panning_active=state_.panning_active;
+    next.gold_bags=state_.u16(0x82bd,0x53ea);next.qol_improvements=state_.qol_improvements;
+    next.cash=state_.u16(0x82bd,0x53f0)|(uint32_t(state_.u16(0x82bd,0x53f2))<<16);
+    next.assay_pounds=state_.u16(0x82bd,0x5b82);next.assay_grade=state_.u16(0x82bd,0x59d0);
+    next.combat_active=state_.combat_active;next.bullets=state_.u16(0x82bd,0x53e2);
+    auto aim=state_.combat_aim();next.sight_x=aim.x;next.sight_y=aim.y;
+    next.mining_space_held=state_.mining_space_held;next.mining_strokes=state_.u16(0x82bd,0x93a);
+    return next;
+}
 void Session::run() {
     using Clock=std::chrono::steady_clock;
-    auto last=Clock::now(),published=last,started=last;
-    double timer_elapsed=0;uint8_t directions=0;
+    auto last=Clock::now(),published=last;
+    double elapsed_ms=0,pit_fraction=0;
     try {
         while(!stopping_ && state_.running) {
             auto now=Clock::now();
@@ -82,60 +172,14 @@ void Session::run() {
                 last=now;
                 std::this_thread::sleep_for(std::chrono::milliseconds(1));continue;
             }
-            double elapsed=std::chrono::duration<double>(now-last).count();
-            timer_elapsed+=elapsed;last=now;
-            state_.mouse.set_time(uint64_t(std::chrono::duration_cast<std::chrono::milliseconds>(now-started).count()));
-            bool was_panning=state_.panning_active;
-            std::vector<Command> commands;
-            {std::lock_guard<std::mutex> lock(mutex_);commands.swap(commands_);}
-            for(auto command:commands)switch(command.kind) {
-                case Kind::Key:
-                    if(state_.qol_improvements && (uint32_t(command.a)&KeyRepeat) &&
-                       (bios_key(uint32_t(command.a),false)>>8)==0x39)break;
-                    if(!was_panning)state_.keys.push_back(uint32_t(command.a));
-                    break;
-                case Kind::Release:
-                    state_.keys.erase(std::remove_if(state_.keys.begin(),state_.keys.end(),[&](uint32_t key){return repeat_from(key,unsigned(command.a));}),state_.keys.end());break;
-                case Kind::Directions:directions=uint8_t(command.a);break;
-                case Kind::Space:state_.mining_space_held=!was_panning && command.a!=0;break;
-                case Kind::Mouse:state_.mouse.move(command.a,command.b);break;
-                case Kind::Buttons:if(!was_panning)state_.mouse.buttons(command.a);break;
-                case Kind::Clear:directions=0;state_.mining_space_held=false;state_.keys.clear();state_.mouse.clear();state_.reset_combat_pointer();state_.reset_world_pointer();break;
-                case Kind::Qol:state_.qol_improvements=command.a!=0;state_.reset_combat_pointer();state_.reset_world_pointer();break;
-            }
-            while(timer_elapsed>=((state_.pit_divisor?state_.pit_divisor:65536)/1193182.0)) {
-                timer_elapsed-=(state_.pit_divisor?state_.pit_divisor:65536)/1193182.0;
-                state_.timer_interrupt();
-            }
-            state_.set_movement(was_panning?0:directions);
-            for(int i=0;i<4096 && state_.running;i++) {
-                native_step(state_);if(state_.waiting)break;
-            }
-            if(was_panning!=state_.panning_active) {
-                directions=0;state_.mining_space_held=false;state_.set_movement(0);state_.keys.clear();state_.mouse.clear();
-            }
-            state_.audio.speaker((state_.ports[0x61]&3)==3?1193182u/(state_.speaker_divisor?state_.speaker_divisor:65536):0);
+            double seconds=std::chrono::duration<double>(now-last).count();last=now;
+            elapsed_ms+=seconds*1000;state_.emulated_ms=uint64_t(elapsed_ms);
+            pit_fraction+=seconds*1193182;
+            auto clocks=uint64_t(pit_fraction);pit_fraction-=double(clocks);
+            // The audio callback advances the OPL clock while rendering live.
+            quantum(clocks,0);
             if(now-published>=std::chrono::milliseconds(4)) {
-                Snapshot next;
-                read_frame(state_,next.pixels);next.video_mode=state_.video_mode;
-                next.x=state_.u16(0x82bd,0x5b4a);next.y=state_.u16(0x82bd,0x5b4c);
-                next.town_page=state_.u16(0x82bd,0x5b5a);next.building=state_.u16(0x82bd,0x5b5e);
-                next.directions=directions;next.custom_cursor=state_.custom_cursor;next.boundaries=state_.boundaries;
-                next.mouse_visibility=state_.mouse_visibility;next.mouse_mode=state_.u16(0x82bd,0x5d62);
-                next.mouse_x=state_.mouse.current().x;next.mouse_y=state_.mouse.current().y;
-                next.pointer_visible=state_.game_ui.pointer_visible(state_);
-                next.desert_view=state_.desert_view_active;next.map_view=state_.u16(0x82bd,0x5e06)!=0;
-                next.cave_view=state_.u16(0x82bd,0x5e0a)!=0;
-                next.map_scroll_x=state_.u16(0x82bd,0x5b56);next.map_scroll_y=state_.u16(0x82bd,0x5b58);
-                next.return_x=state_.u16(0x82bd,0x5b60);next.return_y=state_.u16(0x82bd,0x5b62);
-                next.survival_ticks=state_.u16(0x82bd,0x5406);
-                next.panning_active=state_.panning_active;
-                next.gold_bags=state_.u16(0x82bd,0x53ea);next.qol_improvements=state_.qol_improvements;
-                next.cash=state_.u16(0x82bd,0x53f0)|(uint32_t(state_.u16(0x82bd,0x53f2))<<16);
-                next.assay_pounds=state_.u16(0x82bd,0x5b82);next.assay_grade=state_.u16(0x82bd,0x59d0);
-                next.combat_active=state_.combat_active;next.bullets=state_.u16(0x82bd,0x53e2);
-                auto aim=state_.combat_aim();next.sight_x=aim.x;next.sight_y=aim.y;
-                next.mining_space_held=state_.mining_space_held;next.mining_strokes=state_.u16(0x82bd,0x93a);
+                auto next=capture();
                 {std::lock_guard<std::mutex> lock(frame_mutex_);next.sequence=frame_.sequence+1;frame_=std::move(next);}
                 published=now;
             }

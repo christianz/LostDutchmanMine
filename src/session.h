@@ -4,6 +4,7 @@
 #include <atomic>
 #include <exception>
 #include <mutex>
+#include <ostream>
 #include <thread>
 
 namespace ldm {
@@ -30,13 +31,22 @@ struct Snapshot {
     int mining_strokes=0;
 };
 void read_frame(const State& state,Pixels& pixels);
+// FNV-1a 64 over the registers, 1 MiB memory and palette: the trace identity.
+uint64_t state_hash(const State& state);
+// Threaded sessions follow the wall clock. Deterministic sessions run exactly
+// one emulated millisecond per step(), so identical inputs reproduce exactly.
+enum class SessionMode { Threaded, Deterministic };
 // The game has a dedicated clock. A blocking GPU present, slow monitor or open
 // settings window must never change the cadence of the original timer handler.
 class Session {
 public:
-    explicit Session(State& state);
+    explicit Session(State& state,SessionMode mode=SessionMode::Threaded);
     ~Session();
     Session(const Session&)=delete;
+    void step();
+    // Append a trace line every 100 emulated milliseconds, and at finish_trace().
+    void set_trace(std::ostream* out);
+    void finish_trace();
     void key(uint32_t code);
     void release_repeat(uint16_t physical_key);
     void directions(uint8_t mask);
@@ -53,13 +63,20 @@ private:
     enum class Kind { Key,Release,Directions,Space,Mouse,Buttons,Clear,Qol };
     struct Command {Kind kind;int a=0,b=0;};
     State& state_;
+    SessionMode mode_;
     std::mutex mutex_,frame_mutex_;
     std::vector<Command> commands_;
     Snapshot frame_;
     std::exception_ptr error_;
     std::atomic<bool> stopping_{false},done_{false},paused_{false};
+    uint8_t directions_=0;
+    uint64_t pit_clocks_=0,quanta_=0,traced_=0;
+    std::ostream* trace_=nullptr;
     std::thread thread_;
     void send(Command command);
     void run();
+    void quantum(uint64_t pit_clocks,uint64_t opl_clocks);
+    Snapshot capture() const;
+    void write_trace();
 };
 }

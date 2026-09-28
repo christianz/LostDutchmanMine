@@ -41,6 +41,8 @@ build/test-console: $(filter-out build/probe.o,$(OBJECTS)) tests/console.cpp
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $^ -o $@
 build/test-clock: $(filter-out build/probe.o,$(OBJECTS)) tests/clock.cpp
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $^ -o $@
+build/test-trace: $(filter-out build/probe.o,$(OBJECTS)) build/session.o tests/trace.cpp
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $^ -o $@
 build/test-panning: $(filter-out build/probe.o,$(OBJECTS)) tests/panning.cpp
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $^ -o $@
 build/test-panning-scene: $(filter-out build/probe.o,$(OBJECTS)) tests/panning-scene.cpp

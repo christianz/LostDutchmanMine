@@ -46,6 +46,10 @@ void Audio::speaker(unsigned hz) {
     std::lock_guard<std::mutex> lock(impl->mutex);
     impl->speaker_hz=hz;
 }
+void Audio::advance_clock(unsigned clocks) {
+    std::lock_guard<std::mutex> lock(impl->mutex);
+    impl->advance(clocks);
+}
 void Audio::render(float* output,size_t count) {
     std::lock_guard<std::mutex> lock(impl->mutex);
     const double ratio=3579545.0/72.0/48000.0;
