@@ -21,6 +21,7 @@ repository = "https://github.com/christianz/LostDutchmanMine"
 rust-version = "1.94"
 
 [workspace.dependencies]
+desktop = { path = "crates/desktop" }
 dos = { path = "crates/dos" }
 engine = { path = "crates/engine" }
 game = { path = "crates/game" }

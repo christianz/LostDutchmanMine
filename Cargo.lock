@@ -87,6 +87,10 @@ dependencies = [
 [[package]]
 name = "desktop"
 version = "0.1.0"
+dependencies = [
+ "dos",
+ "engine",
+]
 
 [[package]]
 name = "digest"
@@ -436,10 +440,14 @@ dependencies = [
 name = "testkit"
 version = "0.1.0"
 dependencies = [
+ "desktop",
+ "engine",
  "flate2",
+ "game",
  "machine",
  "serde",
  "serde_json",
+ "thiserror",
  "translate",
 ]
 
