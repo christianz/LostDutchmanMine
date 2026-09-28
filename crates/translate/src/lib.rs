@@ -3,7 +3,11 @@
 //! Instructions are decoded once, at build time, lowered into a small IR whose
 //! meaning is defined by the `machine` crate, and written out as Rust.
 
+pub mod emit;
+pub mod image;
 pub mod ir;
 mod lower;
+pub mod recover;
+pub mod translation;
 
 pub use lower::{Instruction, LowerError, Relocations, lower};

@@ -100,6 +100,11 @@ pub fn lower(
 }
 
 fn disassemble(decoded: &Decoded) -> String {
+    if decoded.op_count() > 0 && decoded.op0_kind() == OpKind::FarBranch16 {
+        let mnemonic = format!("{:?}", decoded.mnemonic()).to_lowercase();
+        let (segment, offset) = (decoded.far_branch_selector(), decoded.far_branch16());
+        return format!("{mnemonic} far {segment:04x}:{offset:04x}");
+    }
     let mut formatter = IntelFormatter::new();
     let options = formatter.options_mut();
     options.set_hex_prefix("0x");
