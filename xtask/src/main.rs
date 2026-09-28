@@ -5,8 +5,10 @@
 //! - `test`: every test, including the hardware vectors when downloaded.
 //! - `verify`: the tests that need the original game, against the golden traces.
 //! - `windows`: cross-build the Windows executable with Zig.
+//! - `package`: a private portable bundle with the player's own game.
 
 mod lint;
+mod package;
 mod vectors;
 mod windows;
 
@@ -15,7 +17,7 @@ use std::process::Command;
 
 use anyhow::{Context, Result, bail};
 
-const USAGE: &str = "usage: cargo xtask <lint | vectors | test | verify | windows>";
+const USAGE: &str = "usage: cargo xtask <lint | vectors | test | verify | windows | package>";
 
 fn main() -> Result<()> {
     let command = std::env::args().nth(1);
@@ -25,6 +27,7 @@ fn main() -> Result<()> {
         Some("test") => test(),
         Some("verify") => verify(),
         Some("windows") => windows::build().map(|_| ()),
+        Some("package") => package::package(&std::env::args().skip(2).collect::<Vec<_>>()),
         _ => bail!(USAGE),
     }
 }
