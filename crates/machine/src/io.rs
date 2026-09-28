@@ -63,6 +63,11 @@ impl Ports {
     pub fn get(&self, port: u16) -> u8 {
         self.values[usize::from(port)]
     }
+
+    /// Latches a byte without the side effects of OUT, as BIOS services do.
+    pub fn set(&mut self, port: u16, value: u8) {
+        self.values[usize::from(port)] = value;
+    }
 }
 
 impl Default for Ports {

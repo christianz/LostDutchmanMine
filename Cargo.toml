@@ -1,6 +1,8 @@
 [workspace]
 resolver = "3"
 members = [
+    "crates/dos",
+    "crates/engine",
     "crates/machine",
     "crates/patches",
     "crates/testkit",
@@ -17,6 +19,8 @@ repository = "https://github.com/christianz/LostDutchmanMine"
 rust-version = "1.94"
 
 [workspace.dependencies]
+dos = { path = "crates/dos" }
+engine = { path = "crates/engine" }
 machine = { path = "crates/machine" }
 patches = { path = "crates/patches" }
 translate = { path = "crates/translate" }
