@@ -1,7 +1,10 @@
-//! Every scenario against the C++ oracle's golden trace.
+//! Every scenario against the C++ oracle's golden trace, and every check ported
+//! from its verifiers against the runs it reads.
 
+use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 
+use testkit::checks::{CHECKS, Run, Runs};
 use testkit::scenario::{Manifest, run};
 
 fn root() -> PathBuf {
@@ -18,7 +21,7 @@ fn every_scenario_reproduces_its_golden_trace() {
     let root = root();
     let manifest = Manifest::load(&root).expect("tests/scenarios.json");
     let data = data(&root);
-    let failures: Vec<String> = std::thread::scope(|scope| {
+    let (mut failures, runs): (Vec<String>, Runs) = std::thread::scope(|scope| {
         let runs: Vec<_> = manifest
             .scenarios
             .iter()
@@ -31,15 +34,39 @@ fn every_scenario_reproduces_its_golden_trace() {
                     )
                     .expect("a golden trace");
                     match run(scenario, root, data, &folder) {
-                        Err(error) => Some(format!("{}: {error}", scenario.name)),
-                        Ok(result) => first_difference(&scenario.name, &golden, &result.trace),
+                        Err(error) => (Some(format!("{}: {error}", scenario.name)), None),
+                        Ok(outcome) => (
+                            first_difference(&scenario.name, &golden, &outcome.trace),
+                            Some((scenario.name.clone(), Run { outcome, folder })),
+                        ),
                     }
                 })
             })
             .collect();
-        runs.into_iter().filter_map(|run| run.join().expect("a scenario thread")).collect()
+        let results = runs.into_iter().map(|run| run.join().expect("a scenario thread"));
+        let (failures, runs): (Vec<_>, Vec<_>) = results.unzip();
+        (failures.into_iter().flatten().collect(), runs.into_iter().flatten().collect())
     });
-    assert!(failures.is_empty(), "{} scenarios diverge:\n{}", failures.len(), failures.join("\n"));
+    let scenarios: HashSet<&str> = manifest.scenarios.iter().map(|s| s.name.as_str()).collect();
+    failures.extend(check_failures(&scenarios, &runs));
+    assert!(failures.is_empty(), "{} failures:\n{}", failures.len(), failures.join("\n"));
+}
+
+/// Every check's failure. A check naming a scenario the manifest lacks fails;
+/// one whose scenario failed to run is skipped, that failure being reported.
+fn check_failures(scenarios: &HashSet<&str>, runs: &Runs) -> Vec<String> {
+    let mut failures = Vec::new();
+    for check in CHECKS {
+        let label = format!("{} on {}", check.verifier, check.scenarios.join(", "));
+        if let Some(absent) = check.scenarios.iter().find(|name| !scenarios.contains(**name)) {
+            failures.push(format!("{label}: no scenario {absent} in tests/scenarios.json"));
+        } else if check.scenarios.iter().all(|name| runs.contains(name))
+            && let Err(message) = (check.check)(runs)
+        {
+            failures.push(format!("{label}: {message}"));
+        }
+    }
+    failures
 }
 
 fn first_difference(name: &str, golden: &str, trace: &[String]) -> Option<String> {

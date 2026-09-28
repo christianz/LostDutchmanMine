@@ -81,6 +81,34 @@ pub struct Screen {
     pub menu_open: bool,
 }
 
+/// How a run ended: what the C++ desktop logged as the game switched video
+/// modes and when it closed.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct Ending {
+    /// Emulated milliseconds from launch to the end, pauses included.
+    pub ms: u64,
+    /// Whether the game exited by itself, rather than the run running out of
+    /// time or the desktop quitting.
+    pub exited: bool,
+    /// Every video mode the game switched to, in order. Modes are sampled each
+    /// millisecond, so a switch undone within one is not seen.
+    pub video_modes: Vec<u8>,
+    /// The BIOS video mode at the end.
+    pub video_mode: u8,
+    /// The PIT's timer divisor at the end; zero is the BIOS default, 65536.
+    pub pit_divisor: u16,
+}
+
+impl Ending {
+    /// Notes the video mode after a millisecond.
+    fn note(&mut self, mode: u8) {
+        if mode != self.video_mode {
+            self.video_modes.push(mode);
+            self.video_mode = mode;
+        }
+    }
+}
+
 /// What a run produced.
 #[derive(Clone, Debug, Default)]
 pub struct Outcome {
@@ -90,6 +118,8 @@ pub struct Outcome {
     pub captures: Vec<Capture>,
     /// Every `screen`, in script order.
     pub screens: Vec<Screen>,
+    /// How it ended.
+    pub ending: Ending,
 }
 
 /// Why a scenario could not run.
@@ -157,10 +187,13 @@ pub fn run(
     let mut controller = Controller::new(config, settings, scenario.settings);
     let mut engine = Engine::new(machine, game);
     let mut outcome = Outcome::default();
+    outcome.ending.video_mode = engine.program().dos.video.mode;
     let mut events = script.into_iter().peekable();
     let mut traced = 0;
+    let mut end = scenario.seconds * 1000;
     for now in 0..scenario.seconds * 1000 {
         if engine.finished() {
+            end = now;
             break;
         }
         controller.tick(now, engine.program().dos.video.mode);
@@ -176,14 +209,19 @@ pub fn run(
                 outcome.trace.push(engine.trace_line());
                 traced = engine.quanta();
             }
+            outcome.ending.note(engine.program().dos.video.mode);
         }
         if controller.quit() {
+            end = now + 1;
             break;
         }
     }
     if traced != engine.quanta() {
         outcome.trace.push(engine.trace_line());
     }
+    outcome.ending.ms = end;
+    outcome.ending.exited = engine.finished();
+    outcome.ending.pit_divisor = engine.machine().pit.timer_divisor;
     Ok(outcome)
 }
 
