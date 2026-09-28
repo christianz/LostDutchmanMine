@@ -16,14 +16,16 @@ this is an AOT recompilation, not a hand-rewritten engine. The original decoder
 has also been recovered into readable C++ and checked against the translated
 routine for every supplied packed asset. FM synthesis uses BSD-licensed ymfm.
 
-Original game files are read from a user-supplied directory. They are not included
-in this source repository. The working copy at `/nas/tmp/LDM` must remain intact,
-including its existing saved games. Build outputs and recovered proprietary data
-are ignored by Git. Do not publish recovered game code or assets automatically.
+Original game files are not included in this repository; you need your own copy
+of Lost Dutchman Mine. They are read from a directory you supply, which is never
+written to: its saved games stay intact and new saves go to a separate `Saves/`
+directory. Build outputs, generated game code and recovered proprietary data are
+ignored by Git. Do not commit or publish recovered game code or assets.
 
 ## Play
 
-Copy the complete Windows bundle to a writable folder and double-click
+Build a playable bundle with `tools/package.py` (see [Build](#build)), copy the
+complete Windows bundle to a writable folder and double-click
 `LostDutchmanMine.exe`. Choose display settings, then Play. **4K comfort** selects
 desktop fullscreen, a centred 85% picture, soft edges, gentle colours and VSync.
 **F11** reopens the menu while pausing the game and music. Preferences are saved
@@ -139,8 +141,8 @@ cmake -S . -B build-cmake -DCMAKE_BUILD_TYPE=Release
 cmake --build build-cmake --parallel 4
 ```
 
-The verified Linux build in this workspace uses the Makefile with local SDL2
-headers and the system SDL2 shared library:
+The verified Linux build uses the Makefile with local SDL2 headers and the
+system SDL2 shared library:
 
 ```sh
 make -j4 build/ldm-native build/test-assets build/test-arithmetic build/test-poker build/test-quit build/test-display build/test-mouse build/test-menu build/test-menu-scene build/test-keyboard build/test-console build/test-panning build/test-panning-scene build/test-combat build/test-combat-scene build/test-qol
@@ -189,6 +191,17 @@ The settings UI uses a pre-baked DejaVu font bitmap with its license in
 - Runtime checks on Windows 11 and Linux; macOS support is claimed only when tested.
 - Missing functions or unsupported behavior produce a diagnostic rather than a
   fabricated approximation.
+
+## License
+
+The port's own source code, tools, tests and new artwork are released under the
+[MIT License](LICENSE). Bundled third-party components keep their own licenses:
+ymfm is BSD-3-Clause (`third_party/ymfm/LICENSE`) and the DejaVu-derived settings
+font is covered by `resources/FONT-LICENSE.txt`. SDL2 is linked, not vendored, and
+is distributed under the zlib license.
+
+Lost Dutchman Mine itself, including its executable, artwork, music and data, is
+not part of this repository and is not covered by this license.
 
 ## References
 
