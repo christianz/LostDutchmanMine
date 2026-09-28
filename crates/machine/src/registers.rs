@@ -152,6 +152,71 @@ impl Registers {
         self.set(parent, u16::from_le_bytes(bytes));
     }
 
+    /// AL.
+    pub const fn al(&self) -> u8 {
+        self.get8(Reg8::Al)
+    }
+    /// AH.
+    pub const fn ah(&self) -> u8 {
+        self.get8(Reg8::Ah)
+    }
+    /// BL.
+    pub const fn bl(&self) -> u8 {
+        self.get8(Reg8::Bl)
+    }
+    /// BH.
+    pub const fn bh(&self) -> u8 {
+        self.get8(Reg8::Bh)
+    }
+    /// CL.
+    pub const fn cl(&self) -> u8 {
+        self.get8(Reg8::Cl)
+    }
+    /// CH.
+    pub const fn ch(&self) -> u8 {
+        self.get8(Reg8::Ch)
+    }
+    /// DL.
+    pub const fn dl(&self) -> u8 {
+        self.get8(Reg8::Dl)
+    }
+    /// DH.
+    pub const fn dh(&self) -> u8 {
+        self.get8(Reg8::Dh)
+    }
+    /// Sets AL.
+    pub const fn set_al(&mut self, value: u8) {
+        self.set8(Reg8::Al, value);
+    }
+    /// Sets AH.
+    pub const fn set_ah(&mut self, value: u8) {
+        self.set8(Reg8::Ah, value);
+    }
+    /// Sets BL.
+    pub const fn set_bl(&mut self, value: u8) {
+        self.set8(Reg8::Bl, value);
+    }
+    /// Sets BH.
+    pub const fn set_bh(&mut self, value: u8) {
+        self.set8(Reg8::Bh, value);
+    }
+    /// Sets CL.
+    pub const fn set_cl(&mut self, value: u8) {
+        self.set8(Reg8::Cl, value);
+    }
+    /// Sets CH.
+    pub const fn set_ch(&mut self, value: u8) {
+        self.set8(Reg8::Ch, value);
+    }
+    /// Sets DL.
+    pub const fn set_dl(&mut self, value: u8) {
+        self.set8(Reg8::Dl, value);
+    }
+    /// Sets DH.
+    pub const fn set_dh(&mut self, value: u8) {
+        self.set8(Reg8::Dh, value);
+    }
+
     /// The registers in the order the trace hash covers them.
     pub const fn in_trace_order(&self) -> [u16; 14] {
         [
