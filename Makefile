@@ -39,6 +39,8 @@ build/test-keyboard: $(filter-out build/probe.o,$(OBJECTS)) tests/keyboard.cpp s
 	$(CXX) $(CPPFLAGS) -I$(SDL_INCLUDE) $(CXXFLAGS) $(filter %.o %.cpp,$^) -o $@
 build/test-console: $(filter-out build/probe.o,$(OBJECTS)) tests/console.cpp
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $^ -o $@
+build/test-clock: $(filter-out build/probe.o,$(OBJECTS)) tests/clock.cpp
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $^ -o $@
 build/test-panning: $(filter-out build/probe.o,$(OBJECTS)) tests/panning.cpp
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $^ -o $@
 build/test-panning-scene: $(filter-out build/probe.o,$(OBJECTS)) tests/panning-scene.cpp

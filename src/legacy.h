@@ -69,6 +69,10 @@ struct State {
     bool custom_cursor=false;
     std::array<uint16_t,32> mouse_mask{};
     uint32_t ticks=0;
+    // DOS date and time derive from emulated time, never the host clock, so runs
+    // reproduce exactly. A live session sets clock_base to local time at start.
+    int64_t clock_base=1767268800; // 2026-01-01 12:00:00
+    uint64_t emulated_ms=0;
     uint16_t pit_divisor=0,pit_partial=0;
     unsigned pit_write_phase=0;
     uint16_t speaker_divisor=0,speaker_partial=0;
@@ -147,4 +151,6 @@ struct State {
     std::filesystem::path file_path(const std::string& name,bool write) const;
 };
 void native_step(State& s);
+// The host's local time as seconds since 1970-01-01 in that local calendar.
+int64_t local_clock_seconds();
 }

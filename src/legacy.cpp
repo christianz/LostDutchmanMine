@@ -7,10 +7,37 @@
 #include <iomanip>
 #include <iostream>
 #include <sstream>
-#include <chrono>
 #include <ctime>
 
 namespace ldm {
+namespace {
+struct CivilDate {int64_t year;unsigned month,day,weekday;};
+// Howard Hinnant's days-from-civil algorithms: exact for every proleptic
+// Gregorian date, without depending on the host time zone.
+CivilDate civil_from_days(int64_t days) {
+    unsigned weekday=unsigned((days%7+11)%7);
+    days+=719468;
+    int64_t era=(days>=0?days:days-146096)/146097;
+    auto doe=unsigned(days-era*146097);
+    unsigned yoe=(doe-doe/1460+doe/36524-doe/146096)/365;
+    unsigned doy=doe-(365*yoe+yoe/4-yoe/100),mp=(5*doy+2)/153;
+    unsigned day=doy-(153*mp+2)/5+1,month=mp<10?mp+3:mp-9;
+    return {int64_t(yoe)+era*400+(month<=2),month,day,weekday};
+}
+int64_t days_from_civil(int64_t year,unsigned month,unsigned day) {
+    year-=month<=2;
+    int64_t era=(year>=0?year:year-399)/400;
+    auto yoe=unsigned(year-era*400);
+    unsigned doy=(153*(month>2?month-3:month+9)+2)/5+day-1;
+    unsigned doe=yoe*365+yoe/4-yoe/100+doy;
+    return era*146097+int64_t(doe)-719468;
+}
+}
+int64_t local_clock_seconds() {
+    auto t=std::time(nullptr);auto local=*std::localtime(&t);
+    return days_from_civil(local.tm_year+1900,unsigned(local.tm_mon+1),unsigned(local.tm_mday))*86400
+        +local.tm_hour*3600+local.tm_min*60+local.tm_sec;
+}
 void State::fail(const std::string& message) const {
     std::ostringstream o;
     o<<message<<" at "<<std::hex<<std::setfill('0')<<std::setw(4)<<uint16_t(cs-LoadSegment)
@@ -357,9 +384,15 @@ void State::interrupt(uint8_t number) {
         case 0x1a:ok();return;
         case 0x25:w16(0,al*4,dx);w16(0,al*4+2,ds);return;
         case 0x2a:case 0x2c: {
-            auto now=std::chrono::system_clock::now();auto t=std::chrono::system_clock::to_time_t(now);auto local=*std::localtime(&t);
-            if(ah==0x2a){cx=uint16_t(local.tm_year+1900);dx=uint16_t((local.tm_mon+1)<<8)|local.tm_mday;ax=(ax&0xff00)|local.tm_wday;}
-            else {cx=uint16_t(local.tm_hour<<8)|local.tm_min;dx=uint16_t(local.tm_sec<<8)|uint16_t(std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count()%1000/10);}
+            int64_t seconds=clock_base+int64_t(emulated_ms/1000);
+            int64_t days=(seconds>=0?seconds:seconds-86399)/86400,time=seconds-days*86400;
+            if(ah==0x2a) {
+                auto date=civil_from_days(days);
+                cx=uint16_t(date.year);dx=uint16_t((date.month<<8)|date.day);ax=(ax&0xff00)|date.weekday;
+            }else {
+                cx=uint16_t(((time/3600)<<8)|(time/60%60));
+                dx=uint16_t(((time%60)<<8)|(emulated_ms%1000/10));
+            }
             return;
         }
         case 0x30:ax=5;bx=cx=0;return;
