@@ -7,6 +7,7 @@
 //! nothing of the game: a [`Program`] supplies its code and services.
 
 mod program;
+mod state;
 mod timer;
 
 pub use program::{InputKind, Program, Stop};

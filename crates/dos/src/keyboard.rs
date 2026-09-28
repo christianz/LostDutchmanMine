@@ -7,6 +7,7 @@
 
 use std::collections::VecDeque;
 
+use machine::state::{Reader, StateError, Writer};
 use machine::{Flag, Machine};
 
 use crate::Dos;
@@ -44,6 +45,23 @@ pub struct Keyboard {
 }
 
 impl Keyboard {
+    pub(crate) fn save(&self, w: &mut Writer) {
+        w.u32(self.keys.len() as u32);
+        for &key in &self.keys {
+            w.u32(key);
+        }
+        w.bool(self.movement_aliases);
+    }
+
+    pub(crate) fn restore(&mut self, r: &mut Reader) -> Result<(), StateError> {
+        self.keys.clear();
+        for _ in 0..r.u32()? {
+            self.keys.push_back(r.u32()?);
+        }
+        self.movement_aliases = r.bool()?;
+        Ok(())
+    }
+
     /// Queues a key.
     pub fn push(&mut self, key: u32) {
         self.keys.push_back(key);

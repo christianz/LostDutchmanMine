@@ -12,6 +12,7 @@ mod io;
 mod memory;
 mod opl;
 mod registers;
+pub mod state;
 mod strings;
 mod vga;
 

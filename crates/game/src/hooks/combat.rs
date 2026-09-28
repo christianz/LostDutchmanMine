@@ -7,6 +7,7 @@
 
 use dos::MouseSample;
 use machine::Machine;
+use machine::state::{Reader, StateError, Writer};
 use patches::After;
 
 use crate::Game;
@@ -48,6 +49,32 @@ pub(crate) struct Combat {
 }
 
 impl Combat {
+    pub(crate) fn save(&self, w: &mut Writer) {
+        w.bool(self.active);
+        w.u8(match self.read {
+            AimingRead::Off => 0,
+            AimingRead::Aiming => 1,
+            AimingRead::Firing => 2,
+        });
+        w.bool(self.sight_pending);
+        w.bool(self.sight_visible);
+        crate::state::save_sample(w, self.pointer);
+    }
+
+    pub(crate) fn restore(&mut self, r: &mut Reader) -> Result<(), StateError> {
+        self.active = r.bool()?;
+        self.read = match r.u8()? {
+            0 => AimingRead::Off,
+            1 => AimingRead::Aiming,
+            2 => AimingRead::Firing,
+            other => return Err(StateError::Invalid(format!("aiming read {other}"))),
+        };
+        self.sight_pending = r.bool()?;
+        self.sight_visible = r.bool()?;
+        self.pointer = crate::state::restore_sample(r)?;
+        Ok(())
+    }
+
     /// Baselines on `current`: only motion from here moves the sight, and a
     /// press made before it is no shot.
     pub(crate) fn reset_pointer(&mut self, current: MouseSample) {

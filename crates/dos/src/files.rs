@@ -9,6 +9,7 @@ use std::io::{ErrorKind, Read, Seek, SeekFrom, Write};
 use std::path::{Component, Path, PathBuf};
 
 use machine::Machine;
+use machine::state::{Reader, StateError, Writer};
 
 use crate::services::{failure, read_string, success};
 use crate::{Dos, DosError};
@@ -27,8 +28,21 @@ const INVALID_HANDLE: u16 = 6;
 pub struct Files {
     data: PathBuf,
     saves: PathBuf,
-    open: BTreeMap<u16, File>,
+    open: BTreeMap<u16, Open>,
 }
+
+/// An open file, and what reopens it from a savestate.
+#[derive(Debug)]
+struct Open {
+    file: File,
+    path: PathBuf,
+    write: bool,
+}
+
+/// Which folder a saved open file is in.
+const IN_SAVES: u8 = 0;
+const IN_DATA: u8 = 1;
+const ELSEWHERE: u8 = 2;
 
 impl Files {
     /// Files read from `data`, written to `saves`.
@@ -61,15 +75,61 @@ impl Files {
     }
 
     fn get(&mut self, handle: u16) -> Option<&mut File> {
-        self.open.get_mut(&handle)
+        self.open.get_mut(&handle).map(|open| &mut open.file)
     }
 
-    fn insert(&mut self, file: File) -> u16 {
+    fn insert(&mut self, file: File, path: PathBuf, write: bool) -> u16 {
         let handle = (FIRST_HANDLE..=u16::MAX)
             .find(|handle| !self.open.contains_key(handle))
             .expect("a free handle");
-        self.open.insert(handle, file);
+        self.open.insert(handle, Open { file, path, write });
         handle
+    }
+
+    /// Each open file by folder, name within it, mode and position, so a
+    /// state restores into another session's folders.
+    pub(crate) fn save(&self, w: &mut Writer) {
+        w.u16(self.open.len() as u16);
+        for (&handle, open) in &self.open {
+            let (folder, name) = if let Ok(name) = open.path.strip_prefix(&self.saves) {
+                (IN_SAVES, name)
+            } else if let Ok(name) = open.path.strip_prefix(&self.data) {
+                (IN_DATA, name)
+            } else {
+                (ELSEWHERE, open.path.as_path())
+            };
+            w.u16(handle);
+            w.u8(folder);
+            w.bytes(name.to_string_lossy().as_bytes());
+            w.bool(open.write);
+            w.u64((&open.file).stream_position().unwrap_or(0));
+        }
+    }
+
+    /// Reopens the files a state had open, at their positions.
+    pub(crate) fn restore(&mut self, r: &mut Reader) -> Result<(), StateError> {
+        self.open.clear();
+        for _ in 0..r.u16()? {
+            let handle = r.u16()?;
+            let folder = r.u8()?;
+            let name = String::from_utf8_lossy(r.bytes()?).into_owned();
+            let (write, position) = (r.bool()?, r.u64()?);
+            let path = match folder {
+                IN_SAVES => self.saves.join(&name),
+                IN_DATA => self.data.join(&name),
+                ELSEWHERE => PathBuf::from(&name),
+                other => return Err(StateError::Invalid(format!("folder {other} of {name}"))),
+            };
+            let reopen = || -> std::io::Result<File> {
+                let mut file = OpenOptions::new().read(true).write(write).open(&path)?;
+                file.seek(SeekFrom::Start(position))?;
+                Ok(file)
+            };
+            let file = reopen()
+                .map_err(|error| StateError::Invalid(format!("{}: {error}", path.display())))?;
+            self.open.insert(handle, Open { file, path, write });
+        }
+        Ok(())
     }
 }
 
@@ -138,7 +198,7 @@ impl Dos {
         options.read(true).write(write).create(create).truncate(create);
         match options.open(&path) {
             Ok(file) => {
-                m.regs.ax = self.files.insert(file);
+                m.regs.ax = self.files.insert(file, path, write);
                 success(m);
             }
             Err(_) => failure(m, FILE_NOT_FOUND),

@@ -9,6 +9,7 @@ mod draw;
 
 use engine::Stop;
 use machine::Machine;
+use machine::state::{Reader, StateError, Writer};
 use patches::After;
 
 use crate::Game;
@@ -73,6 +74,28 @@ pub(crate) struct Overlay {
 }
 
 impl Overlay {
+    pub(crate) fn save(&self, w: &mut Writer) {
+        w.bytes(&self.font);
+        w.bool(self.atlas.is_some());
+        w.bytes(self.atlas.as_deref().unwrap_or_default());
+        w.u8(self.context_buttons);
+        w.bytes(&self.covered);
+        w.bool(self.mule_shop);
+        w.bool(self.mule_shop_visible);
+    }
+
+    pub(crate) fn restore(&mut self, r: &mut Reader) -> Result<(), StateError> {
+        self.font = r.bytes()?.to_vec();
+        let prepared = r.bool()?;
+        let atlas = r.bytes()?;
+        self.atlas = prepared.then(|| atlas.into());
+        self.context_buttons = r.u8()?;
+        self.covered = r.bytes()?.to_vec();
+        self.mule_shop = r.bool()?;
+        self.mule_shop_visible = r.bool()?;
+        Ok(())
+    }
+
     /// Whether a dialog or menu covers the scene.
     pub(crate) fn menu_open(&self) -> bool {
         !self.covered.is_empty()

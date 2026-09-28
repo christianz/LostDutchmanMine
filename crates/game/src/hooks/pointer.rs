@@ -7,6 +7,7 @@
 
 use dos::MouseSample;
 use machine::Machine;
+use machine::state::{Reader, StateError, Writer};
 use patches::After;
 use patches::resume::{SELECTION, SELECTOR_CALL, WALKING};
 
@@ -24,6 +25,20 @@ pub(crate) struct WorldPointer {
 }
 
 impl WorldPointer {
+    pub(crate) fn save(&self, w: &mut Writer) {
+        crate::state::save_sample(w, self.last);
+        w.bool(self.click.is_some());
+        crate::state::save_sample(w, self.click.unwrap_or_default());
+    }
+
+    pub(crate) fn restore(&mut self, r: &mut Reader) -> Result<(), StateError> {
+        self.last = crate::state::restore_sample(r)?;
+        let pending = r.bool()?;
+        let click = crate::state::restore_sample(r)?;
+        self.click = pending.then_some(click);
+        Ok(())
+    }
+
     /// Baselines on `current` and forgets a waiting click.
     pub(crate) fn reset(&mut self, current: MouseSample) {
         self.last = current;

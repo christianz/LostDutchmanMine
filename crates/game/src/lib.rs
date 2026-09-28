@@ -17,6 +17,7 @@ mod overlay;
 mod pixels;
 mod program;
 mod report;
+mod state;
 pub mod symbols;
 mod translated;
 

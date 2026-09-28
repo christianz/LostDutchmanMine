@@ -1,5 +1,6 @@
 //! I/O ports and the programmable interval timer.
 
+use crate::state::{Reader, StateError, Writer};
 use crate::{Machine, Width};
 
 /// The PIT's channel 0 (the system timer) and channel 2 (the PC speaker), as
@@ -17,6 +18,25 @@ pub struct Pit {
 }
 
 impl Pit {
+    pub(crate) fn save(&self, w: &mut Writer) {
+        w.u16(self.timer_divisor);
+        w.u16(self.speaker_divisor);
+        w.u8(self.timer_low);
+        w.u32(self.timer_writes);
+        w.u8(self.speaker_low);
+        w.u32(self.speaker_writes);
+    }
+
+    pub(crate) fn restore(&mut self, r: &mut Reader) -> Result<(), StateError> {
+        self.timer_divisor = r.u16()?;
+        self.speaker_divisor = r.u16()?;
+        self.timer_low = r.u8()?;
+        self.timer_writes = r.u32()?;
+        self.speaker_low = r.u8()?;
+        self.speaker_writes = r.u32()?;
+        Ok(())
+    }
+
     /// PIT input clocks per timer interrupt.
     pub const fn timer_period(&self) -> u64 {
         if self.timer_divisor == 0 { 65536 } else { self.timer_divisor as u64 }
@@ -62,6 +82,16 @@ impl Ports {
     /// The latched byte of a port.
     pub fn get(&self, port: u16) -> u8 {
         self.values[usize::from(port)]
+    }
+
+    pub(crate) fn save(&self, w: &mut Writer) {
+        w.fixed(self.values.as_slice());
+    }
+
+    pub(crate) fn restore(&mut self, r: &mut Reader) -> Result<(), StateError> {
+        let values = r.fixed(self.values.len())?;
+        self.values.copy_from_slice(values);
+        Ok(())
     }
 
     /// Latches a byte without the side effects of OUT, as BIOS services do.

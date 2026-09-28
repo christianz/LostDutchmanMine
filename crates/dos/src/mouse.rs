@@ -3,6 +3,7 @@
 use std::collections::VecDeque;
 
 use machine::Machine;
+use machine::state::{Reader, StateError, Writer};
 
 use crate::Dos;
 
@@ -39,6 +40,29 @@ pub struct MouseInput {
 }
 
 impl MouseInput {
+    pub(crate) fn save(&self, w: &mut Writer) {
+        save_sample(w, self.current);
+        save_sample(w, self.sample);
+        w.u32(self.pending.len() as u32);
+        for &(sample, at) in &self.pending {
+            save_sample(w, sample);
+            w.u64(at);
+        }
+        w.u64(self.now_ms);
+    }
+
+    pub(crate) fn restore(&mut self, r: &mut Reader) -> Result<(), StateError> {
+        self.current = restore_sample(r)?;
+        self.sample = restore_sample(r)?;
+        self.pending.clear();
+        for _ in 0..r.u32()? {
+            let sample = restore_sample(r)?;
+            self.pending.push_back((sample, r.u64()?));
+        }
+        self.now_ms = r.u64()?;
+        Ok(())
+    }
+
     /// Emulated time, set before each simulation quantum.
     pub fn set_time(&mut self, now_ms: u64) {
         self.now_ms = now_ms;
@@ -110,6 +134,40 @@ pub struct Mouse {
     pub shape: [u16; 32],
     /// Whether the program defined its own cursor.
     pub custom_cursor: bool,
+}
+
+fn save_sample(w: &mut Writer, sample: MouseSample) {
+    w.i32(sample.x);
+    w.i32(sample.y);
+    w.u8(sample.buttons);
+}
+
+fn restore_sample(r: &mut Reader) -> Result<MouseSample, StateError> {
+    Ok(MouseSample { x: r.i32()?, y: r.i32()?, buttons: r.u8()? })
+}
+
+impl Mouse {
+    pub(crate) fn save(&self, w: &mut Writer) {
+        self.input.save(w);
+        w.i32(self.visibility);
+        w.i32(self.hotspot.0);
+        w.i32(self.hotspot.1);
+        for row in self.shape {
+            w.u16(row);
+        }
+        w.bool(self.custom_cursor);
+    }
+
+    pub(crate) fn restore(&mut self, r: &mut Reader) -> Result<(), StateError> {
+        self.input.restore(r)?;
+        self.visibility = r.i32()?;
+        self.hotspot = (r.i32()?, r.i32()?);
+        for row in &mut self.shape {
+            *row = r.u16()?;
+        }
+        self.custom_cursor = r.bool()?;
+        Ok(())
+    }
 }
 
 impl Default for Mouse {

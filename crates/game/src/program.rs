@@ -4,6 +4,7 @@
 use dos::{KEY_REPEAT, bios_key, repeat_from};
 use engine::{InputKind, Program, Stop};
 use machine::Machine;
+use machine::state::{Reader, StateError, Writer};
 
 use crate::symbols::set_joystick;
 use crate::{Game, translated};
@@ -20,6 +21,18 @@ pub(crate) struct Held {
     /// Whether panning was under way when this quantum began: input made while
     /// panning never reaches the game, and changing either way drops it.
     was_panning: bool,
+}
+
+impl Held {
+    pub(crate) fn save(self, w: &mut Writer) {
+        w.u8(self.directions);
+        w.bool(self.was_panning);
+    }
+
+    pub(crate) fn restore(&mut self, r: &mut Reader) -> Result<(), StateError> {
+        (self.directions, self.was_panning) = (r.u8()?, r.bool()?);
+        Ok(())
+    }
 }
 
 impl Game {

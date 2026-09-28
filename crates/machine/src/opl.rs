@@ -58,4 +58,10 @@ impl Opl {
         self.chip.restore(state);
         self.pending.clear();
     }
+
+    /// Restores the chip and the diagnostic write count, for savestates.
+    pub(crate) fn restore_with_count(&mut self, state: &[u8], data_writes: u64) {
+        self.restore(state);
+        self.data_writes = data_writes;
+    }
 }

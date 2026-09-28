@@ -6,6 +6,7 @@
 
 use dos::direction_scan;
 use machine::Machine;
+use machine::state::{Reader, StateError, Writer};
 use patches::After;
 use patches::resume::{AFTER_HAZARD_CHECK, WALKING};
 
@@ -20,6 +21,18 @@ const DIRECTIONS: u8 = 15;
 pub(crate) struct Walk {
     fast: bool,
     extra_tick: bool,
+}
+
+impl Walk {
+    pub(crate) fn save(self, w: &mut Writer) {
+        w.bool(self.fast);
+        w.bool(self.extra_tick);
+    }
+
+    pub(crate) fn restore(&mut self, r: &mut Reader) -> Result<(), StateError> {
+        (self.fast, self.extra_tick) = (r.bool()?, r.bool()?);
+        Ok(())
+    }
 }
 
 /// A walking step begins.

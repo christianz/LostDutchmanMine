@@ -224,4 +224,10 @@ impl Registers {
             self.ds, self.es, self.ss, self.ip, self.flags,
         ]
     }
+
+    /// The registers from [`Registers::in_trace_order`].
+    pub const fn from_trace_order(values: [u16; 14]) -> Self {
+        let [ax, bx, cx, dx, si, di, bp, sp, cs, ds, es, ss, ip, flags] = values;
+        Registers { ax, bx, cx, dx, si, di, bp, sp, cs, ds, es, ss, ip, flags }
+    }
 }
