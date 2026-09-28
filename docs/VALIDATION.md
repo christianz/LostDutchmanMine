@@ -472,6 +472,32 @@ headless recovery probe's accelerated synthetic clock is not fidelity evidence.
 The checked Windows test host available during development identifies itself
 as Windows Server 2025, not Windows 11. No Windows 11 runtime claim is made.
 
+## Deterministic runs and golden traces
+
+`build/ldm-native --trace FILE` runs a script deterministically: emulated time
+advances one millisecond per loop, independent of the host; script events apply at
+their virtual time; no audio device renders, so the OPL timers advance from port
+accesses and emulated time only; DOS date and time are a fixed base plus emulated
+time; stale mouse clicks expire after one emulated second. Every 100 emulated
+milliseconds, and at the end, the trace records
+`ms=<n> blocks=<n> ticks=<n> hash=<FNV-1a 64 of registers, memory and palette>`.
+A 25-second scenario runs in about two seconds.
+
+```sh
+python3 tools/fixtures.py            # isolated saves from $LDM_DATA, built twice, must match
+python3 tools/record_traces.py       # record tests/golden/*.trace
+python3 tools/record_traces.py --check
+```
+
+`tests/scenarios.json` lists 29 scenarios with their fixtures, durations and QoL
+settings. `qol-saloon` and `saloon-sleep` are absent because their saves have no
+generator. The golden traces are the reference the Rust build must reproduce; they
+contain hashes only, no game data. Two consecutive checks, the second with fixtures
+rebuilt from scratch, reproduce every trace, and the single-run verifiers pass on
+the deterministic captures. `panning.txt` now navigates the seven-row settings
+menu, and `verify-panning.py` expects the original animation with QoL off as well
+(update 16), so the Pan click made during that animation is ignored.
+
 ## Reproduce focused checks
 
 ```sh
