@@ -50,6 +50,9 @@ pub struct Machine {
     pub vga: Vga,
     /// Translated runs started so far: the C++ build's "boundaries".
     pub steps: u64,
+    /// The lowest stack pointer a push has reached since it was last set. A
+    /// lockstep check sets it at a routine's entry to find the dead stack.
+    pub low_water: u16,
 }
 
 impl Machine {
@@ -64,6 +67,7 @@ impl Machine {
             opl: Opl::default(),
             vga: Vga::default(),
             steps: 0,
+            low_water: u16::MAX,
         }
     }
 
@@ -81,6 +85,7 @@ impl Machine {
     /// Pushes a word onto SS:SP.
     pub fn push(&mut self, value: u16) {
         self.regs.sp = self.regs.sp.wrapping_sub(2);
+        self.low_water = self.low_water.min(self.regs.sp);
         self.memory.write16(self.regs.ss, self.regs.sp, value);
     }
 

@@ -78,3 +78,26 @@ fn a_patch_on_the_wrong_bytes_stops_the_build() {
     let error = Translation::build(&image, &recover(&image, &[]), &wrong).expect_err("mismatch");
     assert_eq!(error.to_string(), "patch `sample before` at 0000:0013: expected 56, found 55");
 }
+
+#[test]
+fn a_routine_entry_may_hand_over_to_readable_rust_and_carries_its_contract() {
+    use patches::Routine;
+    let image = image();
+    let patches = [Patch {
+        name: "sample routine",
+        site: Address::new(0, 0x13),
+        expect: &[0x55],
+        action: Action::Routine(Routine::DecodeAsset),
+    }];
+    let translation =
+        Translation::build(&image, &recover(&image, &[]), &patches).expect("translation");
+    let contract = translation.contracts[&Routine::DecodeAsset];
+    let files = emit(&translation, "sample");
+    assert!(files[0].contents.contains(&format!(
+        "pub(crate) const CONTRACTS: &[(Routine, u32)] = &[(Routine::DecodeAsset, {:#x})];",
+        contract.bits()
+    )));
+    assert!(files[1].contents.contains(
+        "if let Some(next) = routine(m, g, Routine::DecodeAsset)? { return Ok(next); }\n    m.push(m.regs.bp);"
+    ));
+}

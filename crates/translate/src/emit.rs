@@ -58,6 +58,17 @@ fn top(translation: &Translation, origin: &str) -> File {
     s.push_str(
         "        segment => Err(Stop::Unrecovered(Address::new(segment, m.regs.ip))),\n    }\n}\n",
     );
+    let contracts: Vec<String> = translation
+        .contracts
+        .iter()
+        .map(|(routine, uses)| format!("(Routine::{routine:?}, {:#x})", uses.bits()))
+        .collect();
+    let _ = writeln!(
+        s,
+        "\n/// What callers of each readable routine observe, as `translate::liveness::Uses` bits.\n\
+         pub(crate) const CONTRACTS: &[(Routine, u32)] = &[{}];",
+        contracts.join(", ")
+    );
     File { name: "translated.rs".to_owned(), contents: s }
 }
 
@@ -148,6 +159,9 @@ fn with_patches(segment: &Segment, instruction: &Instruction) -> Vec<String> {
         match patch.action {
             Action::Before(hook) => lines.push(format!(
                 "if let Some(next) = before(m, g, Hook::{hook:?}, {next:#06x})? {{ return Ok(next); }}"
+            )),
+            Action::Routine(routine) => lines.push(format!(
+                "if let Some(next) = routine(m, g, Routine::{routine:?})? {{ return Ok(next); }}"
             )),
             Action::Replace(hook) => {
                 lines.push(format!("match replace(m, g, Hook::{hook:?}, {next:#06x})? {{"));

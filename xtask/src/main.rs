@@ -75,12 +75,15 @@ pub(crate) fn game_executable() -> Result<PathBuf> {
     Ok(exe)
 }
 
-/// Every test that needs the original game: the headless boot and every
-/// scenario against its golden trace and checks.
+/// Every test that needs the original game: the translation, the headless
+/// boot and savestates, the readable decoder on every shipped asset, and every
+/// scenario against its golden trace and checks, with readable routines
+/// checked in lockstep.
 fn verify() -> Result<()> {
     let exe = game_executable()?;
     let status = Command::new("cargo")
-        .args(["test", "-p", "game", "-p", "testkit", "--", "--ignored", "--nocapture"])
+        .args(["test", "-p", "translate", "-p", "game", "-p", "testkit"])
+        .args(["--", "--ignored", "--nocapture"])
         .env("LDM_EXE", &exe)
         .current_dir(root())
         .status()

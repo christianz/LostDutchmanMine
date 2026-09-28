@@ -5,9 +5,11 @@
 //! never land on the wrong instruction. The `game` crate implements the hooks.
 
 mod hook;
+mod routine;
 mod table;
 
 pub use hook::{After, Hook, resume};
+pub use routine::Routine;
 pub use table::PATCHES;
 
 use machine::Address;
@@ -34,13 +36,17 @@ pub enum Action {
     /// Run the hook instead of the instruction. The hook may still ask for the
     /// original instruction with [`After::Original`].
     Replace(Hook),
+    /// At a routine's entry: the readable routine may stand in for the
+    /// translated one, from here to its return.
+    Routine(Routine),
 }
 
 impl Patch {
-    /// The hook this patch runs.
-    pub const fn hook(&self) -> Hook {
+    /// The hook this patch runs, if it runs one.
+    pub const fn hook(&self) -> Option<Hook> {
         match self.action {
-            Action::Before(hook) | Action::Replace(hook) => hook,
+            Action::Before(hook) | Action::Replace(hook) => Some(hook),
+            Action::Routine(_) => None,
         }
     }
 }

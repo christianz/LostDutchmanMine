@@ -24,3 +24,14 @@ fn each_site_has_one_meaning() {
 fn every_patch_explains_itself() {
     assert!(PATCHES.iter().all(|patch| !patch.name.is_empty() && !patch.expect.is_empty()));
 }
+
+#[test]
+fn a_replaced_routine_is_the_only_patch_at_its_entry() {
+    use patches::Routine;
+    let entry = PATCHES
+        .iter()
+        .find(|patch| patch.action == Action::Routine(Routine::DecodeAsset))
+        .expect("the asset decoder is replaceable")
+        .site;
+    assert_eq!(PATCHES.iter().filter(|patch| patch.site == entry).count(), 1);
+}

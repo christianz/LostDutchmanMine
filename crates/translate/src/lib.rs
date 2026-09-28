@@ -6,6 +6,7 @@
 pub mod emit;
 pub mod image;
 pub mod ir;
+pub mod liveness;
 mod lower;
 pub mod recover;
 pub mod translation;

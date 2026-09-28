@@ -1,5 +1,6 @@
-//! Every scenario against the C++ oracle's golden trace, and every check ported
-//! from its verifiers against the runs it reads.
+//! Every scenario against the C++ oracle's golden trace, every readable
+//! routine call against its translation, and every check ported from the
+//! verifiers against the runs it reads.
 
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
@@ -21,7 +22,7 @@ fn every_scenario_reproduces_its_golden_trace() {
     let root = root();
     let manifest = Manifest::load(&root).expect("tests/scenarios.json");
     let data = data(&root);
-    let (mut failures, runs): (Vec<String>, Runs) = std::thread::scope(|scope| {
+    let (mut failures, checked, runs): (Vec<String>, u64, Runs) = std::thread::scope(|scope| {
         let runs: Vec<_> = manifest
             .scenarios
             .iter()
@@ -34,19 +35,42 @@ fn every_scenario_reproduces_its_golden_trace() {
                     )
                     .expect("a golden trace");
                     match run(scenario, root, data, &folder) {
-                        Err(error) => (Some(format!("{}: {error}", scenario.name)), None),
-                        Ok(outcome) => (
-                            first_difference(&scenario.name, &golden, &outcome.trace),
-                            Some((scenario.name.clone(), Run { outcome, folder })),
-                        ),
+                        Err(error) => (vec![format!("{}: {error}", scenario.name)], 0, None),
+                        Ok(outcome) => {
+                            let mut problems: Vec<String> =
+                                first_difference(&scenario.name, &golden, &outcome.trace)
+                                    .into_iter()
+                                    .collect();
+                            problems.extend(
+                                outcome
+                                    .routine_mismatches
+                                    .iter()
+                                    .map(|mismatch| format!("{}: {mismatch}", scenario.name)),
+                            );
+                            let checked = outcome.routine_checks;
+                            (
+                                problems,
+                                checked,
+                                Some((scenario.name.clone(), Run { outcome, folder })),
+                            )
+                        }
                     }
                 })
             })
             .collect();
-        let results = runs.into_iter().map(|run| run.join().expect("a scenario thread"));
-        let (failures, runs): (Vec<_>, Vec<_>) = results.unzip();
-        (failures.into_iter().flatten().collect(), runs.into_iter().flatten().collect())
+        let (mut failures, mut checked, mut done) = (Vec::new(), 0, Vec::new());
+        for result in runs.into_iter().map(|run| run.join().expect("a scenario thread")) {
+            let (problems, checks, run) = result;
+            failures.extend(problems);
+            checked += checks;
+            done.extend(run);
+        }
+        (failures, checked, done.into_iter().collect())
     });
+    if checked == 0 {
+        failures.push("no readable routine call was checked in lockstep".to_owned());
+    }
+    eprintln!("{checked} readable routine calls checked in lockstep");
     let scenarios: HashSet<&str> = manifest.scenarios.iter().map(|s| s.name.as_str()).collect();
     failures.extend(check_failures(&scenarios, &runs));
     assert!(failures.is_empty(), "{} failures:\n{}", failures.len(), failures.join("\n"));

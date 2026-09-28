@@ -118,6 +118,8 @@ fn run(options: &Options) -> Result<()> {
     let (machine, mut game) =
         game::boot(options.data.clone(), options.saves.clone(), settings.qol)?;
     game.dos.clock.base = local_clock_seconds();
+    // Play runs the readable routines; lockstep proves them equal to the originals.
+    game.set_routine_mode(game::RoutineMode::Readable);
 
     sdl2::hint::set("SDL_WINDOWS_DPI_AWARENESS", "permonitorv2");
     sdl2::hint::set("SDL_MOUSE_FOCUS_CLICKTHROUGH", "1");

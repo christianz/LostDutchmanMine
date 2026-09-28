@@ -8,9 +8,9 @@
 
 use engine::Stop;
 use machine::{Address, Fault, LOAD_SEGMENT, Machine, RESERVED};
-use patches::{After, Hook};
+use patches::{After, Hook, Routine};
 
-use crate::{Game, hooks};
+use crate::{Game, hooks, routines};
 
 /// The names generated code uses.
 pub(crate) mod prelude {
@@ -19,7 +19,7 @@ pub(crate) mod prelude {
         Address, AluOp, Cond, Flag, LOAD_SEGMENT, Machine, RESERVED, Repeat, ShiftOp, StringOp,
         Width,
     };
-    pub(crate) use patches::Hook;
+    pub(crate) use patches::{Hook, Routine};
 
     #[allow(
         unused_imports,
@@ -27,7 +27,7 @@ pub(crate) mod prelude {
     )]
     pub(crate) use super::{
         AtSite, Next, Replaced, before, call, far_call, far_call_indirect, far_jump,
-        far_jump_indirect, interrupt, iret, replace, ret, retf, yield_at,
+        far_jump_indirect, interrupt, iret, replace, ret, retf, routine, yield_at,
     };
     pub(crate) use crate::Game;
 }
@@ -44,7 +44,7 @@ mod generated {
     include!(concat!(env!("OUT_DIR"), "/translated.rs"));
 }
 
-pub(crate) use generated::step;
+pub(crate) use generated::{CONTRACTS, step};
 
 include!(concat!(env!("OUT_DIR"), "/source.rs"));
 
@@ -66,6 +66,28 @@ pub(crate) enum Replaced {
     Transfer(Next),
 }
 
+/// At a readable routine's entry: `Some` when the readable routine ran and
+/// returned, `None` to run the translation.
+pub(crate) fn routine(
+    m: &mut Machine,
+    g: &mut Game,
+    routine: Routine,
+) -> Result<Option<Next>, Stop> {
+    Ok(routines::dispatch(m, g, routine)?.then_some(Next::Yield))
+}
+
+/// A readable routine's translation checked in lockstep runs on a copy of
+/// the machine, so it must not change DOS or the port's state.
+fn outside_check(m: &Machine, g: &Game) -> Result<(), Stop> {
+    if g.routines.checking {
+        let at = Address::from_runtime(m.regs.cs, m.regs.ip);
+        return Err(Stop::Program(format!(
+            "a routine checked in lockstep reached DOS or a hook at {at}"
+        )));
+    }
+    Ok(())
+}
+
 /// Runs a `Before` hook: `None` continues with the instruction.
 pub(crate) fn before(
     m: &mut Machine,
@@ -73,6 +95,7 @@ pub(crate) fn before(
     hook: Hook,
     next: u16,
 ) -> Result<Option<Next>, Stop> {
+    outside_check(m, g)?;
     Ok(match hooks::run(hook, m, g, next)? {
         After::Continue => None,
         After::Original => return Err(misplaced(hook, m)),
@@ -89,6 +112,7 @@ pub(crate) fn replace(
     hook: Hook,
     next: u16,
 ) -> Result<Replaced, Stop> {
+    outside_check(m, g)?;
     Ok(match hooks::run(hook, m, g, next)? {
         After::Continue => Replaced::Done,
         After::Original => Replaced::Original,
@@ -112,6 +136,7 @@ fn misplaced(hook: Hook, m: &Machine) -> Stop {
 /// `INT number`: true when the run must stop, because the program exited or
 /// waits for input. IP still addresses the `INT`, so a wait retries it.
 pub(crate) fn interrupt(m: &mut Machine, g: &mut Game, number: u8) -> Result<bool, Stop> {
+    outside_check(m, g)?;
     g.dos.interrupt(m, number).map_err(|error| {
         Stop::Program(format!("{error} at {}", Address::from_runtime(m.regs.cs, m.regs.ip)))
     })?;

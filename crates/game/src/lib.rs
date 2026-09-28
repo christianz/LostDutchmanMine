@@ -11,12 +11,14 @@
 
 mod assets;
 mod boot;
+mod decompiled;
 mod frame;
 mod hooks;
 mod overlay;
 mod pixels;
 mod program;
 mod report;
+mod routines;
 mod state;
 pub mod symbols;
 mod translated;
@@ -29,6 +31,7 @@ pub use assets::{AssetError, decode_asset};
 pub use boot::{BootError, boot};
 pub use frame::Frame;
 pub use report::Report;
+pub use routines::RoutineMode;
 
 /// The game's state beside the machine: DOS, and what the port adds.
 #[derive(Debug)]
@@ -51,6 +54,8 @@ pub struct Game {
     pub(crate) overlay: overlay::Overlay,
     /// Input held across quanta.
     pub(crate) held: program::Held,
+    /// Which implementation of the readable routines runs.
+    pub(crate) routines: routines::Routines,
 }
 
 impl Game {
@@ -66,6 +71,7 @@ impl Game {
             combat: hooks::Combat::default(),
             overlay: overlay::Overlay::default(),
             held: program::Held::default(),
+            routines: routines::Routines::default(),
         };
         game.set_qol(qol);
         game
@@ -74,6 +80,21 @@ impl Game {
     /// Whether the quality-of-life improvements are on.
     pub fn qol(&self) -> bool {
         self.qol
+    }
+
+    /// Chooses the translated, readable or lockstep-checked routines.
+    pub fn set_routine_mode(&mut self, mode: RoutineMode) {
+        self.routines.mode = mode;
+    }
+
+    /// Readable routine calls checked in lockstep so far.
+    pub fn routine_checks(&self) -> u64 {
+        self.routines.checked
+    }
+
+    /// What lockstep found to differ, the first calls first.
+    pub fn routine_mismatches(&self) -> &[String] {
+        &self.routines.mismatches
     }
 
     /// Turns the quality-of-life improvements on or off. With them the desktop

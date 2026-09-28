@@ -118,6 +118,16 @@ pub const AIM_FLOOR: Global = Global(0x0112);
 /// The segment of the original sprite page holding the sight.
 pub const SPRITE_PAGE: Address = Address::new(0x1b14, 0xfb37);
 
+// The asset decoder (1265:1250) keeps its state in the stream's own segment.
+/// The decoder's current code width in bits.
+pub const DECODER_CODE_WIDTH: u16 = 0xfa24;
+/// Packed bytes left to read, plus one.
+pub const DECODER_BYTES_LEFT: u16 = 0xfa26;
+/// Bits of the current byte not yet read.
+pub const DECODER_BITS_LEFT: u16 = 0xfa28;
+/// The current byte, shifted so its next bit is the top one.
+pub const DECODER_BYTE: u16 = 0xfa2a;
+
 /// The original 8x8 font: 256 glyphs of eight rows.
 pub const FONT: Address = Address::new(0x1a94, 0x0000);
 

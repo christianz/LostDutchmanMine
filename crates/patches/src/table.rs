@@ -2,7 +2,7 @@
 
 use machine::Address;
 
-use crate::{Action, Hook, Patch};
+use crate::{Action, Hook, Patch, Routine};
 
 const fn at(segment: u16, offset: u16) -> Address {
     Address::new(segment, offset)
@@ -14,6 +14,15 @@ const fn before(name: &'static str, site: Address, expect: &'static [u8], hook: 
 
 const fn replace(name: &'static str, site: Address, expect: &'static [u8], hook: Hook) -> Patch {
     Patch { name, site, expect, action: Action::Replace(hook) }
+}
+
+const fn routine(
+    name: &'static str,
+    site: Address,
+    expect: &'static [u8],
+    routine: Routine,
+) -> Patch {
+    Patch { name, site, expect, action: Action::Routine(routine) }
 }
 
 const LCALL_DESERT_DELAY: &[u8] = &[0x9a, 0x0c, 0x00, 0x05, 0x05];
@@ -289,4 +298,6 @@ pub static PATCHES: &[Patch] = &[
         &[0x89, 0x46, 0xfa],
         Hook::MovementKeys(false),
     ),
+    // Readable routines.
+    routine("the asset decoder", at(0x1265, 0x1250), &[0x8b, 0x04], Routine::DecodeAsset),
 ];

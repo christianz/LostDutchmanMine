@@ -4,10 +4,11 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use machine::Address;
-use patches::{Action, Patch};
+use patches::{Action, Patch, Routine};
 
 use crate::image::{LoadImage, hex};
 use crate::ir::Ir;
+use crate::liveness::{Uses, routine_live_out};
 use crate::recover::Recovered;
 use crate::{Instruction, LowerError, Relocations, lower};
 
@@ -29,6 +30,8 @@ pub struct Segment {
 pub struct Translation {
     /// Segments by image-relative number.
     pub segments: BTreeMap<u16, Segment>,
+    /// What each readable routine's callers observe.
+    pub contracts: BTreeMap<Routine, Uses>,
 }
 
 /// Why a translation cannot be built.
@@ -103,6 +106,12 @@ impl Translation {
         for segment in translation.segments.values_mut() {
             segment.add_resume_points();
         }
+        for patch in patches {
+            if let Action::Routine(routine) = patch.action {
+                let contract = routine_live_out(&translation, patch.site);
+                translation.contracts.insert(routine, contract);
+            }
+        }
         Ok(translation)
     }
 
@@ -123,7 +132,7 @@ impl Translation {
         }
         let next = instruction.next();
         let segment = segment.expect("checked above");
-        for target in patch.hook().targets(next) {
+        for target in patch.hook().map(|hook| hook.targets(next)).unwrap_or_default() {
             if !segment.instructions.contains_key(&target) {
                 return Err(TranslationError::TargetNotCode { name, site, target });
             }

@@ -8,7 +8,7 @@ use desktop::controller::Controller;
 use desktop::keys::{Key, SHIFT, bios, default_keycode};
 use desktop::settings::{self, DisplaySettings};
 use engine::{Engine, InputKind, Stop};
-use game::{BootError, Frame, Game, Report};
+use game::{BootError, Frame, Game, Report, RoutineMode};
 use serde::Deserialize;
 
 use crate::script::{self, Action, ScriptError};
@@ -120,6 +120,10 @@ pub struct Outcome {
     pub screens: Vec<Screen>,
     /// How it ended.
     pub ending: Ending,
+    /// Readable routine calls checked in lockstep with their translation.
+    pub routine_checks: u64,
+    /// What those checks found to differ.
+    pub routine_mismatches: Vec<String>,
 }
 
 /// Why a scenario could not run.
@@ -183,7 +187,10 @@ pub fn run(
         std::fs::write(&config, format!("qol={qol}\nstartup=0\n")).map_err(io(&config))?;
     }
     let settings = settings::load(&config);
-    let (machine, game) = game::boot(data.to_path_buf(), saves, settings.qol)?;
+    let (machine, mut game) = game::boot(data.to_path_buf(), saves, settings.qol)?;
+    // The translation keeps the oracle's timing, and every readable routine
+    // call is checked against it on the side.
+    game.set_routine_mode(RoutineMode::Lockstep);
     let mut controller = Controller::new(config, settings, scenario.settings);
     let mut engine = Engine::new(machine, game);
     let mut outcome = Outcome::default();
@@ -222,6 +229,8 @@ pub fn run(
     outcome.ending.ms = end;
     outcome.ending.exited = engine.finished();
     outcome.ending.pit_divisor = engine.machine().pit.timer_divisor;
+    outcome.routine_checks = engine.program().routine_checks();
+    outcome.routine_mismatches = engine.program().routine_mismatches().to_vec();
     Ok(outcome)
 }
 
