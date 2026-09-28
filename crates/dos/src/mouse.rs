@@ -145,7 +145,7 @@ impl Dos {
             // The DOS selectors park the hidden hand beside the clock. With a
             // persistent desktop pointer (QoL) only physical motion moves it.
             0x04 if self.park_cursor => {
-                mouse.input.warp(i32::from(m.regs.cx / 2), i32::from(m.regs.dx))
+                mouse.input.warp(i32::from(m.regs.cx / 2), i32::from(m.regs.dx));
             }
             0x04 | 0x07 | 0x08 | 0x0a | 0x0f => {}
             0x09 => {

@@ -54,7 +54,7 @@ impl Dos {
             0x33 => m.regs.dx = 0,
             0x35 => {
                 (m.regs.bx, m.regs.es) =
-                    (m.memory.read16(0, vector), m.memory.read16(0, vector + 2))
+                    (m.memory.read16(0, vector), m.memory.read16(0, vector + 2));
             }
             0x36 => (m.regs.ax, m.regs.bx, m.regs.cx, m.regs.dx) = (1, 0x4000, 512, 0x8000),
             0x3c..=0x40 | 0x42 | 0x43 => return self.file_service(m),

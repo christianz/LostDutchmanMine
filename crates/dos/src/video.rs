@@ -140,7 +140,7 @@ fn palette_service(m: &mut Machine, al: u8) -> bool {
             }
         }
         0x10 => {
-            m.vga.palette[usize::from(bx & 0xff)] = colour(m.regs.dh(), m.regs.ch(), m.regs.cl())
+            m.vga.palette[usize::from(bx & 0xff)] = colour(m.regs.dh(), m.regs.ch(), m.regs.cl());
         }
         0x12 => {
             for i in 0..cx {

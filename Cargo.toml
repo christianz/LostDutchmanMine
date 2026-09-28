@@ -4,6 +4,7 @@ members = [
     "crates/desktop",
     "crates/dos",
     "crates/engine",
+    "crates/game",
     "crates/machine",
     "crates/patches",
     "crates/testkit",
@@ -22,6 +23,7 @@ rust-version = "1.94"
 [workspace.dependencies]
 dos = { path = "crates/dos" }
 engine = { path = "crates/engine" }
+game = { path = "crates/game" }
 machine = { path = "crates/machine" }
 patches = { path = "crates/patches" }
 translate = { path = "crates/translate" }

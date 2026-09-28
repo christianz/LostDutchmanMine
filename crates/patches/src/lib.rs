@@ -7,7 +7,7 @@
 mod hook;
 mod table;
 
-pub use hook::{After, Hook};
+pub use hook::{After, Hook, resume};
 pub use table::PATCHES;
 
 use machine::Address;

@@ -84,10 +84,6 @@ pub enum Hook {
     ReadContextButtons,
     /// The scene's context buttons are cleared.
     ClearContextButtons,
-    /// The walking command poll starts choosing.
-    BeginChoosing,
-    /// The walking command poll stops choosing.
-    EndChoosing,
     /// The shared selector's hook: remap QoL toolbar clicks, open a menu.
     OpenSelectorMenu,
     /// A menu opened from the walking poll closes.
@@ -114,19 +110,46 @@ pub enum Hook {
     ReturnToWalking,
 }
 
+/// Where hooks continue, by the original code's meaning. Offsets are in the
+/// segment of the hook's site.
+pub mod resume {
+    /// 033f: the panning reward loop's body, restored.
+    pub const PANNING_REWARD_LOOP: u16 = 0x0308;
+    /// 033f: after the panning reward loop.
+    pub const AFTER_PANNING_REWARD: u16 = 0x0410;
+    /// 033f: the panning frame loop's comparison.
+    pub const PANNING_FRAME_TEST: u16 = 0x03a0;
+    /// 033f: after the panning frame loop.
+    pub const AFTER_PANNING_FRAMES: u16 = 0x03a3;
+    /// 1265: the accepted-VGA path of the graphics selector.
+    pub const VGA_CHOSEN: u16 = 0x06f7;
+    /// 0000: the walking poll's call of the selector.
+    pub const SELECTOR_CALL: u16 = 0x07fc;
+    /// 0000: the walking poll's handling of a selection.
+    pub const SELECTION: u16 = 0x08cc;
+    /// 0000: the walking poll's return to keyboard walking.
+    pub const WALKING: u16 = 0x0914;
+    /// 0bb4: the mine loop after its hazard check.
+    pub const AFTER_HAZARD_CHECK: u16 = 0x07a6;
+}
+
 impl Hook {
     /// The offsets a hook may continue or resume at, given the offset of the
     /// instruction after its site. The translator makes each one a block start.
     pub fn targets(self, next: u16) -> Vec<u16> {
+        use resume::{
+            AFTER_HAZARD_CHECK, AFTER_PANNING_FRAMES, AFTER_PANNING_REWARD, PANNING_FRAME_TEST,
+            PANNING_REWARD_LOOP, SELECTION, SELECTOR_CALL, VGA_CHOSEN, WALKING,
+        };
         match self {
             Hook::DesertCloseUp | Hook::DeferCombatSight | Hook::SkipExtraWalkTick => vec![next],
-            Hook::PanningRewardLoop => vec![0x0308, 0x0410],
-            Hook::PanningFrameLoop => vec![0x03a3, 0x03a0],
-            Hook::SkipGraphicsSelector => vec![0x06f7],
-            Hook::DispatchPendingClick => vec![0x07fc],
-            Hook::DispatchWorldClick => vec![0x08cc],
-            Hook::KeepWalking | Hook::ReturnToWalking => vec![0x0914],
-            Hook::SkipExtraHazardCheck => vec![0x07a6],
+            Hook::PanningRewardLoop => vec![PANNING_REWARD_LOOP, AFTER_PANNING_REWARD],
+            Hook::PanningFrameLoop => vec![AFTER_PANNING_FRAMES, PANNING_FRAME_TEST],
+            Hook::SkipGraphicsSelector => vec![VGA_CHOSEN],
+            Hook::DispatchPendingClick => vec![SELECTOR_CALL],
+            Hook::DispatchWorldClick => vec![SELECTION],
+            Hook::KeepWalking | Hook::ReturnToWalking => vec![WALKING],
+            Hook::SkipExtraHazardCheck => vec![AFTER_HAZARD_CHECK],
             _ => Vec::new(),
         }
     }

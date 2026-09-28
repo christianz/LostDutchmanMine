@@ -244,8 +244,6 @@ pub static PATCHES: &[Patch] = &[
         &[0x9a, 0x65, 0x00, 0x65, 0x12],
         Hook::ClearContextButtons,
     ),
-    before("walking poll chooses", at(0x0000, 0x082e), PUSH_BP, Hook::BeginChoosing),
-    before("walking poll chose", at(0x0000, 0x093d), RETF, Hook::EndChoosing),
     before("selector menu opens", at(0x0000, 0x093e), PUSH_BP, Hook::OpenSelectorMenu),
     before("selector menu closes", at(0x0000, 0x0a83), RETF, Hook::CloseSelectorMenu),
     before("building menu opens", at(0x0000, 0x0ae4), PUSH_BP, Hook::OpenBuildingMenu),

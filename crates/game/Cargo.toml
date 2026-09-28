@@ -1,0 +1,23 @@
+[package]
+name = "game"
+description = "Lost Dutchman Mine: the translated game, its hooks, the QoL overlay and frames."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+build = "build.rs"
+
+[dependencies]
+dos.workspace = true
+engine.workspace = true
+machine.workspace = true
+patches.workspace = true
+translate.workspace = true
+thiserror.workspace = true
+
+[build-dependencies]
+patches.workspace = true
+translate.workspace = true
+
+[lints]
+workspace = true

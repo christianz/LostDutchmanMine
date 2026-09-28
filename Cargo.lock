@@ -160,6 +160,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "game"
+version = "0.1.0"
+dependencies = [
+ "dos",
+ "engine",
+ "machine",
+ "patches",
+ "thiserror",
+ "translate",
+]
+
+[[package]]
 name = "generic-array"
 version = "0.14.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
