@@ -6,7 +6,6 @@
 1300 down 81
 1400 down 80
 1500 down 81
-1600 down 81
 1700 down 79
 1800 screen 301
 1900 down 40

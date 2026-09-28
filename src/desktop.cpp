@@ -73,7 +73,7 @@ int main(int argc,char**argv) {
         if(!window)throw std::runtime_error(SDL_GetError());
         SDL_SetWindowMinimumSize(window,640,480);
         if(auto icon=SDL_LoadBMP((app_dir/"LostDutchmanMine.bmp").string().c_str())){SDL_SetWindowIcon(window,icon);SDL_FreeSurface(icon);}
-        renderer=SDL_CreateRenderer(window,-1,SDL_RENDERER_ACCELERATED|(settings.vsync?SDL_RENDERER_PRESENTVSYNC:0));
+        renderer=SDL_CreateRenderer(window,-1,SDL_RENDERER_ACCELERATED|SDL_RENDERER_PRESENTVSYNC);
         if(!renderer)renderer=SDL_CreateRenderer(window,-1,SDL_RENDERER_ACCELERATED);
         if(!renderer)renderer=SDL_CreateRenderer(window,-1,SDL_RENDERER_SOFTWARE);
         if(!renderer)throw std::runtime_error(SDL_GetError());

@@ -5,8 +5,6 @@
 #include <string>
 
 namespace ldm {
-enum MenuItem { Display, PictureSize, ScalingFilter, CrtMonitor, ColourProfile,
-    Brightness, VSync, Startup, QualityOfLife, Comfort, Original, Cancel, Apply, MenuItemCount };
 class Presentation {
 public:
     Presentation(SDL_Window* window,SDL_Renderer* renderer,const std::filesystem::path& app);
@@ -33,7 +31,6 @@ private:
     std::unique_ptr<Pixels> glow_pixels_=std::make_unique<Pixels>();
     int previous_style_=-1;
     float ui_scale_=1,ui_x_=0,ui_y_=0;
-    bool vsync_available_=true;
     void upload(const Pixels& pixels,const DisplaySettings& settings);
     void picture(const SDL_Rect& destination,const DisplaySettings& settings);
     SDL_FRect ui_rect(float x,float y,float w,float h) const;
@@ -42,7 +39,4 @@ private:
     void ui_layout();
     void physical_point(int wx,int wy,int& px,int& py);
 };
-void change_setting(DisplaySettings& settings,int row,int direction);
-DisplaySettings comfort_settings(bool startup);
-DisplaySettings original_settings(bool startup);
 }

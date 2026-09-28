@@ -26,26 +26,29 @@ ignored by Git. Do not commit or publish recovered game code or assets.
 
 Build a playable bundle with `tools/package.py` (see [Build](#build)), copy the
 complete Windows bundle to a writable folder and double-click
-`LostDutchmanMine.exe`. Choose display settings, then Play. **4K comfort** selects
-desktop fullscreen, a centred 85% picture, soft edges, gentle colours and VSync.
+`LostDutchmanMine.exe`. Choose display settings, then Play. **Comfort** selects
+desktop fullscreen, a centred 85% picture, soft edges and gentle colours.
 **F11** reopens the menu while pausing the game and music. Preferences are saved
-in `display.ini`; disable **Show at startup** to go straight into the game.
+in `display.ini`; set **Show at startup** to No to go straight into the game.
 
-Choose Crisp pixels, Soft pixels or Pixel art smoothing; Original, Warm, Vivid or
-Gentle colour; brightness; window size/fullscreen; and picture size. Fullscreen
-uses the monitor's resolution with the original 4:3 proportions. Original colour
-at 100% brightness preserves the game's palette, and Crisp retains hard edges.
-These filters enlarge the existing artwork; they do not invent detail or new
-animation frames. Monitor presentation is paced separately from the game clock.
+**Display** offers three window sizes and Fullscreen, Fullscreen 85% or
+Fullscreen 70%; the smaller fullscreen pictures leave a border on large monitors.
+Fullscreen uses the monitor's resolution with the original 4:3 proportions, and
+windows always fill with the whole picture. Choose Crisp pixels, Soft pixels or
+Pixel art smoothing; Original, Warm, Vivid or Gentle colour; and brightness.
+Original colour at 100% brightness preserves the game's palette, and Crisp
+retains hard edges. These filters enlarge the existing artwork; they do not
+invent detail or new animation frames. Presentation always uses VSync where
+available and is paced to the monitor separately from the game clock.
 
-**CRT monitor** offers Off, Soft and Classic: steady scanlines, an RGB phosphor
+**CRT monitor** offers Off, Subtle and Strong: steady scanlines, an RGB phosphor
 mask, soft highlight glow and gently darker edges. The effect appears in the
-live preview and is saved with your other preferences. It is off by default;
-Soft is subtle and Classic is stronger. It leaves the settings text sharp and
-keeps the same mouse coordinates. CRT rendering adds GPU work at high resolutions.
+live preview and is saved with your other preferences. It is off by default.
+It leaves the settings text sharp and keeps the same mouse coordinates. CRT
+rendering adds GPU work at high resolutions.
 
 **QoL improvements** enables clearer in-game menus, an arrow pointer and smooth
-mouse aiming in combat, and is checked by default. The six original
+mouse aiming in combat, and is on by default. The six original
 toolbar icons gain names, larger click targets and a gold hover outline, fitted
 below the logo and weekday. Hovering shows the relevant F1-F6 shortcut in the empty message
 strip. River and other contextual buttons accept clicks on their bevels too.
@@ -84,7 +87,7 @@ the original crosshair and **left-click** to fire one shot. Its display follows
 mouse motion between encounter ticks. **Right-click** opens the pointer for
 Run/status/menu selections; a direction key returns to aiming.
 WASD, arrows and numpad still aim, and **Space** still fires. A stationary mouse
-does not override keyboard aiming. Uncheck QoL improvements for the original
+does not override keyboard aiming. Turn QoL improvements off for the original
 keyboard aiming and mouse selection behavior. Ammunition and hit rules are unchanged.
 
 The Windows executable opens only the game window. Startup failures still show

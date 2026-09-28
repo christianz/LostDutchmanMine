@@ -19,12 +19,15 @@ SDL_Texture* load_texture(SDL_Renderer* renderer,const std::filesystem::path& pa
     SDL_SetTextureBlendMode(texture,SDL_BLENDMODE_BLEND);SDL_SetTextureScaleMode(texture,SDL_ScaleModeLinear);
     return texture;
 }
-int cycle(int value,int count,int direction){return (value+count+direction)%count;}
+// Settings rows fill the column down to the preset buttons at y=566.
+constexpr float row_top=154,row_pitch=57,row_height=46;
 }
 Presentation::Presentation(SDL_Window* window,SDL_Renderer* renderer,const std::filesystem::path& app):window_(window),renderer_(renderer) {
     // Text is a pre-baked trusted bitmap; no font parser or system fonts at runtime.
     font_=load_texture(renderer_,app/"ui-font.bmp",true);
     icon_=load_texture(renderer_,app/"LostDutchmanMine.bmp",false);
+    // Presentation is paced to the monitor either way; VSync only prevents tearing.
+    SDL_RenderSetVSync(renderer_,1);
 }
 Presentation::~Presentation(){
     for(auto texture:{texture_,font_,icon_,glow_,mask_})if(texture)SDL_DestroyTexture(texture);
@@ -47,7 +50,6 @@ void Presentation::apply(const DisplaySettings& s,bool resize) {
         }
         SDL_RenderSetViewport(renderer_,nullptr);
     }
-    vsync_available_=SDL_RenderSetVSync(renderer_,s.vsync?1:0)==0;
 }
 void Presentation::upload(const Pixels& pixels,const DisplaySettings& s) {
     int style=int(s.scaling)|(int(s.colour)<<8)|(s.brightness<<16)|(int(s.crt)<<24);
@@ -86,12 +88,12 @@ void Presentation::picture(const SDL_Rect& dest,const DisplaySettings& s) {
         mask_w_=dest.w;mask_h_=dest.h;mask_style_=s.crt;
     }
     SDL_RenderCopy(renderer_,mask_,nullptr,&dest);
-    SDL_SetTextureAlphaMod(glow_,s.crt==Crt::Classic?30:18);
+    SDL_SetTextureAlphaMod(glow_,s.crt==Crt::Strong?30:18);
     SDL_RenderCopy(renderer_,glow_,nullptr,&dest);
 }
 void Presentation::game(const Pixels& pixels,const DisplaySettings& s) {
     upload(pixels,s);
-    int w,h;SDL_GetRendererOutputSize(renderer_,&w,&h);auto bounds=picture_rect(w,h,s.size);
+    int w,h;SDL_GetRendererOutputSize(renderer_,&w,&h);auto bounds=picture_rect(w,h,picture_percent(s));
     SDL_Rect dest{bounds.x,bounds.y,bounds.w,bounds.h};
     draw_colour(renderer_,0xff000000);SDL_RenderClear(renderer_);
     picture(dest,s);
@@ -102,7 +104,7 @@ void Presentation::physical_point(int wx,int wy,int& px,int& py) {
 }
 bool Presentation::game_point(int wx,int wy,const DisplaySettings& s,int& x,int& y) {
     int px,py,w,h;physical_point(wx,wy,px,py);SDL_GetRendererOutputSize(renderer_,&w,&h);
-    return picture_point(picture_rect(w,h,s.size),px,py,x,y);
+    return picture_point(picture_rect(w,h,picture_percent(s)),px,py,x,y);
 }
 void Presentation::ui_layout() {
     int w,h;SDL_GetRendererOutputSize(renderer_,&w,&h);
@@ -130,64 +132,37 @@ void Presentation::menu(const Pixels& pixels,const DisplaySettings& s,bool start
     if(icon_){auto r=ui_rect(38,32,64,64);SDL_RenderCopyF(renderer_,icon_,nullptr,&r);}
     text(118,64,32,"Lost Dutchman Mine",ink);text(119,91,15,"DISPLAY & GAMEPLAY",gold);
     box(40,122,960,1,line);
-    const char* labels[]={"Display","Picture size","Scaling","CRT monitor","Colour","Brightness","VSync","Show at startup","QoL improvements"};
-    const char* windows[]={"960 x 720 window","1280 x 960 window","1600 x 1200 window","Fullscreen"};
-    const char* filters[]={"Crisp pixels","Soft pixels","Pixel art"};
-    const char* colours[]={"Original","Warm","Vivid","Gentle"};
-    const char* crt[]={"Off","Soft","Classic"};
-    std::string values[]={windows[s.window],std::to_string(s.size)+"%",filters[int(s.scaling)],crt[int(s.crt)],colours[int(s.colour)],std::to_string(s.brightness)+"%",s.vsync?"On":"Off",s.startup?"Yes":"No",s.qol?"On":"Off"};
     for(int i=0;i<Comfort;i++) {
-        float y=154+i*44;box(40,y,496,38,panel);box(40,y,496,38,i==selected?gold:line,true);
-        text(55,y+26,18,labels[i],i==selected?ink:muted);
-        if(i==QualityOfLife) {
-            box(348,y+9,20,20,ink,true);
-            if(s.qol){text(351,y+25,18,"x",gold);}
-            text(402,y+26,17,values[i],ink,true);
-        }else {
-            text(270,y+27,22,"<",gold);text(502,y+27,22,">",gold);
-            text(388,y+26,17,values[i],ink,true);
-        }
+        float y=row_top+i*row_pitch;box(40,y,496,row_height,panel);box(40,y,496,row_height,i==selected?gold:line,true);
+        text(55,y+30,18,menu_label(i,startup),i==selected?ink:muted);
+        text(270,y+31,22,"<",gold);text(502,y+31,22,">",gold);
+        text(388,y+30,17,menu_value(s,i),ink,true);
     }
     text(568,153,15,"LIVE PREVIEW",gold);
     box(568,174,432,324,0xff000000);
-    upload(pixels,s);auto p=picture_rect(432,324,s.size);
+    upload(pixels,s);auto p=picture_rect(432,324,picture_percent(s));
     auto dst=ui_rect(568+p.x,174+p.y,p.w,p.h);
     picture({int(std::lround(dst.x)),int(std::lround(dst.y)),int(std::lround(dst.w)),int(std::lround(dst.h))},s);
     box(568,174,432,324,line,true);
-    const char* help[][2]={
-        {"Fullscreen uses your monitor's resolution.","The picture keeps its original 4:3 shape."},
-        {"Use a smaller picture on a large monitor.","Black borders keep the image centred."},
-        {"Soft blends edges. Pixel art rounds diagonals.","Crisp keeps the original hard pixel edges."},
-        {"Scanlines, phosphor texture and a soft glow.","Soft is subtle. Classic gives a stronger effect."},
-        {"Adjust the colour of the original artwork.","Original keeps the game's palette unchanged."},
-        {"Adjust picture brightness to suit your room.","100% keeps the original brightness."},
-        {"Synchronise presentation with the monitor.","The game's clock runs independently."},
-        {"Choose whether this menu opens at launch.","You can always open it again with F11."},
-        {"Clearer menus, arrow pointer, smooth mouse aim.","Off restores the original menus and controls."},
-        {"Fullscreen, 85% picture size and soft edges.","Gentle colours; adjust any choice to taste."},
-        {"Crisp pixels and the original colour palette.","A window with the original 4:3 proportions."},
-        {"Settings are saved when you apply them.","F11 pauses play and reopens this menu."}
-    };
-    int help_row=std::clamp(selected,0,int(Cancel));
-    text(568,529,17,help[help_row][0],muted);text(568,554,17,help[help_row][1],muted);
-    auto button=[&](int id,float x,float y,float w,const char* label,bool primary=false) {
+    auto help=menu_help(std::clamp(selected,0,MenuItemCount-1),startup);
+    text(568,529,17,help[0],muted);text(568,554,17,help[1],muted);
+    auto button=[&](int id,float x,float y,float w,bool primary=false) {
         box(x,y,w,44,primary?gold:panel);box(x,y,w,44,selected==id?ink:line,true);
-        text(x+w/2,y+29,18,label,primary?0xff211a10:ink,true);
+        text(x+w/2,y+29,18,menu_label(id,startup),primary?0xff211a10:ink,true);
     };
-    button(Comfort,40,566,240,"4K comfort");button(Original,296,566,240,"Original look");
+    button(Comfort,40,566,240);button(Original,296,566,240);
     SDL_DisplayMode mode{};SDL_GetDesktopDisplayMode(std::max(0,SDL_GetWindowDisplayIndex(window_)),&mode);
     text(568,598,16,"Monitor: "+std::to_string(mode.w)+" x "+std::to_string(mode.h)+" / "+std::to_string(refresh_rate())+" Hz",muted);
     box(40,639,960,1,line);
-    button(Cancel,40,660,132,startup?"Quit":"Cancel");button(Apply,800,660,200,startup?"Play":"Apply & resume",true);
-    text(206,687,15,"Arrows adjust   Enter confirms   F11 settings",muted);
+    button(Cancel,40,660,132);button(Apply,800,660,200,true);
+    text(206,687,15,menu_keys(startup),muted);
     if(!message.empty())text(40,627,15,message,0xffffab81);
-    else if(s.vsync && !vsync_available_)text(568,624,15,"VSync unavailable; frame pacing is active.",muted);
 }
 int Presentation::menu_hit(int wx,int wy,bool& left) {
     ui_layout();int px,py;physical_point(wx,wy,px,py);
     float x=(px-ui_x_)/ui_scale_,y=(py-ui_y_)/ui_scale_;left=x>=258 && x<300;
-    if(x>=40 && x<536 && y>=154 && y<154+Comfort*44) {
-        int row=int(y-154)/44;if(int(y-154)%44<38)return row;
+    if(x>=40 && x<536 && y>=row_top && y<row_top+Comfort*row_pitch) {
+        int row=int((y-row_top)/row_pitch);if(y-row_top-row*row_pitch<row_height)return row;
     }
     if(y>=566 && y<610){if(x>=40 && x<280)return Comfort;if(x>=296 && x<536)return Original;}
     if(y>=660 && y<704){if(x>=40 && x<172)return Cancel;if(x>=800 && x<1000)return Apply;}
@@ -202,19 +177,4 @@ void Presentation::capture(const std::filesystem::path& file) {
     int saved=read<0?-1:SDL_SaveBMP(surface,file.string().c_str());SDL_FreeSurface(surface);
     if(saved<0)throw std::runtime_error(SDL_GetError());
 }
-void change_setting(DisplaySettings& s,int row,int dir) {
-    switch(row) {
-    case Display:s.window=cycle(s.window,4,dir);break;
-    case PictureSize:{const int sizes[]={70,85,100};int i=s.size==70?0:s.size==85?1:2;s.size=sizes[cycle(i,3,dir)];break;}
-    case ScalingFilter:s.scaling=Scaling(cycle(int(s.scaling),3,dir));break;
-    case CrtMonitor:s.crt=Crt(cycle(int(s.crt),3,dir));break;
-    case ColourProfile:s.colour=Colour(cycle(int(s.colour),4,dir));break;
-    case Brightness:s.brightness=80+10*cycle((s.brightness-80)/10,5,dir);break;
-    case VSync:s.vsync=!s.vsync;break;
-    case Startup:s.startup=!s.startup;break;
-    case QualityOfLife:s.qol=!s.qol;break;
-    }
-}
-DisplaySettings comfort_settings(bool startup){DisplaySettings s;s.window=3;s.size=85;s.colour=Colour::Gentle;s.startup=startup;return s;}
-DisplaySettings original_settings(bool startup){DisplaySettings s;s.window=0;s.scaling=Scaling::Crisp;s.startup=startup;return s;}
 }

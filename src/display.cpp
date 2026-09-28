@@ -17,6 +17,13 @@ bool integer(const std::string& value,int& number) {
     std::istringstream in(value);if(!(in>>number))return false;in>>std::ws;
     return in.eof();
 }
+int cycle(int value,int count,int direction){return (value+count+direction)%count;}
+const int fullscreen_sizes[]={100,85,70};
+// The Display row offers the three windows, then fullscreen at each picture size.
+int display_choice(const DisplaySettings& s) {
+    if(s.window<3)return s.window;
+    return s.size==85?4:s.size==70?5:3;
+}
 }
 DisplaySettings load_settings(const std::filesystem::path& file) {
     DisplaySettings s;
@@ -31,7 +38,6 @@ DisplaySettings load_settings(const std::filesystem::path& file) {
         else if(key=="colour" && n>=0 && n<=3)s.colour=Colour(n);
         else if(key=="crt" && n>=0 && n<=2)s.crt=Crt(n);
         else if(key=="brightness" && n>=80 && n<=120 && n%10==0)s.brightness=n;
-        else if(key=="vsync" && (n==0 || n==1))s.vsync=n;
         else if(key=="startup" && (n==0 || n==1))s.startup=n;
         else if(key=="qol" && (n==0 || n==1))s.qol=n;
     }
@@ -45,7 +51,7 @@ void save_settings(const std::filesystem::path& file,const DisplaySettings& s) {
         out<<"# Lost Dutchman Mine display settings. F11 opens the settings window.\n"
            <<"window="<<s.window<<"\nsize="<<s.size<<"\nscaling="<<int(s.scaling)
            <<"\ncolour="<<int(s.colour)<<"\ncrt="<<int(s.crt)<<"\nbrightness="<<s.brightness
-           <<"\nvsync="<<s.vsync<<"\nstartup="<<s.startup<<"\nqol="<<s.qol<<"\n";
+           <<"\nstartup="<<s.startup<<"\nqol="<<s.qol<<"\n";
         out.close();if(!out)throw std::runtime_error("Cannot save display settings to "+file.string());
     }
 #ifdef _WIN32
@@ -55,6 +61,65 @@ void save_settings(const std::filesystem::path& file,const DisplaySettings& s) {
     std::filesystem::rename(temp,file);
 #endif
 }
+const char* menu_label(int item,bool startup) {
+    const char* labels[]={"Display","Scaling","CRT monitor","Colour","Brightness","Show at startup","QoL improvements","Comfort","Original look"};
+    if(item==Cancel)return startup?"Quit":"Cancel";
+    if(item==Apply)return startup?"Play":"Apply & resume";
+    return item>=0 && item<Cancel?labels[item]:"";
+}
+std::string menu_value(const DisplaySettings& s,int row) {
+    const char* windows[]={"960 x 720 window","1280 x 960 window","1600 x 1200 window","Fullscreen","Fullscreen 85%","Fullscreen 70%"};
+    const char* filters[]={"Crisp pixels","Soft pixels","Pixel art"};
+    const char* crt[]={"Off","Subtle","Strong"};
+    const char* colours[]={"Original","Warm","Vivid","Gentle"};
+    switch(row) {
+    case Display:return windows[display_choice(s)];
+    case ScalingFilter:return filters[int(s.scaling)];
+    case CrtMonitor:return crt[int(s.crt)];
+    case ColourProfile:return colours[int(s.colour)];
+    case Brightness:return std::to_string(s.brightness)+"%";
+    case Startup:return s.startup?"Yes":"No";
+    case QualityOfLife:return s.qol?"On":"Off";
+    }
+    return "";
+}
+std::array<const char*,2> menu_help(int item,bool startup) {
+    switch(item) {
+    case Display:return {"Fullscreen keeps the 4:3 shape at any resolution.","85% or 70% leaves a border on large monitors."};
+    case ScalingFilter:return {"Soft blends edges. Pixel art rounds diagonals.","Crisp keeps the original hard pixel edges."};
+    case CrtMonitor:return {"Scanlines, phosphor texture and a gentle glow.","Subtle is light. Strong gives a bolder effect."};
+    case ColourProfile:return {"Adjust the colour of the original artwork.","Original keeps the game's palette unchanged."};
+    case Brightness:return {"Adjust picture brightness to suit your room.","100% keeps the original brightness."};
+    case Startup:return {"Choose whether this menu opens at launch.","You can always open it again with F11."};
+    case QualityOfLife:return {"Toolbar labels, arrow pointer, mouse aiming,","faster walking; mules unlock one at a time."};
+    case Comfort:return {"Fullscreen 85%, soft pixels, gentle colours,","CRT off and 100% brightness. Adjust to taste."};
+    case Original:return {"Crisp pixels, original colours, CRT off,","in a 960 x 720 window with the 4:3 shape."};
+    case Cancel:
+        if(startup)return {"Quit closes the game without saving settings.","Your saved games are not affected."};
+        return {"Cancel discards these changes and resumes.","F11 opens this menu again during play."};
+    case Apply:
+        if(startup)return {"Play saves these settings and starts the game.","F11 opens this menu again during play."};
+        return {"Apply saves these settings and resumes play.","F11 opens this menu again during play."};
+    }
+    return {"",""};
+}
+const char* menu_keys(bool startup) {
+    return startup?"Arrows adjust   Enter confirms   Esc quits":"Arrows adjust   Enter confirms   Esc cancels";
+}
+void change_setting(DisplaySettings& s,int row,int dir) {
+    switch(row) {
+    case Display:{int i=cycle(display_choice(s),6,dir);s.window=std::min(i,3);if(i>=3)s.size=fullscreen_sizes[i-3];break;}
+    case ScalingFilter:s.scaling=Scaling(cycle(int(s.scaling),3,dir));break;
+    case CrtMonitor:s.crt=Crt(cycle(int(s.crt),3,dir));break;
+    case ColourProfile:s.colour=Colour(cycle(int(s.colour),4,dir));break;
+    case Brightness:s.brightness=80+10*cycle((s.brightness-80)/10,5,dir);break;
+    case Startup:s.startup=!s.startup;break;
+    case QualityOfLife:s.qol=!s.qol;break;
+    }
+}
+DisplaySettings comfort_settings(bool startup){DisplaySettings s;s.window=3;s.size=85;s.colour=Colour::Gentle;s.startup=startup;return s;}
+DisplaySettings original_settings(bool startup){DisplaySettings s;s.window=0;s.scaling=Scaling::Crisp;s.startup=startup;return s;}
+int picture_percent(const DisplaySettings& s){return s.window==3?s.size:100;}
 Rect picture_rect(int width,int height,int percent) {
     if(width<=0 || height<=0)return {};
     // VGA's rectangular pixels are presented at their original 4:3 aspect.
@@ -129,8 +194,8 @@ void crt_mask(Crt effect,int width,int height,std::vector<uint32_t>& output) {
     output.resize(size_t(width)*height);
     if(effect==Crt::Off){std::fill(output.begin(),output.end(),0xffffffff);return;}
     constexpr double pi=3.14159265358979323846;
-    bool classic=effect==Crt::Classic;
-    double beam=classic?.28:.15,phosphor=classic?.88:.96,edge=classic?.14:.06;
+    bool strong=effect==Crt::Strong;
+    double beam=strong?.28:.15,phosphor=strong?.88:.96,edge=strong?.14:.06;
     int stripe=std::max(1,int(std::lround(height/1080.0)));
     std::vector<std::array<double,3>> columns(width);
     for(int x=0;x<width;x++) {

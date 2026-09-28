@@ -1,7 +1,24 @@
-# Native port validation — 2026-09-25
+# Native port validation — 2026-09-28
 
 Status: runnable development build. Full fidelity and complete gameplay are
 not yet certified. The original DOS program was neither launched nor modified.
+
+## Verified after update 16: settings menu
+
+- The settings menu has seven rows. VSync is always requested, because
+  presentation is already paced to the monitor's refresh rate; the option only
+  allowed tearing. Picture size is part of Display (Fullscreen, Fullscreen 85%,
+  Fullscreen 70%); windows always show the whole picture. Old `display.ini`
+  files load, their `vsync` key is ignored and no longer written.
+- CRT strengths are Subtle and Strong, the comfort preset is Comfort, and QoL is
+  an On/Off row like Show at startup. Help text names QoL's walking and mule
+  changes, Quit/Play and Cancel/Apply describe what they do, and the key hint
+  names Esc instead of F11, which does nothing inside the menu.
+- `test-display` checks rows, Display cycling in both directions, windowed and
+  fullscreen picture sizes, old settings files, value names, presets, help text
+  and that every label, value, button, help line and key hint fits its box using
+  the baked font metrics. The display-menu, CRT-menu and keyboard-controls/save
+  scripts pass with fresh configs; captures show the startup and F11 menus.
 
 ## Verified in update 16
 
@@ -524,7 +541,7 @@ framebuffer and selected state fields. Timed/scripted runs skip startup settings
 unless explicitly launched with `--settings`.
 The keyboard-controls script also needs a fresh config. Its optional final
 column on `down`/`up`/`repeat` supplies SDL modifier bits (4096 is Num Lock).
-`tests/scripts/crt-menu.txt` previews both CRT strengths, saves Classic and
+`tests/scripts/crt-menu.txt` previews both CRT strengths, saves Strong and
 checks Cancel/Apply from F11. Run it with a fresh config, `--settings --seconds 4`.
 
 `tests/scripts/poker.txt` walks to the saloon and selects Play. Its opponent is
