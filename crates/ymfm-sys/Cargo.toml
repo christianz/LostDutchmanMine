@@ -1,0 +1,19 @@
+[package]
+name = "ymfm-sys"
+description = "A thin, safe wrapper around the vendored ymfm YM3812 (OPL2) emulator."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+links = "ymfm"
+
+[build-dependencies]
+cc.workspace = true
+
+# The only crate that may use unsafe code: it calls the C++ emulator.
+[lints.rust]
+missing_docs = "deny"
+
+[lints.clippy]
+pedantic = { level = "deny", priority = -1 }
+must_use_candidate = "allow"

@@ -1,6 +1,7 @@
 .venv
 .local/
 build*/
+target/
 __pycache__/
 *.pyc
 original/
