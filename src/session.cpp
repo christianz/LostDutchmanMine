@@ -73,7 +73,7 @@ void Session::snapshot(Snapshot& output) {
 }
 void Session::run() {
     using Clock=std::chrono::steady_clock;
-    auto last=Clock::now(),published=last;
+    auto last=Clock::now(),published=last,started=last;
     double timer_elapsed=0;uint8_t directions=0;
     try {
         while(!stopping_ && state_.running) {
@@ -84,6 +84,7 @@ void Session::run() {
             }
             double elapsed=std::chrono::duration<double>(now-last).count();
             timer_elapsed+=elapsed;last=now;
+            state_.mouse.set_time(uint64_t(std::chrono::duration_cast<std::chrono::milliseconds>(now-started).count()));
             bool was_panning=state_.panning_active;
             std::vector<Command> commands;
             {std::lock_guard<std::mutex> lock(mutex_);commands.swap(commands_);}

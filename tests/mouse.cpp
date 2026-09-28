@@ -38,10 +38,15 @@ int main() {
         require(read().buttons==0 && read().buttons==0,"Focus loss retained a queued click");
         s->mouse.warp(25,40);s->mouse.buttons(1);auto warped=read();
         require(warped.x==25 && warped.y==40 && warped.buttons==1,"Original pointer positioning failed");
-        s->mouse.clear();auto old=ldm::MouseInput::Clock::now()-std::chrono::seconds(2);
-        s->mouse.buttons(1,old);s->mouse.buttons(0,old);
+        // Clicks expire after one second of emulated time, never host time.
+        s->mouse.clear();s->mouse.set_time(1000);
+        s->mouse.buttons(1);s->mouse.buttons(0);s->mouse.set_time(3000);
         require(read().buttons==0,"A click made during loading was replayed later");
-        s->mouse.buttons(1,old);require(read().buttons==1,"A physically held button expired");
+        s->mouse.set_time(1000);s->mouse.buttons(1);s->mouse.set_time(3000);
+        require(read().buttons==1,"A physically held button expired");
+        s->mouse.clear();s->mouse.set_time(1000);
+        s->mouse.buttons(1);s->mouse.buttons(0);s->mouse.set_time(1999);
+        require(read().buttons==1,"A click younger than one second was dropped");
         s->mouse.clear();s->mouse.buttons(1);s->mouse.buttons(0);s->mouse.buttons(2);s->mouse.buttons(0);
         for(int mask:{1,0,2,0})require(read().buttons==mask,"Consecutive clicks were reordered");
         for(bool qol:{false,true}) {
