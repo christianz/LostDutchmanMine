@@ -31,7 +31,7 @@ int main(int argc,char**argv) {
     char* base=SDL_GetBasePath();
     auto app_dir=base?std::filesystem::path(base):std::filesystem::absolute(argv[0]).parent_path();SDL_free(base);
     std::filesystem::path data=app_dir/"Game",image=data/"port-data.bin",save=app_dir/"Saves",script;
-    std::filesystem::path config=app_dir/"display.ini",screenshot;
+    std::filesystem::path config=app_dir/"display.ini",screenshot,trace_path;
     uint64_t duration=0;std::string keys;bool force_setup=false,no_setup=false;
     auto s=std::make_unique<ldm::State>();
     SDL_Window* window=nullptr;SDL_Renderer* renderer=nullptr;SDL_AudioDeviceID audio=0;
@@ -44,6 +44,7 @@ int main(int argc,char**argv) {
             else if(arg=="--keys")keys=value();else if(arg=="--script")script=value();
             else if(arg=="--config")config=value();else if(arg=="--screenshot")screenshot=value();
             else if(arg=="--settings")force_setup=true;else if(arg=="--no-settings")no_setup=true;
+            else if(arg=="--trace")trace_path=value();
             else {std::cerr<<"Unknown argument "<<arg<<"\n";return 2;}
         }
         std::vector<ScriptEvent> events;size_t event_pos=0;
@@ -51,6 +52,14 @@ int main(int argc,char**argv) {
             std::ifstream f(script);if(!f)throw std::runtime_error("Cannot open input script");
             std::string line;while(std::getline(f,line)){if(line.empty()||line[0]=='#')continue;std::istringstream in(line);ScriptEvent e{};in>>e.time>>e.type>>e.a>>e.b;events.push_back(e);}
             if(!std::is_sorted(events.begin(),events.end(),[](auto&a,auto&b){return a.time<b.time;}))throw std::runtime_error("Input script is not time ordered");
+        }
+        // A traced run is deterministic: emulated time advances one millisecond
+        // per loop, independent of the host, and no audio device renders.
+        const bool deterministic=!trace_path.empty();
+        std::ofstream trace;
+        if(deterministic) {
+            trace.open(trace_path);
+            if(!trace)throw std::runtime_error("Cannot write trace "+trace_path.string());
         }
         auto settings=ldm::load_settings(config),draft=settings;
         bool menu=force_setup || (!no_setup && !duration && script.empty() && settings.startup);
@@ -60,11 +69,12 @@ int main(int argc,char**argv) {
         if(std::filesystem::weakly_canonical(s->data_dir)==std::filesystem::weakly_canonical(s->save_dir))throw std::runtime_error("Save directory must differ from the original game directory");
         s->load(image,image_relocations,entry_cs,entry_ip,stack_ss,stack_sp);
         s->qol_improvements=settings.qol;
+        if(!deterministic)s->clock_base=ldm::local_clock_seconds();
         for(unsigned char c:keys){SDL_KeyboardEvent key{};key.keysym.sym=c;s->keys.push_back(keycode(key));}
         SDL_SetMainReady();SDL_SetHint(SDL_HINT_WINDOWS_DPI_AWARENESS,"permonitorv2");
         SDL_SetHint(SDL_HINT_MOUSE_FOCUS_CLICKTHROUGH,"1");
         if(SDL_Init(SDL_INIT_VIDEO|SDL_INIT_TIMER)<0)throw std::runtime_error(SDL_GetError());
-        if(SDL_InitSubSystem(SDL_INIT_AUDIO)==0) {
+        if(!deterministic && SDL_InitSubSystem(SDL_INIT_AUDIO)==0) {
             SDL_AudioSpec wanted{};wanted.freq=48000;wanted.format=AUDIO_F32SYS;wanted.channels=1;wanted.samples=512;wanted.callback=audio_callback;wanted.userdata=&s->audio;
             audio=SDL_OpenAudioDevice(nullptr,0,&wanted,nullptr,0);
         }
@@ -80,7 +90,8 @@ int main(int argc,char**argv) {
         SDL_RendererInfo info{};SDL_GetRendererInfo(renderer,&info);
         std::cerr<<"Display renderer: "<<info.name<<"\n";
         ldm::Presentation view(window,renderer,app_dir);view.apply(settings,true);
-        session=std::make_unique<ldm::Session>(*s);
+        session=std::make_unique<ldm::Session>(*s,deterministic?ldm::SessionMode::Deterministic:ldm::SessionMode::Threaded);
+        if(deterministic)session->set_trace(&trace);
         if(audio && !menu)SDL_PauseAudioDevice(audio,0);
         std::array<bool,SDL_NUM_SCANCODES> held{};
         auto release_input=[&](){held.fill(false);mouse_buttons=0;session->clear_input();};
@@ -146,14 +157,18 @@ int main(int argc,char**argv) {
         };
         uint64_t start=SDL_GetPerformanceCounter();double frequency=double(SDL_GetPerformanceFrequency());
         double next_frame=0;auto storage=std::make_unique<ldm::Snapshot>();auto& frame=*storage;
+        uint64_t virtual_ms=0;
         while(!quit) {
-            auto now=SDL_GetPerformanceCounter();double elapsed_ms=(now-start)*1000/frequency;
+            double elapsed_ms=deterministic?double(virtual_ms):(SDL_GetPerformanceCounter()-start)*1000/frequency;
             uint64_t elapsed=uint64_t(elapsed_ms);
-            session->snapshot(frame); // Also propagates precise native diagnostics.
+            // A deterministic run reads the state directly and snapshots only for captures.
+            if(!deterministic)session->snapshot(frame); // Also propagates precise native diagnostics.
             if((duration && elapsed>=duration) || session->finished())break;
-            if(warmup && elapsed>=350 && frame.video_mode==0x13){session->pause(true);warmup=false;}
+            int video_mode=deterministic?s->video_mode:frame.video_mode;
+            if(warmup && elapsed>=350 && video_mode==0x13){session->pause(true);warmup=false;}
             SDL_Event e;
             while(SDL_PollEvent(&e)) {
+                if(deterministic)continue; // Only the script drives a deterministic run.
                 if(e.type==SDL_QUIT)quit=true;
                 else if(e.type==SDL_KEYDOWN || e.type==SDL_KEYUP)keyboard(e.key,e.type==SDL_KEYDOWN);
                 else if(e.type==SDL_WINDOWEVENT && e.window.event==SDL_WINDOWEVENT_FOCUS_LOST)release_input();
@@ -180,6 +195,7 @@ int main(int argc,char**argv) {
                 else if(event.type=="click")pointer(event.a,event.b,true,SDL_BUTTON_LEFT,false);
                 else if(event.type=="screen")screen_capture=std::filesystem::path("captures")/(std::to_string(event.a)+"-display.bmp");
                 else if(event.type=="capture") {
+                    if(deterministic)session->snapshot(frame);
                     capture(frame.pixels,std::filesystem::path("captures")/(std::to_string(event.a)+".bmp"));
                     std::ofstream meta(std::filesystem::path("captures")/(std::to_string(event.a)+".json"));
                     meta<<"{\"x\":"<<frame.x<<",\"y\":"<<frame.y<<",\"town_page\":"<<frame.town_page<<",\"building\":"<<frame.building
@@ -198,6 +214,16 @@ int main(int argc,char**argv) {
                         <<",\"mining_space_held\":"<<frame.mining_space_held<<",\"mining_strokes\":"<<frame.mining_strokes<<"}\n";
                 }else throw std::runtime_error("Unknown script event");
             }
+            if(deterministic) {
+                if(!screen_capture.empty()) {
+                    session->snapshot(frame);
+                    if(menu)view.menu(frame.pixels,draft,startup_menu,selected,message);else view.game(frame.pixels,settings);
+                    view.capture(screen_capture);SDL_RenderPresent(renderer);
+                }
+                if(!session->paused())session->step();
+                ++virtual_ms;
+                continue;
+            }
             if(elapsed_ms>=next_frame || !screen_capture.empty()) {
                 SDL_ShowCursor(menu || !frame.custom_cursor?SDL_ENABLE:SDL_DISABLE);
                 if(menu)view.menu(frame.pixels,draft,startup_menu,selected,message);else view.game(frame.pixels,settings);
@@ -208,7 +234,7 @@ int main(int argc,char**argv) {
             }
             SDL_Delay(1);
         }
-        session->stop();session->snapshot(frame);
+        session->stop();session->finish_trace();session->snapshot(frame);
         if(!screenshot.empty()) {
             if(menu)view.menu(frame.pixels,draft,startup_menu,selected,message);else view.game(frame.pixels,settings);
             view.capture(screenshot);
@@ -219,7 +245,7 @@ int main(int argc,char**argv) {
                  <<", CS:IP="<<s->cs-ldm::LoadSegment<<":"<<s->ip<<", clock="<<s->u16(0x2b14,0xfbc4)<<":"<<s->u16(0x2b14,0xfbc2)<<std::dec
                  <<", FM writes="<<s->audio.writes()<<", audible samples="<<s->audio.audible_samples()<<"\n";
     }catch(const std::exception&e) {
-        if(session)session->stop();
+        if(session){session->stop();session->finish_trace();}
         std::cerr<<e.what()<<"\n";
         if(duration || !script.empty()) {
             std::filesystem::create_directories(".local");

@@ -56,6 +56,7 @@ public:
     void clear_input();
     void qol(bool enabled);
     void pause(bool paused);
+    bool paused() const {return paused_;}
     bool finished();
     void snapshot(Snapshot& output);
     void stop();
