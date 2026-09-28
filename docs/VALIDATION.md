@@ -1,7 +1,55 @@
-# Native port validation — 2026-09-28
+# Native port validation — 2026-09-29
 
 Status: runnable development build. Full fidelity and complete gameplay are
 not yet certified. The original DOS program was neither launched nor modified.
+
+## The Rust build
+
+The port was rebuilt in Rust against the earlier C++ port as its oracle. The
+C++ build was first made deterministic (emulated time for the timer, the OPL
+chip, DOS date and time and mouse-click expiry), then recorded 29 scenarios;
+the Rust build reproduces every one exactly.
+
+- **Golden traces.** Each scenario in `tests/scenarios.json` replays desktop
+  input from `tests/scripts/` through the same controller the window uses.
+  Every 100 emulated milliseconds, and at the end, the FNV-1a 64 hash of the
+  registers, all 1 MiB of memory and the palette equals the C++ line in
+  `tests/golden/`: all 29 scenarios, line for line.
+- **Captures.** Every `capture` of every scenario, all report fields and every
+  pixel of the frame, was compared once with the C++ captures and matched.
+- **Checks.** The scenario verifiers are ported to Rust (`crates/testkit/src/
+  checks/`) and pass. Assertions that compared a build before a fix, and a few
+  written for hand-made saves the generated fixtures do not reproduce, which
+  the C++ build's own captures fail too, are left out; each module says which.
+  `verify-sleep` is not ported: its scenario has no fixture generator.
+- **Startup.** A headless boot reproduces the first 18.4 seconds of the
+  held-movement trace, before its first input.
+- **Savestates.** A state saved halfway through that startup and restored into
+  a freshly booted game continues on the golden trace.
+- **Readable routines.** The asset decoder (1265:1250) runs as readable Rust in
+  play. In verification every call also runs translated on a copy of the
+  machine, and both must agree on all memory outside the dead stack, the
+  registers the translator's liveness analysis finds callers read (all but DS
+  and ES), and every flag: all 21 shipped assets, and the 160 calls across the
+  scenarios.
+- **The CPU.** The IR is checked against the SingleStepTests 8088 hardware
+  vectors for every opcode the game uses, and the ALU against the C++ port's
+  1,315,840 arithmetic cases.
+- **The desktop.** Settings files, 1.2 million menu transitions, every colour
+  under every profile and brightness, every scaling filter and the CRT mask and
+  glow were compared byte for byte with the C++ `display.cpp`.
+- **Windows.** `cargo xtask windows` produces a PE32+ x86-64 GUI executable on
+  the Universal C Runtime whose only non-system import is SDL2.dll. It has not
+  been run on Windows here.
+
+```sh
+cargo xtask lint                     # rustfmt, pedantic clippy, named addresses
+cargo xtask test                     # everything that needs no game data
+LDM_EXE=/path/to/LDM.EXE LDM_DATA=/path/to/LDM cargo xtask verify
+```
+
+The sections below record the C++ port's validation, update by update. Its
+behaviour is what the golden traces pin down, so they hold for the Rust build.
 
 ## Verified after update 16: settings menu
 
@@ -474,103 +522,28 @@ as Windows Server 2025, not Windows 11. No Windows 11 runtime claim is made.
 
 ## Deterministic runs and golden traces
 
-`build/ldm-native --trace FILE` runs a script deterministically: emulated time
-advances one millisecond per loop, independent of the host; script events apply at
-their virtual time; no audio device renders, so the OPL timers advance from port
-accesses and emulated time only; DOS date and time are a fixed base plus emulated
-time; stale mouse clicks expire after one emulated second. Every 100 emulated
-milliseconds, and at the end, the trace records
+A scenario runs one emulated millisecond per step, independent of the host:
+script events apply at their emulated time; no audio device renders, so the OPL
+timers advance from port accesses and emulated time only; DOS date and time are
+a fixed base plus emulated time; stale mouse clicks expire after one emulated
+second. Every 100 emulated milliseconds, and at the end, the trace records
 `ms=<n> blocks=<n> ticks=<n> hash=<FNV-1a 64 of registers, memory and palette>`.
-A 25-second scenario runs in about two seconds.
+All 29 scenarios run in about half a minute.
 
-```sh
-python3 tools/fixtures.py            # isolated saves from $LDM_DATA, built twice, must match
-python3 tools/record_traces.py       # record tests/golden/*.trace
-python3 tools/record_traces.py --check
-```
+`tests/scenarios.json` lists the scenarios with their fixtures, durations and
+QoL settings. `qol-saloon` and `saloon-sleep` are absent because their saves
+have no generator. The golden traces were recorded from the C++ build, twice,
+the second time with fixtures rebuilt from scratch; they contain hashes only,
+no game data. Fixtures are isolated saves built from the player's own game
+into `.local/fixtures`.
 
-`tests/scenarios.json` lists 29 scenarios with their fixtures, durations and QoL
-settings. `qol-saloon` and `saloon-sleep` are absent because their saves have no
-generator. The golden traces are the reference the Rust build must reproduce; they
-contain hashes only, no game data. Two consecutive checks, the second with fixtures
-rebuilt from scratch, reproduce every trace, and the single-run verifiers pass on
-the deterministic captures. `panning.txt` now navigates the seven-row settings
-menu, and `verify-panning.py` expects the original animation with QoL off as well
-(update 16), so the Pan click made during that animation is ignored.
-
-## Reproduce focused checks
-
-```sh
-make -j4 build/ldm-native build/test-assets build/test-arithmetic build/test-poker build/test-quit build/test-display build/test-mouse build/test-keyboard build/test-console build/test-panning build/test-panning-scene build/test-combat build/test-combat-scene
-build/test-arithmetic
-build/test-assets /path/to/original-game/LDMG
-build/test-poker
-build/test-quit
-build/test-display
-build/test-mouse
-build/test-keyboard
-build/test-console
-build/test-panning
-build/test-panning-scene /path/to/original-game
-build/test-combat
-build/test-combat-scene /path/to/original-game
-python3 tests/make-combat-fixture.py /path/to/original-game/LDMSAVE1.SAV .local/combat-test/Saves
-SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy build/ldm-native \
-  --data /path/to/original-game --image recovered/load-image.bin \
-  --saves .local/combat-test/Saves --config .local/combat-test/display.ini \
-  --seconds 39 --script tests/scripts/combat.txt
-python3 tests/verify-combat.py
-python3 tests/verify-quit.py
-python3 tests/verify-mouse.py
-python3 tests/make-river-fixture.py /path/to/original-game/LDMSAVE1.SAV .local/panning-test/Saves
-SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy build/ldm-native \
-  --data /path/to/original-game --image recovered/load-image.bin \
-  --saves .local/panning-test/Saves --config .local/panning-test/display.ini \
-  --seconds 77 --script tests/scripts/panning.txt
-python3 tests/verify-panning.py
-SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy build/ldm-native \
-  --data /path/to/original-game --image recovered/load-image.bin \
-  --saves .local/saloon-drinks/Saves --seconds 69 \
-  --script tests/scripts/saloon-drinks.txt
-python3 tests/verify-saloon.py
-SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy build/ldm-native \
-  --data /path/to/original-game --image recovered/load-image.bin \
-  --saves .local/movement-saves --seconds 23 \
-  --script tests/scripts/held-movement.txt
-python3 tests/verify-movement.py
-SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy build/ldm-native \
-  --data /path/to/original-game --image recovered/load-image.bin \
-  --saves .local/keyboard-controls/Saves --config .local/keyboard-controls/display.ini \
-  --seconds 33 --script tests/scripts/keyboard-controls.txt
-SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy build/ldm-native \
-  --data /path/to/original-game --image recovered/load-image.bin \
-  --saves .local/keyboard-save/Saves --seconds 43 \
-  --script tests/scripts/keyboard-save.txt
-python3 tests/verify-keyboard.py
-SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy build/ldm-native \
-  --data /path/to/original-game --image recovered/load-image.bin \
-  --saves .local/display-test/Saves --config .local/display-test/display.ini \
-  --settings --seconds 25 --script tests/scripts/display-menu.txt
-python3 tests/verify-display-menu.py .local/display-test/display.ini
-SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy build/ldm-native \
-  --data /path/to/original-game --image recovered/load-image.bin \
-  --saves .local/roundtrip-saves --seconds 43 \
-  --script tests/scripts/save-roundtrip.txt
-```
-
-Scripts write diagnostic BMP frames and selected recovered state fields under
-`captures/`. Normal interactive play does not write those diagnostic captures.
-Arithmetic and asset checks need no SDL window or DOS environment.
-Use a fresh config path for the display-menu script. `screen` script events and
-`--screenshot` capture presented output; `capture` retains the original 320x200
-framebuffer and selected state fields. Timed/scripted runs skip startup settings
-unless explicitly launched with `--settings`.
-The keyboard-controls script also needs a fresh config. Its optional final
-column on `down`/`up`/`repeat` supplies SDL modifier bits (4096 is Num Lock).
-`tests/scripts/crt-menu.txt` previews both CRT strengths, saves Strong and
-checks Cancel/Apply from F11. Run it with a fresh config, `--settings --seconds 4`.
+Scripts are one event per line: `<ms> <type> [a] [b]`. `down`, `up` and
+`repeat` take an SDL scancode and optional SDL modifier bits (4096 is Num
+Lock); `key` and `ascii` type directly; `mouse`, `buttons` and `focuslost`
+drive the pointer and focus; `capture` records the 320x200 frame and the
+state report, `screen` the settings the presented picture follows.
 
 `tests/scripts/poker.txt` walks to the saloon and selects Play. Its opponent is
 chosen by the original game's random state and is sometimes absent; check the
-captured invitation and dealt hand rather than treating a zero exit as proof
+captured invitation and dealt hand rather than treating a clean run as proof
 that poker was exercised.

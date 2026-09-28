@@ -1,20 +1,26 @@
 # Lost Dutchman Mine — native port
 
-Development build of a faithful native port of the supplied 1989 DOS game.
-The native Linux build runs the original title, town, movement, menus, saved
-games and AdLib music. A Windows x64 executable is cross-compiled from the same
-C++17 source. Independent Windows 11 testing and a complete playthrough remain open.
+Development build of a faithful native port of the 1989 DOS game. The native
+Linux build runs the original title, town, movement, menus, saved games and
+AdLib music. A Windows x64 executable is cross-compiled from the same Rust
+source. Independent Windows 11 testing and a complete playthrough remain open.
 macOS is a prospective SDL2 target and has not been built or tested.
 
-The original executable is EXEPACK-compressed Microsoft C code. Its game logic
-is recovered with the original assets and data layouts retained. The port uses
-ahead-of-time translation into C++: instructions
-are translated at build time, not decoded or interpreted by a CPU emulator at
-runtime. File access, windowing, input, timing and audio use native platform
-services. The runtime retains the original register and segmented data model;
-this is an AOT recompilation, not a hand-rewritten engine. The original decoder
-has also been recovered into readable C++ and checked against the translated
-routine for every supplied packed asset. FM synthesis uses BSD-licensed ymfm.
+The original executable is EXEPACK-compressed Microsoft C code. At build time
+the port unpacks it, recovers its code and translates every instruction into
+Rust, which is compiled to native machine code: nothing is decoded or
+interpreted at run time, and there is no DOSBox, CPU emulator or VM. The game
+runs on its original register and segmented data model, with the original
+assets and data layouts. File access, windowing, input, timing and audio use
+native platform services. Original routines are being replaced one at a time
+with readable Rust proven equivalent to their translation; the first is the
+asset decoder. FM synthesis uses BSD-licensed ymfm.
+
+Everything is deterministic: the game advances in emulated milliseconds, never
+wall-clock time, so a run from the same input is the same run. The build was
+checked against the earlier C++ port line for line: the state of the whole
+machine every 100 ms of 29 recorded scenarios is identical (see
+[Verify](#verify)).
 
 Original game files are not included in this repository; you need your own copy
 of Lost Dutchman Mine. They are read from a directory you supply, which is never
@@ -24,8 +30,8 @@ ignored by Git. Do not commit or publish recovered game code or assets.
 
 ## Play
 
-Build a playable bundle with `tools/package.py` (see [Build](#build)), copy the
-complete Windows bundle to a writable folder and double-click
+Build a playable bundle with `cargo xtask package` (see [Build](#build)), copy
+the complete Windows bundle to a writable folder and double-click
 `LostDutchmanMine.exe`. Choose display settings, then Play. **Comfort** selects
 desktop fullscreen, a centred 85% picture, soft edges and gentle colours.
 **F11** reopens the menu while pausing the game and music. Preferences are saved
@@ -112,77 +118,88 @@ preserved until the game polls them, including the click used to focus its windo
 The executable finds `Game/` and `Saves/` alongside itself regardless of the
 working directory. The supplied saved games remain in `Game/`; writes go to
 `Saves/` with copy-on-write for files opened in read/write mode. Keep `Saves/`
-and `display.ini` when updating. Keep `ui-font.bmp` beside the executable.
-There is no installer, administrator requirement, Python runtime,
-DOS executable, DOSBox, CPU interpreter or VM in the playable bundle.
+and `display.ini` when updating. There is no installer, administrator
+requirement, Python runtime, DOSBox, CPU interpreter or VM in the playable
+bundle; the original `LDM.EXE` in `Game/` is read for its data, never run.
 
 See [validation and remaining work](docs/VALIDATION.md). Unknown control flow
 stops with a diagnostic identifying the original address.
 
 ## Build
 
-Use the supplied DOS executable as build input. Its SHA-256 is
-`de0726a1cb0a475cd05f19ffb56e6c84f014fdb34f986d374d5e09797b925e07`.
+You need Rust 1.94 or newer and your own `LDM.EXE`, whose SHA-256 must be
+`de0726a1cb0a475cd05f19ffb56e6c84f014fdb34f986d374d5e09797b925e07`. The
+game crate's build script translates it, so every build names it:
 
 ```sh
-uv venv .venv
-uv pip install --python .venv/bin/python -r requirements-dev.txt
-.venv/bin/python tools/unpack.py /path/to/LDM/LDM.EXE
-.venv/bin/python tools/analyze.py
-.venv/bin/python tools/translate.py
+LDM_EXE=/path/to/LDM/LDM.EXE cargo build --release -p app
+target/release/lost-dutchman-mine --data /path/to/LDM --saves .local/saves
 ```
 
-`recovered/` contains the unpacked load image, relocation metadata and conservative
-disassembly. Control flow through indirect calls needs further recovery; the
-disassembler's instruction count is not a coverage claim. Run all commands from
-the repository root.
+Without `LDM_EXE` everything still builds and every test that needs no game
+data runs, but the executable has no game to start. On Linux the window needs
+the SDL2 library (the runtime package is enough).
 
-With CMake, a C++17 compiler and SDL2 2.26 or newer development files installed:
+The workspace, one concern per crate:
+
+| Crate | Owns |
+| --- | --- |
+| `machine` | 8086 registers and flags, the ALU, memory, ports, the timer, the AdLib chip, savestates |
+| `dos` | The DOS and BIOS services the game calls: files, keyboard, mouse, clock, video |
+| `translate` | Build time only: EXEPACK, control-flow recovery, the IR, the patch table's placement, Rust emission, routine contracts |
+| `patches` | Every change to the original, as data: site, expected bytes, hook or routine |
+| `game` | The translated game, named addresses (`symbols.rs`), the hooks, the QoL overlay, frames, readable routines |
+| `engine` | The deterministic session: 1 ms quanta, timer interrupts, input, traces |
+| `desktop` | Settings, the settings menu, input mapping, audio synthesis and picture processing, without a window |
+| `app` | The SDL2 window around it all |
+| `testkit` | Scenario runs, golden traces, ported verifiers, hardware vectors, the IR interpreter |
+
+`cargo xtask lint` runs rustfmt, pedantic clippy and a check that game code names
+every address it touches. `cargo xtask test` runs every test that needs no game
+data, including the SingleStepTests 8088 hardware vectors once downloaded with
+`cargo xtask vectors`.
+
+The Windows executable is cross-built on Linux with official Zig 0.15.1 and the
+official SDL2 2.32.0 MinGW development archive, both unpacked into
+`.local/deps/`:
 
 ```sh
-cmake -S . -B build-cmake -DCMAKE_BUILD_TYPE=Release
-cmake --build build-cmake --parallel 4
+LDM_EXE=/path/to/LDM/LDM.EXE cargo xtask windows
+LDM_EXE=/path/to/LDM/LDM.EXE cargo xtask package --platform windows --output dist/Windows-x64 --data /path/to/LDM
+LDM_EXE=/path/to/LDM/LDM.EXE cargo xtask package --platform linux --output dist/Linux-x64 --data /path/to/LDM
 ```
 
-The verified Linux build uses the Makefile with local SDL2 headers and the
-system SDL2 shared library:
+Packaging requires a fresh output folder, so an existing player's saves are
+never removed, and writes a manifest of every file's SHA-256. Bundles contain
+the player's own game files and are never published. The vendored ymfm subset
+retains its upstream BSD license and a pinned commit in
+`third_party/ymfm/UPSTREAM.json`. The settings menu's pre-baked DejaVu font
+bitmap is built into the executable; its license is in
+`resources/FONT-LICENSE.txt`.
+
+## Verify
 
 ```sh
-make -j4 build/ldm-native build/test-assets build/test-arithmetic build/test-poker build/test-quit build/test-display build/test-mouse build/test-menu build/test-menu-scene build/test-keyboard build/test-console build/test-panning build/test-panning-scene build/test-combat build/test-combat-scene build/test-qol
-build/test-arithmetic
-build/test-assets /path/to/LDM/LDMG
-build/test-poker
-build/test-quit
-build/test-display
-build/test-mouse
-build/test-menu
-build/test-menu-scene /path/to/LDM
-build/test-keyboard
-build/test-console
-build/test-panning
-build/test-panning-scene /path/to/LDM
-build/test-combat
-build/test-combat-scene /path/to/LDM
-build/test-qol /path/to/LDM
-build/ldm-native --data /path/to/LDM --image recovered/load-image.bin --saves .local/saves
+LDM_EXE=/path/to/LDM/LDM.EXE LDM_DATA=/path/to/LDM cargo xtask verify
 ```
 
-`SDL_INCLUDE` and `SDL_LIBS` can be overridden for another SDL2 installation.
-`tools/build_windows.py` uses official Zig 0.15.1 and the official SDL2 2.32.0
-MinGW development archive in `.local/deps/`. These tools are build-only.
+runs every test that needs the original game:
 
-```sh
-.venv/bin/python tools/build_windows.py
-.venv/bin/python tools/package.py /path/to/LDM --platform windows --output dist/Windows-x64
-.venv/bin/python tools/package.py /path/to/LDM --platform linux --output dist/Linux-x64
-```
+- **Golden traces.** 29 scenarios in `tests/scenarios.json` replay desktop
+  input from `tests/scripts/` through the same controller the window uses.
+  Every 100 emulated milliseconds the FNV-1a hash of all registers, all 1 MiB
+  of memory and the palette must equal the line recorded from the C++ port in
+  `tests/golden/`. The hashes contain no game content.
+- **Checks.** The scenario verifiers, ported to Rust, read each run's captures,
+  saves and settings file.
+- **Lockstep.** Every call of a readable routine is also run translated, on a
+  copy of the machine, and the two must agree on everything the callers can
+  observe: the registers and flags the translator's liveness analysis finds
+  they read, and all memory outside the dead stack.
+- **Savestates.** A state restored halfway through the startup continues on
+  the golden trace.
 
-Packaging requires a fresh output directory so an existing player's saves are
-never removed. Generated game code, original assets and private bundles are
-excluded from Git. The vendored ymfm subset retains its upstream BSD license
-and a pinned commit in `third_party/ymfm/UPSTREAM.json`.
-The settings UI uses a pre-baked DejaVu font bitmap with its license in
-`resources/FONT-LICENSE.txt`; no additional runtime font dependency is needed.
+Fixtures for the scenarios are built from your own saves into `.local/fixtures`.
 
 ## Acceptance before calling this a faithful port
 
