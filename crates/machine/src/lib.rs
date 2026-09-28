@@ -4,6 +4,7 @@
 
 mod address;
 mod alu;
+mod cond;
 mod fault;
 mod flags;
 mod hash;
@@ -16,6 +17,7 @@ mod vga;
 
 pub use address::Address;
 pub use alu::{AluOp, ShiftOp, Width};
+pub use cond::Cond;
 pub use fault::Fault;
 pub use flags::{Flag, RESERVED};
 pub use hash::Fnv;

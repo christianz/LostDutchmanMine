@@ -1,0 +1,9 @@
+//! Ahead-of-time translation of Lost Dutchman Mine's 8086 code into Rust.
+//!
+//! Instructions are decoded once, at build time, lowered into a small IR whose
+//! meaning is defined by the `machine` crate, and written out as Rust.
+
+pub mod ir;
+mod lower;
+
+pub use lower::{Instruction, LowerError, Relocations, lower};

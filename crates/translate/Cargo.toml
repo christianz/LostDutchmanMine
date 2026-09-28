@@ -1,0 +1,15 @@
+[package]
+name = "translate"
+description = "Ahead-of-time translation of Lost Dutchman Mine's 8086 code into Rust."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+machine.workspace = true
+iced-x86.workspace = true
+thiserror.workspace = true
+
+[lints]
+workspace = true
