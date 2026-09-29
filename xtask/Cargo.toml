@@ -1,0 +1,15 @@
+[package]
+name = "xtask"
+description = "Project automation for the Lost Dutchman Mine port."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish = false
+
+[dependencies]
+anyhow.workspace = true
+sha2.workspace = true
+
+[lints]
+workspace = true

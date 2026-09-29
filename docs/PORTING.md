@@ -8,35 +8,36 @@ The native state loads data at paragraph 1000; DS is normally 82bd at runtime.
 
 ## Architecture
 
-- `tools/unpack.py`: bounds-checked EXEPACK recovery; opens the original read only.
-- `tools/analyze.py`: conservative control-flow recovery using Capstone in 16-bit
-  mode. Far references and observed indirect targets seed reachable code.
-- `tools/translate.py`: emits compiled C++ operations and branches. Calls and
-  backward branches yield to a native dispatcher. No instruction decoding or
-  execution from the data image occurs at runtime. Unknown targets throw.
-- `tools/entry-points.json`: additional code addresses found from actual indirect
-  control transfers and graphics callback tables. Do not seed arbitrary bytes.
-- `src/legacy.*`: retained original data/register representation, exact-width
-  arithmetic helpers, native files, keyboard/mouse, palettes and timer boundary.
-- `src/desktop.cpp`: SDL2 lifecycle, settings/menu input and diagnostic scripts.
-- `src/session.*`: dedicated original-game thread, real PIT clock, queued inputs
-  and synchronized framebuffer snapshots. Pausing the settings menu freezes the
-  game clock; GPU/VSync waits cannot pace the game simulation.
-- `src/display.*`: persisted display preferences, colour grading, Scale2x and
-  4:3 display/mouse geometry, CRT phosphor/scanline masks and highlight glow.
-  The original 320x200 framebuffer is never altered.
-- `src/presentation.*`: high-DPI SDL2 rendering, monitor frame pacing and settings
-  menu. Coordinates convert from window units through physical output pixels to
-  the actual centred game picture; clicks in black borders are rejected.
-- `src/audio.*`: synchronized YM3812 synthesis using ymfm plus PC speaker tone.
-- `src/mouse.h`: desktop button transitions and their coordinates, retained until
-  a complete original mouse poll reads them; current motion remains independent.
-- `src/keyboard.h`: physical WASD/keypad/direction bindings and normal BIOS text.
-  `keyboard_event.h` retains both meanings in the native event queue, with source
-  key identity for repeat cleanup even if Num Lock/Shift changes before release.
-- `src/assets.*`: readable packed-asset decoder, differentially checked against
-  the translated original routine at 1265:1250. The runtime still uses the
-  translated original decoder.
+- `translate::image`: bounds-checked EXEPACK unpacking of the original, read only.
+- `translate::recover`: conservative control-flow recovery with iced-x86 in
+  16-bit mode. The entry point, relocated far references and the evidence-backed
+  seeds in `crates/game/entry_points.toml` start it. Do not seed arbitrary bytes.
+- `translate::lower` and `translate::ir`: each instruction's meaning, defined by
+  the `machine` crate's ALU; `testkit::interp` executes the IR against the
+  SingleStepTests 8088 hardware vectors.
+- `translate::translation` and `translate::emit`: the patch table placed with
+  its byte checks, then one small Rust function per basic block and one
+  dispatcher per segment, each line annotated with its original instruction.
+  Calls, returns and backward branches yield, as the C++ port's did, so a step
+  here is a step there. Unknown targets stop with `Stop::Unrecovered`.
+- `translate::liveness`: what callers read after a routine returns, the
+  contract a readable routine must keep.
+- `patches`: every change to the original as data: site, expected bytes, and the
+  hook or readable routine that runs there.
+- `game`: named addresses (`symbols.rs`), the hooks (`hooks/`), the QoL overlay
+  (`overlay/`), frame composition, the scenario report, savestates, and readable
+  routines (`decompiled/`) with their lockstep check (`routines.rs`).
+- `dos`: the DOS and BIOS services the game calls; files copy-on-write into the
+  saves folder; the keyboard buffer's native tags; mouse edges kept until an
+  original poll reads them, expiring after a second of emulated time.
+- `engine`: one-millisecond quanta in a fixed order: input, timer interrupts,
+  the OPL clock, then at most 4,096 translated steps.
+- `desktop`: display settings and menu, key mapping (`keys`), the controller
+  that turns keys, focus and the menu into game input, the audio synthesiser,
+  and colour grading, Scale2x, 4:3 geometry and the CRT mask and glow. The
+  original 320x200 frame is never altered.
+- `app`: the SDL2 window. The game runs on its own thread in real time;
+  rendering, a slow monitor or an open menu cannot pace it.
 
 ## Details that matter
 
@@ -231,17 +232,21 @@ The native state loads data at paragraph 1000; DS is normally 82bd at runtime.
 - Writes resolve to a separate save tree. Existing originals opened for
   read/write are copied there first. Reads prefer the save tree and then the
   original data directory. Paths are case-insensitive on Linux too.
-- The data image has a build-time fingerprint which must match the executable.
-  Mixing a different DOS revision with this build produces an explicit error.
+- The build translates one executable, identified by its SHA-256, and the game
+  folder must hold that same release. Any other revision is refused explicitly.
 
 ## Continue recovery
 
-Run native scenarios and retain the first precise diagnostic. For an unrecovered
-target, disassemble that address and confirm it is actual code before adding it
-to the entry-point list, regenerating and rebuilding. `tools/discover.py` automates
-this for startup using a synthetic clock; it is not a real-time gameplay test.
-Never substitute an interpreter or silently skip an unimplemented service.
+Run scenarios and keep the first precise diagnostic. For an unrecovered target,
+disassemble that address and confirm it is actual code before adding it, with
+its evidence, to `crates/game/entry_points.toml`. Never substitute an
+interpreter or silently skip an unimplemented service.
 
-Generated C++ and recovered images are private build products excluded from Git.
-They retain original proprietary game material. The repository carries recovery
-tools, platform adapters and the separately licensed ymfm subset only.
+To replace a translated routine with readable Rust, add its entry to the patch
+table as `Action::Routine`, write it in `crates/game/src/decompiled/`, and run
+`cargo xtask verify`: every call is then checked in lockstep against the
+translation, under the contract the translator computes.
+
+Generated code and recovered images are private build products excluded from
+Git. They retain original proprietary game material. The repository carries
+the translator, platform services and the separately licensed ymfm subset only.

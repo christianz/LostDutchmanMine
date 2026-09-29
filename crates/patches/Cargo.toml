@@ -1,0 +1,13 @@
+[package]
+name = "patches"
+description = "Every place the translated Lost Dutchman Mine differs from the supplied executable, as data."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+machine.workspace = true
+
+[lints]
+workspace = true

@@ -1,0 +1,64 @@
+[workspace]
+resolver = "3"
+members = [
+    "crates/app",
+    "crates/desktop",
+    "crates/dos",
+    "crates/engine",
+    "crates/game",
+    "crates/machine",
+    "crates/patches",
+    "crates/testkit",
+    "crates/translate",
+    "crates/ymfm-sys",
+    "xtask",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+repository = "https://github.com/christianz/LostDutchmanMine"
+rust-version = "1.94"
+
+[workspace.dependencies]
+desktop = { path = "crates/desktop" }
+dos = { path = "crates/dos" }
+engine = { path = "crates/engine" }
+game = { path = "crates/game" }
+machine = { path = "crates/machine" }
+patches = { path = "crates/patches" }
+translate = { path = "crates/translate" }
+testkit = { path = "crates/testkit" }
+ymfm-sys = { path = "crates/ymfm-sys" }
+iced-x86 = { version = "1.21", default-features = false, features = ["std", "decoder", "intel"] }
+thiserror = "2"
+sha2 = "0.10"
+toml = "0.8"
+insta = "1"
+anyhow = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+flate2 = "1"
+cc = "1"
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+missing_docs = "deny"
+
+[workspace.lints.clippy]
+pedantic = { level = "deny", priority = -1 }
+# Emulating a 16-bit CPU truncates and reinterprets integers by design; each
+# such cast is the documented x86 behaviour at that point.
+cast_possible_truncation = "allow"
+cast_possible_wrap = "allow"
+cast_sign_loss = "allow"
+# Accessors and small constructors would all carry #[must_use]; the few whose
+# results are easy to drop by mistake are marked explicitly.
+must_use_candidate = "allow"
+
+[profile.dev]
+opt-level = 1
+
+[profile.test]
+opt-level = 2

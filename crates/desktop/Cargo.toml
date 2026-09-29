@@ -1,0 +1,15 @@
+[package]
+name = "desktop"
+description = "The desktop front end: settings, the settings menu, input, and how the game's picture is presented."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+dos.workspace = true
+engine.workspace = true
+ymfm-sys.workspace = true
+
+[lints]
+workspace = true

@@ -1,0 +1,39 @@
+# Code the translator cannot find by following direct jumps and calls: each
+# address is reached only through a computed transfer. Seed only addresses with
+# evidence; arbitrary bytes are data as often as code.
+
+[[group]]
+why = "Poker's card comparator, passed by address to qsort at 13b4:227c."
+at = ["0106:0000"]
+
+[[group]]
+why = """The panning animation loops the supplied executable bypasses. The panning
+restoration patches at 033f:0303 and 033f:039e continue at these addresses."""
+at = ["033f:0308", "033f:03a0"]
+
+[[group]]
+why = "The game's INT 08h timer handler, installed through DOS set-vector at 1398:009d."
+at = ["1398:00ce"]
+
+[[group]]
+why = "Quit Game's C runtime cleanup callback, called indirectly."
+at = ["13b4:0752"]
+
+[[group]]
+why = "A C runtime routine reached indirectly in the first native runs."
+at = ["13b4:25f5"]
+
+[[group]]
+why = """The graphics driver's callback table in segment 1613, including the shutdown
+routine 1613:1c7d that Quit Game calls indirectly."""
+at = [
+    "1613:0006", "1613:02c5", "1613:1c32", "1613:1c42", "1613:1c47", "1613:1c4f",
+    "1613:1c54", "1613:1c7d", "1613:1ce7", "1613:1df8", "1613:1dfd", "1613:1e37",
+    "1613:1e75", "1613:1e93", "1613:1e9d", "1613:1f06", "1613:1f72", "1613:220c",
+    "1613:2211", "1613:221d", "1613:224c", "1613:2af1", "1613:2b16", "1613:2b2f",
+    "1613:2b42", "1613:2b66", "1613:2b70", "1613:2bbb", "1613:2bf1", "1613:2c00",
+    "1613:2c03", "1613:2c1c", "1613:2c21", "1613:2c46", "1613:2c66", "1613:2c87",
+    "1613:2d0a", "1613:2e51", "1613:2e93", "1613:2e97", "1613:2f69", "1613:3232",
+    "1613:329b", "1613:32dd", "1613:335d", "1613:3be2", "1613:3c4e", "1613:3ca9",
+    "1613:3d43",
+]

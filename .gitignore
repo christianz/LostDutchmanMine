@@ -1,9 +1,11 @@
-.venv/
 .local/
-build*/
+target/
+dist/
+# The font baker's Python environment.
+.venv
 __pycache__/
 *.pyc
-original/
-recovered/
+# Outputs of the former C++ build; recovered/ holds game data.
+build/
 captures/
-dist/
+recovered/
