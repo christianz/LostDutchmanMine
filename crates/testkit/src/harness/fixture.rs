@@ -1,10 +1,9 @@
-//! The saved games the C++ oracle's native tests exported as fixtures for
-//! `tools/fixtures.py`, and whether a harness reaches the same moment.
+//! The saved game a harness would write, and whether it matches a fixture.
 //!
 //! A fixture is the eight blocks of the data segment the original save
 //! routine writes, as `LDMSAVE1.SAV`, beside the save index `LDMSAVE.LDM` the
-//! game would read. The C++ tests remain the generators; these checks compare
-//! the port's state at each export point with what they wrote.
+//! game would read. `cargo xtask fixtures` builds them from the moments in
+//! `crate::moments`; these checks confirm the tests still reach them.
 
 use std::path::PathBuf;
 
@@ -17,7 +16,7 @@ const SAVED_GAME: &str = "LDMSAVE1.SAV";
 /// The save index beside it.
 const SAVE_INDEX: &str = "LDMSAVE.LDM";
 
-/// The C++ generators' fixtures: `.local/fixtures` in the workspace.
+/// The fixtures: `.local/fixtures` in the workspace.
 fn fixtures() -> PathBuf {
     workspace().join(".local/fixtures")
 }
@@ -44,7 +43,7 @@ impl Harness {
     }
 
     /// Checks the saved game and the save index the game would read now
-    /// against the C++ generator's fixture `name`.
+    /// against fixture `name`.
     ///
     /// # Panics
     ///
@@ -55,7 +54,7 @@ impl Harness {
         let read = |file: &str| {
             let path = folder.join(file);
             std::fs::read(&path).unwrap_or_else(|error| {
-                panic!("{}: {error}; tools/fixtures.py builds it", path.display())
+                panic!("{}: {error}; cargo xtask fixtures builds it", path.display())
             })
         };
         let (expected, saved) = (read(SAVED_GAME), self.saved_game());
@@ -64,12 +63,12 @@ impl Harness {
         {
             let address = address(at)
                 .map_or_else(|| "beyond its blocks".to_owned(), |a| format!("DS:{a:04x}"));
-            panic!("{name}: the saved game differs from the C++ fixture first at {address}");
+            panic!("{name}: the saved game differs from the fixture first at {address}");
         }
         let files = &self.game.dos.files;
         let path = files.resolve(SAVE_INDEX.as_bytes(), false).expect("a plain file name");
         let index = std::fs::read(&path).unwrap_or_else(|e| panic!("{}: {e}", path.display()));
-        assert!(index == read(SAVE_INDEX), "{name}: the save index differs from the C++ fixture's");
+        assert!(index == read(SAVE_INDEX), "{name}: the save index differs from the fixture's");
     }
 }
 

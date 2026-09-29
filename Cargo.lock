@@ -632,6 +632,7 @@ dependencies = [
  "machine",
  "serde",
  "serde_json",
+ "sha2",
  "thiserror",
  "translate",
 ]

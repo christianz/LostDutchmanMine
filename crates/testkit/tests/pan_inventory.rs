@@ -8,12 +8,12 @@
 //! `tools/fixtures.py`; here those moments are checked against the fixtures.
 
 use game::symbols::{
-    BUILDING, CASH, GOLD_BAGS, Global, INVENTORY_SLOTS, ITEM_NONE, ITEM_PAN, LOADED_SCENE,
-    MOUSE_MODE, MULES_OWNED, PANS, PENDING_DIRECTION, POSITION_X, POSITION_Y, SCENE_CAVE,
-    SCENE_ENCOUNTER, SCENE_MAP, SCENE_RIVER, SCENE_TOWN, SCENE_VARIANT, inventory,
+    CASH, GOLD_BAGS, INVENTORY_SLOTS, ITEM_PAN, MOUSE_MODE, MULES_OWNED, PANS, PENDING_DIRECTION,
+    inventory,
 };
 use machine::Address;
 use testkit::harness::{Harness, INPUT_POLL, SCENE_LIMIT};
+use testkit::moments::river::{river_state, town};
 
 /// The shop's purchase, taking the item bought.
 const BUY: Address = Address::new(0x08c0, 0x2718);
@@ -26,8 +26,6 @@ const READ_MOUSE: Address = Address::new(0x0fc5, 0x0038);
 /// The return into the classic hand's release drain: a mouse read with it
 /// on the stack waits for the selection click.
 const RELEASE_DRAIN_RETURN: u16 = 0x0876;
-/// What loading restores the wallet from: three times the cash.
-const SAVED_CASH: Global = Global(0x5b72);
 /// An ordinary item that fills a slot.
 const LAMP: u16 = 0x12;
 /// The river's Pan button is context button 1.
@@ -36,26 +34,6 @@ const PAN_BUTTON: u8 = 0b10;
 const PAN_CLICK: (i32, i32) = (100, 147);
 /// P, Pan's key.
 const P: u32 = 0x1970;
-
-/// The town with an empty pack, no mules, no pans and $1,000.
-fn town(qol: bool) -> Harness {
-    let mut h = Harness::in_town();
-    h.game.set_qol_flag(qol);
-    for row in 0..4 {
-        if row > 0 {
-            h.set(MULES_OWNED.nth(row - 1), 0);
-        }
-        for slot in 1..INVENTORY_SLOTS {
-            h.set(inventory(slot, row), ITEM_NONE);
-        }
-    }
-    h.set(PANS, 0);
-    h.set(GOLD_BAGS, 0);
-    h.set(CASH, 1000);
-    h.set(CASH.nth(1), 0);
-    h.set(SAVED_CASH, 3000);
-    h
-}
 
 /// Whether the player or an owned mule actually carries a pan.
 fn has_pan(h: &Harness) -> bool {
@@ -70,18 +48,6 @@ fn run_to_return(h: &mut Harness, routine: Address, args: &[u16]) {
     h.set(PENDING_DIRECTION, 0);
     h.call(routine, args);
     h.finish();
-}
-
-/// The river, as a loaded game shows it.
-fn river_state(h: &mut Harness) {
-    for scene in [SCENE_TOWN, SCENE_MAP, SCENE_CAVE, SCENE_ENCOUNTER, BUILDING] {
-        h.set(scene, 0);
-    }
-    h.set(SCENE_RIVER, 1);
-    h.set(LOADED_SCENE, 1);
-    h.set(POSITION_X, 40);
-    h.set(POSITION_Y, 55);
-    h.set(SCENE_VARIANT, 0);
 }
 
 /// Enters the river and runs it to its input poll.

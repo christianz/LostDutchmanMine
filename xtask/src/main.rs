@@ -4,6 +4,7 @@
 //! - `vectors`: download the SingleStepTests 8088 vectors into `.local/vectors`.
 //! - `test`: every test, including the hardware vectors when downloaded.
 //! - `verify`: the tests that need the original game, against the golden traces.
+//! - `fixtures`: build the scenario fixtures from the player's own saves.
 //! - `windows`: cross-build the Windows executable with Zig.
 //! - `package`: a private portable bundle with the player's own game.
 
@@ -17,7 +18,8 @@ use std::process::Command;
 
 use anyhow::{Context, Result, bail};
 
-const USAGE: &str = "usage: cargo xtask <lint | vectors | test | verify | windows | package>";
+const USAGE: &str =
+    "usage: cargo xtask <lint | vectors | test | verify | fixtures | windows | package>";
 
 fn main() -> Result<()> {
     let command = std::env::args().nth(1);
@@ -26,6 +28,7 @@ fn main() -> Result<()> {
         Some("vectors") => vectors::vectors(),
         Some("test") => test(),
         Some("verify") => verify(),
+        Some("fixtures") => fixtures(&std::env::args().skip(2).collect::<Vec<_>>()),
         Some("windows") => windows::build().map(|_| ()),
         Some("package") => package::package(&std::env::args().skip(2).collect::<Vec<_>>()),
         _ => bail!(USAGE),
@@ -90,6 +93,33 @@ fn verify() -> Result<()> {
         .context("running cargo")?;
     if !status.success() {
         bail!("verification failed");
+    }
+    Ok(())
+}
+
+/// The scenario fixtures, from the player's game (`--data DIR`, `LDM_DATA` or
+/// `.local/original`) into `.local/fixtures` (or `--out DIR`).
+fn fixtures(args: &[String]) -> Result<()> {
+    let mut command = Command::new("cargo");
+    command.args(["run", "--release", "--quiet", "-p", "testkit", "--bin", "fixtures", "--"]);
+    let mut args = args.iter();
+    while let Some(arg) = args.next() {
+        let value = args.next().with_context(|| format!("{arg} needs a folder"))?;
+        match arg.as_str() {
+            "--data" => command.env("LDM_DATA", value),
+            "--out" => command.args(["--out", value]),
+            _ => bail!(
+                "unknown argument {arg}; usage: cargo xtask fixtures [--data DIR] [--out DIR]"
+            ),
+        };
+    }
+    let status = command
+        .env("LDM_EXE", game_executable()?)
+        .current_dir(root())
+        .status()
+        .context("running cargo")?;
+    if !status.success() {
+        bail!("the fixtures could not be built");
     }
     Ok(())
 }
