@@ -1,4 +1,4 @@
-//! `tests/clock.cpp`: DOS date and time derive from the clock base and emulated
+//! The C++ `clock` test: DOS date and time derive from the clock base and emulated
 //! time. `crates/dos/tests/services.rs` checks the default date and time, the
 //! emulated time and the leap day; the one date it lacks, the day after
 //! February in a common year, is here.

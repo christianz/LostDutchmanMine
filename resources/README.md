@@ -12,8 +12,9 @@ magick resources/ldm-icon-master.png -resize 64x64 -define bmp:format=bmp4 resou
 ```
 
 The display settings menu uses `ui-font.bmp`, a pre-baked DejaVu Sans ASCII
-atlas. `src/ui-font.h` contains its glyph metrics, and `ui-font.json` records the
-source font hash. Regenerate both with `python3 tools/bake_font.py` (Pillow and
+atlas built into the executable. `crates/desktop/src/font/glyphs.rs` holds its
+glyph metrics, and `ui-font.json` records the source font hash. Regenerate them
+with `python3 tools/bake_font.py /path/to/DejaVuSans.ttf` (Pillow and
 ImageMagick are build tools only). The font's license is in `FONT-LICENSE.txt`
 and is included in playable bundles. No system font is required at runtime.
 

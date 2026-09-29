@@ -1,4 +1,4 @@
-//! `tests/qol.cpp`, its pointer and hover checks: walking shows the QoL
+//! The C++ `qol` test, its pointer and hover checks: walking shows the QoL
 //! pointer and keeps a quick click for the toolbar, the selector parks only
 //! the classic hand, and menus and the saloon's sleep hide every hover target
 //! beneath them until they close. The same C++ test's scene and walking

@@ -1,4 +1,4 @@
-//! `tests/verify-assay.py`: the assay office sells the chosen player and mule
+//! `verify-assay`: the assay office sells the chosen player and mule
 //! bags for exactly weight times grade times 10 dollars, and a cave visit
 //! returns the player to the exact map position.
 //!

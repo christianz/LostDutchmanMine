@@ -1,5 +1,5 @@
 //! The town about to enter the assay office as a loaded game, with eight bags
-//! of gold across the pack and three mules, as the C++ `tests/assay.cpp` set it
+//! of gold across the pack and three mules, as the C++ `assay` test set it
 //! up: the assay tests start here, and so does the `assay` fixture.
 
 use game::symbols::{

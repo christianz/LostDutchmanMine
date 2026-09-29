@@ -1,4 +1,4 @@
-//! `tests/keyboard.cpp`: desktop keys through the original movement and text
+//! The C++ `keyboard` test: desktop keys through the original movement and text
 //! readers. WASD walks and still types with its case, the keypad walks with Num
 //! Lock on or off and types digits with it, and a single key event never
 //! replaces a held diagonal. How desktop keys become BIOS keys and held

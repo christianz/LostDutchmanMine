@@ -1,4 +1,4 @@
-//! `tests/qol.cpp`, its walking checks: a held diagonal on the world map keeps
+//! The C++ `qol` test, its walking checks: a held diagonal on the world map keeps
 //! both axes when a single key arrives, repeat or not, and leaves the pointer
 //! alone; and held walking in the town, a mine and the saloon takes the
 //! original collision steps in less time without speeding the survival clock,

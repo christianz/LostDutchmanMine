@@ -1,5 +1,5 @@
 //! The town with an empty pack, and the river as a loaded game shows it, as
-//! the C++ `tests/pan-inventory.cpp` set them up: the pan tests start here,
+//! the C++ `pan-inventory` test set them up: the pan tests start here,
 //! and so do the `pan-missing` and `pan-owned` fixtures.
 
 use game::symbols::{

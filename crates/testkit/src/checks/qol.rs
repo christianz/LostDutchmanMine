@@ -1,4 +1,4 @@
-//! `tests/verify-qol.py`: with QoL, held walking goes faster while the survival
+//! `verify-qol`: with QoL, held walking goes faster while the survival
 //! clock keeps its pace, release and focus loss stop it, and the pointer shows.
 //!
 //! Left out, because no run the manifest makes can meet them:

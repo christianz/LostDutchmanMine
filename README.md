@@ -199,7 +199,8 @@ runs every test that needs the original game:
 - **Savestates.** A state restored halfway through the startup continues on
   the golden trace.
 
-Fixtures for the scenarios are built from your own saves into `.local/fixtures`.
+Fixtures for the scenarios are built from your own saves into `.local/fixtures`
+with `cargo xtask fixtures`: each twice, kept only when both builds agree.
 
 ## Acceptance before calling this a faithful port
 

@@ -1,4 +1,4 @@
-//! `tests/mouse.cpp`: the original mouse helper reads position and buttons in
+//! The C++ `mouse` test: the original mouse helper reads position and buttons in
 //! three BIOS calls. Quick clicks, their positions, holds and their order
 //! survive it; focus loss and stale clicks do not; and the classic cursor
 //! parking happens only without QoL. How the driver queues edges on its own is

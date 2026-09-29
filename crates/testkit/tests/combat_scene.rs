@@ -1,4 +1,4 @@
-//! `tests/combat-scene.cpp`: real encounters, Native Americans and a wanted
+//! The C++ `combat-scene` test: real encounters, Native Americans and a wanted
 //! criminal, each entered from the hand cursor with a held panel click and from
 //! the keys. The sight shows mouse aim at display rate without advancing the
 //! encounter, matches the original sprite and blitter pixel for pixel, hides

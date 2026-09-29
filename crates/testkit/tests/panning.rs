@@ -1,4 +1,4 @@
-//! `tests/panning.cpp`: the original Pan routine pans only with a pan the
+//! The C++ `panning` test: the original Pan routine pans only with a pan the
 //! player or an owned mule actually carries, whatever the stale pan counter
 //! says; every grade animates before any gold is awarded, a full pack goes to
 //! the original message, and a rejected Pan leaves the caller's stack intact,

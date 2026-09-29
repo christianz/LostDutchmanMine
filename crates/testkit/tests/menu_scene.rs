@@ -1,4 +1,4 @@
-//! `tests/menu-scene.cpp`: the QoL toolbar over the real town panel. Without
+//! The C++ `menu-scene` test: the QoL toolbar over the real town panel. Without
 //! QoL the frame is the original VGA screen, pixel for pixel; with it the
 //! labelled toolbar stays within its buttons and the original 16 colours,
 //! never writes game memory, and keeps the live health and food warnings: the

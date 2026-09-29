@@ -1,5 +1,5 @@
 //! The world map beside a generated cave, under the whole original scene
-//! dispatcher, as the C++ `tests/cave.cpp` set it up: the cave tests start
+//! dispatcher, as the C++ `cave` test set it up: the cave tests start
 //! here, and so do the `map` and `mining` fixtures.
 
 use game::symbols::{

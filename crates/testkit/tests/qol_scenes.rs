@@ -1,4 +1,4 @@
-//! `tests/qol.cpp`, its scene checks: a loaded saloon exits to its saved
+//! The C++ `qol` test, its scene checks: a loaded saloon exits to its saved
 //! doorway, mules are sold cheapest first with QoL and marked sold out without
 //! erasing the shop, and the desert close-up waits for a fresh dismissal that
 //! never reaches the map. The same C++ test's pointer and walking checks are

@@ -1,4 +1,4 @@
-//! `tests/verify-keyboard.py`: WASD and the numpad walk with Num Lock on or
+//! `verify-keyboard`: WASD and the numpad walk with Num Lock on or
 //! off, diagonals combine, release and focus loss stop, keys drive the
 //! settings menu, and a save named with WASD letters and keypad digits loads.
 

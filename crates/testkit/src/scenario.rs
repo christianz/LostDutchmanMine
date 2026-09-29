@@ -25,7 +25,7 @@ pub struct Scenario {
     pub script: String,
     /// How long it runs, in emulated seconds.
     pub seconds: u64,
-    /// The saved game it starts from, built by `tools/fixtures.py`.
+    /// The saved game it starts from, built by `cargo xtask fixtures`.
     #[serde(default)]
     pub fixture: Option<String>,
     /// Whether the settings menu opens at launch.

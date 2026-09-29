@@ -1,2 +1,4 @@
-# P6 pixels can contain newline bytes: Windows checkouts must never convert them.
-*.ppm binary
+# Golden traces and scenario scripts are compared byte for byte: never convert
+# their line endings.
+tests/golden/*.trace -text
+tests/scripts/*.txt -text

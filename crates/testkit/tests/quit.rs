@@ -1,4 +1,4 @@
-//! `tests/quit.cpp`: Quit Game calls the original graphics shutdown indirectly.
+//! The C++ `quit` test: Quit Game calls the original graphics shutdown indirectly.
 //! It must take its near return, preserve the caller's registers and stack,
 //! and restore the 400-line text desktop.
 

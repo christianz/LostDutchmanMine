@@ -1,4 +1,4 @@
-//! `tests/verify-input-update.py`: the encounter's sight follows the mouse at
+//! `verify-input-update`: the encounter's sight follows the mouse at
 //! once, numpad walking leaves the pointer alone, held Space keeps mining until
 //! released, and panning with QoL off plays the animation for one bag.
 //!

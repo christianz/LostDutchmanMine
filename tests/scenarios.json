@@ -1,5 +1,5 @@
 {
-  "comment": "Scenario runs for golden traces. Durations are virtual seconds. Fixtures are built from the player's own game by tools/fixtures.py. qol-saloon and saloon-sleep are absent: their saves have no generator.",
+  "comment": "Scenario runs for golden traces. Durations are virtual seconds. Fixtures are built from the player's own game by cargo xtask fixtures. qol-saloon and saloon-sleep are absent: their saves have no generator.",
   "scenarios": [
     {"name": "assay", "script": "assay.txt", "seconds": 36, "fixture": "assay"},
     {"name": "cave-roundtrip", "script": "cave-roundtrip.txt", "seconds": 37, "fixture": "map"},
@@ -30,14 +30,5 @@
     {"name": "saloon-cadence", "script": "saloon-cadence.txt", "seconds": 30},
     {"name": "saloon-drinks", "script": "saloon-drinks.txt", "seconds": 69},
     {"name": "save-roundtrip", "script": "save-roundtrip.txt", "seconds": 43}
-  ],
-  "checks": [
-    {"verifier": "tests/verify-combat.py", "args": ["{combat}/captures"]},
-    {"verifier": "tests/verify-panning.py", "args": ["{panning}/captures", "{panning}/Saves"]},
-    {"verifier": "tests/verify-movement.py", "args": ["{held-movement}/captures"]},
-    {"verifier": "tests/verify-saloon.py", "args": ["{saloon-drinks}/captures"]},
-    {"verifier": "tests/verify-display-menu.py", "args": ["{display-menu}/display.ini", "{display-menu}/captures"]},
-    {"verifier": "tests/verify-keyboard.py", "merge": ["keyboard-controls", "keyboard-save"],
-     "args": ["{merged}", "{keyboard-controls}/display.ini", "{keyboard-save}/Saves"]}
   ]
 }

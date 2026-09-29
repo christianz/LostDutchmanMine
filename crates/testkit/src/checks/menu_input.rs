@@ -1,4 +1,4 @@
-//! `tests/verify-menu-input.py`: dialogs hide the river's hover outlines and
+//! `verify-menu-input`: dialogs hide the river's hover outlines and
 //! closing them restores the outlines, diagonals keep both axes while held,
 //! and release and focus loss stop walking.
 //!

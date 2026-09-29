@@ -1,11 +1,11 @@
-//! `tests/assay.cpp`: selling gold at the assay office with the mouse. Eight
+//! The C++ `assay` test: selling gold at the assay office with the mouse. Eight
 //! bags across the player's pack and all three mules' rows are each assayed
 //! once, with the original weight and grade rules and exactly one payout;
 //! equipment and emptied slots pay nothing, and Done and Exit return to the
 //! saved town doorway, with QoL on and off.
 //!
-//! The C++ test also exported the office's starting state as a fixture for
-//! `tools/fixtures.py`; here that moment is checked against the fixture.
+//! The moments it starts from are fixtures too; `cargo xtask fixtures`
+//! builds them, and they are checked against them here.
 
 use game::symbols::{
     ASSAY_GRADE, ASSAY_POUNDS, BUILDING, GOLD_BAGS, ITEM_NONE, POSITION_X, POSITION_Y, SCENE_TOWN,

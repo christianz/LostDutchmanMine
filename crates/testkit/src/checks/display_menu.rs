@@ -1,4 +1,4 @@
-//! `tests/verify-display-menu.py`: the settings chosen in the menu persist, F11
+//! `verify-display-menu`: the settings chosen in the menu persist, F11
 //! pauses the game, and Cancel or Apply keep the player where they were.
 
 use std::collections::BTreeMap;

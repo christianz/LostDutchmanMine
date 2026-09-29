@@ -1,4 +1,4 @@
-//! `tests/verify-quit.py`: F6 and the original Quit Game button end the game
+//! `verify-quit`: F6 and the original Quit Game button end the game
 //! normally, restoring text mode, well before the run's time limit.
 //!
 //! The verifier launched the C++ desktop itself for a 30-second run under a

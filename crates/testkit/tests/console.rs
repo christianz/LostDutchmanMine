@@ -1,4 +1,4 @@
-//! `tests/console.cpp`: the original C runtime's `kbhit` and `getch` poll
+//! The C++ `console` test: the original C runtime's `kbhit` and `getch` poll
 //! without waiting or consuming input, keep Escape readable, recognise keys
 //! without a character, and still serve the runtime's own buffered character.
 

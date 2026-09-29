@@ -1,4 +1,4 @@
-//! `tests/menu.cpp`: the original shared scene and building selector. With QoL
+//! The C++ `menu` test: the original shared scene and building selector. With QoL
 //! the enlarged toolbar buttons and the context buttons' bevels dispatch
 //! through the original status menus and actions; gaps, absent buttons and
 //! scene clicks keep their original routing, the far return and caller stack

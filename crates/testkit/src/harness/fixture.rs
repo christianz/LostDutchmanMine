@@ -47,7 +47,7 @@ impl Harness {
     ///
     /// # Panics
     ///
-    /// When the fixture is missing, naming `tools/fixtures.py`, or differs,
+    /// When the fixture is missing, naming `cargo xtask fixtures`, or differs,
     /// naming the first data-segment address that does.
     pub fn assert_fixture(&self, name: &str) {
         let folder = fixtures().join(name);

@@ -1,4 +1,4 @@
-//! `tests/trace.cpp`: two deterministic sessions from the same start write
+//! The C++ `trace` test: two deterministic sessions from the same start write
 //! identical traces, one line per 100 emulated milliseconds. That the trace
 //! matches the C++ oracle's is `crates/game/tests/boot.rs`, and that the hash
 //! covers registers, memory and palette is `crates/machine/tests/hash.rs`.

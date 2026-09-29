@@ -1,11 +1,11 @@
-//! `tests/pan-inventory.cpp`: the original shop and discard routines leave
+//! The C++ `pan-inventory` test: the original shop and discard routines leave
 //! the pan counter stale, so the river's Pan must follow the actual inventory.
 //! A full-pack purchase, a real purchase and discarding the last pan, even
 //! while the river's old button is still drawn, never let the mouse or P pan
 //! without one, with QoL on and off.
 //!
-//! The C++ test also exported the river with and without a pan as fixtures for
-//! `tools/fixtures.py`; here those moments are checked against the fixtures.
+//! The moments it starts from are fixtures too; `cargo xtask fixtures`
+//! builds them, and they are checked against them here.
 
 use game::symbols::{
     CASH, GOLD_BAGS, INVENTORY_SLOTS, ITEM_PAN, MOUSE_MODE, MULES_OWNED, PANS, PENDING_DIRECTION,

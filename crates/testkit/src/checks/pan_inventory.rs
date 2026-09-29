@@ -1,4 +1,4 @@
-//! `tests/verify-pan-inventory.py`: without a pan in the inventory neither the
+//! `verify-pan-inventory`: without a pan in the inventory neither the
 //! mouse nor P pans, and with one both animate and collect a bag each.
 //!
 //! Left out: that the build before the fix panned without a pan, since there

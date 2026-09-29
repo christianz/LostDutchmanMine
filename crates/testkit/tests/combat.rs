@@ -1,4 +1,4 @@
-//! `tests/combat.cpp`: the original encounter input loop with QoL mouse aim.
+//! The C++ `combat` test: the original encounter input loop with QoL mouse aim.
 //! The sight follows the pointer and a press fires once at its own position;
 //! keys and Space still aim and fire; aim stays in bounds; focus loss resets;
 //! and the hand cursor, status panel, victory choices, fights without a gun

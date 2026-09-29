@@ -249,7 +249,7 @@ Files:
   (scaling, colour, CRT), SDL window and renderer, audio output from events.
 - [x] 4.2 Windows cross-build (x86_64-pc-windows-gnu, Zig as linker, SDL2 MinGW).
 - [x] 4.3 Packaging (`xtask package`), README and VALIDATION updates.
-- [ ] 4.4 Delete `src/`, the C++ tests, `Makefile`, `CMakeLists.txt` and the
+- [x] 4.4 Delete `src/`, the C++ tests, `Makefile`, `CMakeLists.txt` and the
   Python translator; golden traces remain the reference.
 
 ## M5 — lockstep and the first decompiled routine

@@ -1,11 +1,11 @@
-//! `tests/cave.cpp`: a generated cave on a scrolled part of the world map,
+//! The C++ `cave` test: a generated cave on a scrolled part of the world map,
 //! under the whole original scene dispatcher. Clicks during the entrance or
 //! inside never restart the scene, resuming a loaded cave keeps its position,
 //! a rejected entry and every exit restore the exact map position and scroll,
 //! and held Space mines at the original stroke rate, stopping on release.
 //!
-//! The C++ test also exported two fixture saves for `tools/fixtures.py`; here
-//! the same moments are checked against the fixtures it wrote.
+//! The moments it starts from are fixtures too; `cargo xtask fixtures`
+//! builds them, and they are checked against them here.
 
 use game::symbols::{
     Global, LOADED_SCENE, MINING_STROKES, MOUSE_MODE, POSITION_X, POSITION_Y, SCENE_CAVE,

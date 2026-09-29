@@ -1,4 +1,4 @@
-//! `tests/poker.cpp`: the original C runtime qsort sorts a poker hand through
+//! The C++ `poker` test: the original C runtime qsort sorts a poker hand through
 //! poker's far comparator callback, the callback the first native poker build
 //! lacked, for every order of five cards.
 

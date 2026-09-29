@@ -1,4 +1,4 @@
-//! `tests/verify-panning.py`: the river's original panning animation plays with
+//! `verify-panning`: the river's original panning animation plays with
 //! QoL on and off and pays one deferred bag, input during it is drained, F11
 //! pauses it, walking works afterward, and both bags survive the original
 //! save format.

@@ -1,4 +1,4 @@
-//! `tests/verify-saloon.py`: whiskey and sarsaparilla both return control to
+//! `verify-saloon`: whiskey and sarsaparilla both return control to
 //! the player, who walks away after each and reopens the bartender's menu on
 //! returning.
 

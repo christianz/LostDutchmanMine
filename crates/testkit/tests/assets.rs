@@ -1,4 +1,4 @@
-//! `tests/assets.cpp`: the game's own asset decoder, run where the game runs
+//! The C++ `assets` test: the game's own asset decoder, run where the game runs
 //! it, and the port's native decoder agree byte for byte on all 21 packed
 //! assets the game ships, and the native decoder rejects each one cut short.
 //! The decoder's rules on hand-made streams are `crates/game/tests/assets.rs`.

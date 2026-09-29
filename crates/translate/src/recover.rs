@@ -1,6 +1,6 @@
 //! Control-flow recovery: which bytes of the image are code.
 //!
-//! A conservative recursive descent, like the original `tools/analyze.py`: start
+//! A conservative recursive descent, as the C++ port's Python recovery was: start
 //! from the entry point, relocated far references and evidence-based entry
 //! points, and follow every direct jump and call. Indirect transfers are
 //! recorded, never guessed.

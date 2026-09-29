@@ -1,4 +1,4 @@
-//! Scenario checks: the Python verifiers `tests/verify-*.py`, ported to read a
+//! Scenario checks: the Python verifiers that checked the C++ port, ported to read a
 //! run's [`Outcome`](crate::scenario::Outcome) and folder instead of the C++
 //! desktop's capture files.
 //!
@@ -68,7 +68,7 @@ impl FromIterator<(String, Run)> for Runs {
 /// One ported verifier, applied to particular scenarios.
 #[derive(Clone, Copy, Debug)]
 pub struct Check {
-    /// The Python verifier it ports.
+    /// The Python verifier it ports, by name.
     pub verifier: &'static str,
     /// The scenarios it reads, all of which must have run.
     pub scenarios: &'static [&'static str],
@@ -76,37 +76,37 @@ pub struct Check {
     pub check: fn(&Runs) -> Result<(), String>,
 }
 
-/// Every check. `verify-combat.py` applies to both scenarios that share its
-/// capture numbers. Not ported: `verify-sleep.py`, whose `saloon-sleep`
+/// Every check. `verify-combat` applies to both scenarios that share its
+/// capture numbers. Not ported: `verify-sleep`, whose `saloon-sleep`
 /// scenario has no fixture generator and is absent from the manifest.
 pub const CHECKS: &[Check] = &[
     Check {
-        verifier: "tests/verify-assay.py",
+        verifier: "verify-assay",
         scenarios: &["assay", "cave-roundtrip"],
         check: |runs| assay::check(runs.get("assay")?, runs.get("cave-roundtrip")?),
     },
     Check {
-        verifier: "tests/verify-cave.py",
+        verifier: "verify-cave",
         scenarios: &["cave-roundtrip"],
         check: |runs| cave::check(runs.get("cave-roundtrip")?),
     },
     Check {
-        verifier: "tests/verify-combat.py",
+        verifier: "verify-combat",
         scenarios: &["combat"],
         check: |runs| combat::check(runs.get("combat")?),
     },
     Check {
-        verifier: "tests/verify-combat.py",
+        verifier: "verify-combat",
         scenarios: &["combat-entry"],
         check: |runs| combat::check(runs.get("combat-entry")?),
     },
     Check {
-        verifier: "tests/verify-display-menu.py",
+        verifier: "verify-display-menu",
         scenarios: &["display-menu"],
         check: |runs| display_menu::check(runs.get("display-menu")?),
     },
     Check {
-        verifier: "tests/verify-input-update.py",
+        verifier: "verify-input-update",
         scenarios: &[
             "combat-responsive",
             "map-pointer",
@@ -125,12 +125,12 @@ pub const CHECKS: &[Check] = &[
         },
     },
     Check {
-        verifier: "tests/verify-keyboard.py",
+        verifier: "verify-keyboard",
         scenarios: &["keyboard-controls", "keyboard-save"],
         check: |runs| keyboard::check(runs.get("keyboard-controls")?, runs.get("keyboard-save")?),
     },
     Check {
-        verifier: "tests/verify-menu-input.py",
+        verifier: "verify-menu-input",
         scenarios: &["menu-hover", "map-diagonals", "saloon-cadence"],
         check: |runs| {
             menu_input::check(
@@ -141,17 +141,17 @@ pub const CHECKS: &[Check] = &[
         },
     },
     Check {
-        verifier: "tests/verify-mouse.py",
+        verifier: "verify-mouse",
         scenarios: &["mouse-clicks"],
         check: |runs| mouse::check(runs.get("mouse-clicks")?),
     },
     Check {
-        verifier: "tests/verify-movement.py",
+        verifier: "verify-movement",
         scenarios: &["held-movement"],
         check: |runs| movement::check(runs.get("held-movement")?),
     },
     Check {
-        verifier: "tests/verify-pan-inventory.py",
+        verifier: "verify-pan-inventory",
         scenarios: &["pan-inventory-missing", "pan-inventory-owned"],
         check: |runs| {
             pan_inventory::check(
@@ -161,22 +161,22 @@ pub const CHECKS: &[Check] = &[
         },
     },
     Check {
-        verifier: "tests/verify-panning.py",
+        verifier: "verify-panning",
         scenarios: &["panning"],
         check: |runs| panning::check(runs.get("panning")?),
     },
     Check {
-        verifier: "tests/verify-qol.py",
+        verifier: "verify-qol",
         scenarios: &["qol-cadence-classic", "qol-cadence-qol"],
         check: |runs| qol::check(runs.get("qol-cadence-classic")?, runs.get("qol-cadence-qol")?),
     },
     Check {
-        verifier: "tests/verify-quit.py",
+        verifier: "verify-quit",
         scenarios: &["quit-game"],
         check: |runs| quit::check(runs.get("quit-game")?),
     },
     Check {
-        verifier: "tests/verify-saloon.py",
+        verifier: "verify-saloon",
         scenarios: &["saloon-drinks"],
         check: |runs| saloon::check(runs.get("saloon-drinks")?),
     },

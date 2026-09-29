@@ -1,4 +1,4 @@
-//! `tests/verify-mouse.py`: the pointer stays visible while walking, one quick
+//! `verify-mouse`: the pointer stays visible while walking, one quick
 //! toolbar click opens F6, and one quick click on Quit Game ends the game.
 //!
 //! The verifier launched the C++ desktop itself, with a 26-second timeout on a

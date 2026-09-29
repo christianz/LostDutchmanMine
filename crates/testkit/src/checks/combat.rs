@@ -1,4 +1,4 @@
-//! `tests/verify-combat.py`: in an encounter the mouse aims, a quick click
+//! `verify-combat`: in an encounter the mouse aims, a quick click
 //! fires once and a held one no more, the keyboard aims and Space fires, a
 //! right click opens the hand, and F11 pauses the fight.
 

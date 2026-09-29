@@ -1,4 +1,4 @@
-//! `tests/verify-cave.py`: clicking cave scenery keeps the player in the cave,
+//! `verify-cave`: clicking cave scenery keeps the player in the cave,
 //! and walking out restores the exact map position and scroll.
 //!
 //! Left out, because each compares with the build before the fix, which there

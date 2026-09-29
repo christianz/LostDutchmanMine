@@ -1,4 +1,4 @@
-//! `tests/verify-movement.py`: VGA starts without a key, a held arrow keeps
+//! `verify-movement`: VGA starts without a key, a held arrow keeps
 //! walking without repeat events, and release, focus loss, opposing keys and
 //! stale repeats all stop it.
 

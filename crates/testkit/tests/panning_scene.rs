@@ -1,4 +1,4 @@
-//! `tests/panning-scene.cpp`: the restored panning animation on the game's
+//! The C++ `panning-scene` test: the restored panning animation on the game's
 //! own sprites, page buffers and timer handler, with the synthetic clock. For
 //! every grade, with QoL on and off, it shows the original three poses for
 //! five to nine cycles at the original delays, awards exactly one graded bag

@@ -1,6 +1,6 @@
 //! Lowering decoded 8086 instructions into IR.
 //!
-//! The rules match the original C++ emitter exactly (`tools/translate.py`), so
+//! The rules match the C++ port's Python emitter exactly, so
 //! the Rust and C++ builds execute the same semantics. Anything the 8086 lacks,
 //! or the game never uses, is rejected rather than approximated.
 
