@@ -97,6 +97,30 @@ Scenario manifest `tests/scenarios.json` (read by Python and Rust):
   "fixture": null, "verify": ["tests/verify-movement.py"] }
 ```
 
+### What changed on the way
+
+The interfaces above were the plan; the code differs where the work showed a
+simpler or more faithful shape.
+
+- **Program and flow.** `Program::step(&mut self, m) -> Result<(), Stop>` runs
+  one translated step; blocks hand back `Next::{Goto, Yield}` inside `game`, so
+  `Flow` and a `GameState` parameter were not needed. The engine queues
+  `InputKind`s per quantum rather than timestamped `InputEvent`s: the desktop
+  and the scenario runner already deliver input at its millisecond.
+- **Patch actions.** `SkipTo` was not needed: a hook returning
+  `After::Goto(offset)` covers every conditional skip. `Routine` marks a
+  routine's entry instead of replacing its instructions, so the translation
+  stays available for lockstep.
+- **Lockstep.** A translated routine yields as its original did and may span
+  many quanta with timer interrupts between them, so running the readable
+  routine in the real machine would change the timing. Lockstep instead runs
+  both implementations on copies taken at entry, compares them under the
+  contract, and leaves the real machine on the translation.
+- **The window.** The SDL2 shell is its own crate, `app`, so `desktop` stays
+  free of windowing and `testkit` can drive its controller without SDL.
+- **Missing LDM_EXE.** The game crate builds without it, with no game to run,
+  so lints and every test that needs no game data run anywhere.
+
 ---
 
 ## M0 — deterministic C++ oracle and golden traces
@@ -115,122 +139,122 @@ Files:
 
 ### Task 0.1: Emulated clock for DOS date and time
 
-- [ ] Write `tests/clock.cpp`: with `State` defaults, `int 21h AH=2Ah` returns
+- [x] Write `tests/clock.cpp`: with `State` defaults, `int 21h AH=2Ah` returns
   2026-01-01 (Thursday, AL=4) and `AH=2Ch` returns 12:00:00.00; after
   `emulated_ms=3723450` it returns 13:02:03.45; `clock_base` of 1 Mar 2027
   00:00:00 returns that date. Add a `build/test-clock` Makefile target.
-- [ ] Run `make build/test-clock && build/test-clock`; expect a compile failure
+- [x] Run `make build/test-clock && build/test-clock`; expect a compile failure
   (`emulated_ms` missing).
-- [ ] Add `int64_t clock_base=1767268800; uint64_t emulated_ms=0;` to `State`;
+- [x] Add `int64_t clock_base=1767268800; uint64_t emulated_ms=0;` to `State`;
   compute date/time in `interrupt` from `clock_base+emulated_ms/1000` with a UTC
   civil-from-days conversion (no `localtime`), hundredths `emulated_ms%1000/10`.
-- [ ] Run the test; expect PASS. Run `build/test-console`; expect PASS.
-- [ ] Commit: "Derive DOS date and time from emulated time".
+- [x] Run the test; expect PASS. Run `build/test-console`; expect PASS.
+- [x] Commit: "Derive DOS date and time from emulated time".
 
 ### Task 0.2: Mouse click expiry in emulated time
 
-- [ ] Change `tests/mouse.cpp` lines 41–44 to use `set_time(0)` for the press,
+- [x] Change `tests/mouse.cpp` lines 41–44 to use `set_time(0)` for the press,
   then `set_time(2000)` before polling; expect the stale click to expire and the
   held button to survive, exactly as before.
-- [ ] Run; expect a compile failure (`set_time` missing).
-- [ ] Replace `Clock::time_point` with `uint64_t` milliseconds in `MouseInput`;
+- [x] Run; expect a compile failure (`set_time` missing).
+- [x] Replace `Clock::time_point` with `uint64_t` milliseconds in `MouseInput`;
   add `set_time(uint64_t)`; `buttons(mask)` stamps with the current time;
   `poll()` expires entries older than 1,000 ms.
-- [ ] Run `build/test-mouse`, `build/test-combat`, `build/test-qol`; expect PASS.
-- [ ] Commit: "Measure mouse click expiry in emulated time".
+- [x] Run `build/test-mouse`, `build/test-combat`, `build/test-qol`; expect PASS.
+- [x] Commit: "Measure mouse click expiry in emulated time".
 
 ### Task 0.3: One quantum for both session modes
 
-- [ ] Write `tests/trace.cpp`: two independent `State`s loaded from the recovered
+- [x] Write `tests/trace.cpp`: two independent `State`s loaded from the recovered
   image, each driven by `Session` in deterministic mode for 3,000 quanta, produce
   identical trace lines; changing one memory byte changes `state_hash`.
-- [ ] Run; expect a compile failure.
-- [ ] Add `Audio::advance_clock(unsigned)`. Extract the loop body of
+- [x] Run; expect a compile failure.
+- [x] Add `Audio::advance_clock(unsigned)`. Extract the loop body of
   `Session::run` into `Session::quantum(uint64_t pit_clocks,uint64_t opl_clocks)`
   following the shared quantum order; threaded mode converts wall time to clocks
   and calls it; add `Session(State&,Mode)` with `Mode::Deterministic` (no thread,
   `step()` runs quantum `q`, `snapshot()` reads state directly) and
   `trace(std::ostream&)`; add `uint64_t state_hash(const State&)`.
-- [ ] Run `build/test-trace`; expect PASS. Run the full native test list from
+- [x] Run `build/test-trace`; expect PASS. Run the full native test list from
   `docs/VALIDATION.md`; expect PASS.
-- [ ] Commit: "Run the simulation in reproducible quanta".
+- [x] Commit: "Run the simulation in reproducible quanta".
 
 ### Task 0.4: Deterministic desktop runs
 
-- [ ] Add `--trace FILE`: no audio device, virtual clock advancing 1 ms per loop,
+- [x] Add `--trace FILE`: no audio device, virtual clock advancing 1 ms per loop,
   script events applied at their virtual time, session stepped once per
   unpaused millisecond, frames rendered only for `screen`/`--screenshot`.
-- [ ] Run `display-menu.txt` twice with `--trace`; expect identical files and
+- [x] Run `display-menu.txt` twice with `--trace`; expect identical files and
   `tests/verify-display-menu.py` PASS.
-- [ ] Commit: "Add deterministic trace runs to the desktop".
+- [x] Commit: "Add deterministic trace runs to the desktop".
 
 ### Task 0.5: Scenario manifest, fixtures and golden traces
 
-- [ ] Write `tests/scenarios.json` for every script except `saloon-sleep`
+- [x] Write `tests/scenarios.json` for every script except `saloon-sleep`
   (fixture has no generator), with durations from the scripts, fixtures named by
   generator: `combat` (make-combat-fixture.py), `river` (make-river-fixture.py),
   `assay` (test-assay), `map` and `mining` (test-cave), `pan-owned` and
   `pan-missing` (test-pan-inventory).
-- [ ] Write `tools/fixtures.py`: build each fixture into `.local/fixtures/<name>`
+- [x] Write `tools/fixtures.py`: build each fixture into `.local/fixtures/<name>`
   from `$LDM_DATA`, twice, and fail unless both builds are byte-identical.
-- [ ] Write `tools/record_traces.py`: for each scenario create a fresh temp dir,
+- [x] Write `tools/record_traces.py`: for each scenario create a fresh temp dir,
   copy the fixture, write the config, run `build/ldm-native --trace`, run its
   verifiers against the temp dir, write `tests/golden/<name>.trace`; `--check`
   compares instead of writing. Run scenarios in parallel.
-- [ ] Record; then `--check` twice; expect identical results and every verifier
+- [x] Record; then `--check` twice; expect identical results and every verifier
   PASS. Fix scripts whose timing assumed wall-clock pacing, noting each change.
-- [ ] Document deterministic runs and golden traces in `docs/VALIDATION.md`.
-- [ ] Commit: "Record golden traces for every scenario".
+- [x] Document deterministic runs and golden traces in `docs/VALIDATION.md`.
+- [x] Commit: "Record golden traces for every scenario".
 
 ## M1 — machine, IR and hardware vectors
 
-- [ ] 1.1 Workspace skeleton: `Cargo.toml`, `rust-toolchain.toml`, `rustfmt.toml`,
+- [x] 1.1 Workspace skeleton: `Cargo.toml`, `rust-toolchain.toml`, `rustfmt.toml`,
   `clippy.toml`, `xtask` with `lint` (fmt, clippy pedantic, raw-address check).
-- [ ] 1.2 `machine`: `Registers`, flags, `Memory` (masked 20-bit), `alu`, `shift`,
+- [x] 1.2 `machine`: `Registers`, flags, `Memory` (masked 20-bit), `alu`, `shift`,
   `multiply`, `divide`, stack, string operations, ports, PIT state; unit tests
   ported from `tests/arithmetic.cpp` (1,315,840 cases).
-- [ ] 1.3 `ymfm-sys` + `machine::Opl` (register/timer/status state, clock advance).
-- [ ] 1.4 `translate::ir` and `translate::lower` from iced-x86 for every mnemonic
+- [x] 1.3 `ymfm-sys` + `machine::Opl` (register/timer/status state, clock advance).
+- [x] 1.4 `translate::ir` and `translate::lower` from iced-x86 for every mnemonic
   in `translate.py`; `testkit::interp` executes IR on `Machine`.
-- [ ] 1.5 SingleStepTests 8088 vectors (downloaded by `xtask vectors` into
+- [x] 1.5 SingleStepTests 8088 vectors (downloaded by `xtask vectors` into
   `.local/vectors`) for every opcode LDM uses; compare defined flags only; record
   deliberate differences with reasons.
-- [ ] 1.6 FNV state hash identical to the C++ `state_hash` (fixture test).
+- [x] 1.6 FNV state hash identical to the C++ `state_hash` (fixture test).
 
 ## M2 — translator emits Rust
 
-- [ ] 2.1 `translate::image`: SHA-256 check and EXEPACK unpack (port `unpack.py`),
+- [x] 2.1 `translate::image`: SHA-256 check and EXEPACK unpack (port `unpack.py`),
   tested on synthetic packed data.
-- [ ] 2.2 `translate::recover` (port `analyze.py`) and `game/entry_points.toml`.
-- [ ] 2.3 `patches` crate: every site from `translate.py`, as data.
-- [ ] 2.4 `translate::emit`: blocks as functions, segment dispatchers, annotations;
+- [x] 2.2 `translate::recover` (port `analyze.py`) and `game/entry_points.toml`.
+- [x] 2.3 `patches` crate: every site from `translate.py`, as data.
+- [x] 2.4 `translate::emit`: blocks as functions, segment dispatchers, annotations;
   `insta` snapshots on synthetic programs.
-- [ ] 2.5 `game/build.rs` and a headless boot: the startup scenario matches its
+- [x] 2.5 `game/build.rs` and a headless boot: the startup scenario matches its
   golden trace.
 
 ## M3 — DOS, game, engine
 
-- [ ] 3.1 `dos`: every service in `legacy.cpp::interrupt`, file paths and
+- [x] 3.1 `dos`: every service in `legacy.cpp::interrupt`, file paths and
   copy-on-write, BIOS data area and load layout.
-- [ ] 3.2 `game`: `symbols.rs`, hooks from `legacy.cpp`, `GameUi` overlay,
+- [x] 3.2 `game`: `symbols.rs`, hooks from `legacy.cpp`, `GameUi` overlay,
   frame composition from `session.cpp::read_frame`.
-- [ ] 3.3 `engine`: quantum loop, inputs, frames, audio events, traces, savestates.
-- [ ] 3.4 `testkit` scenario runner and controller-level input mapping (from
+- [x] 3.3 `engine`: quantum loop, inputs, frames, audio events, traces, savestates.
+- [x] 3.4 `testkit` scenario runner and controller-level input mapping (from
   `desktop.cpp` and `keyboard.h`); every golden trace matches.
-- [ ] 3.5 Port the scenario verifiers and the native tests to Rust tests.
+- [x] 3.5 Port the scenario verifiers and the native tests to Rust tests.
 
 ## M4 — desktop parity and C++ removal
 
-- [ ] 4.1 `desktop`: settings file, menu model (from `display.cpp`), presentation
+- [x] 4.1 `desktop`: settings file, menu model (from `display.cpp`), presentation
   (scaling, colour, CRT), SDL window and renderer, audio output from events.
-- [ ] 4.2 Windows cross-build (x86_64-pc-windows-gnu, Zig as linker, SDL2 MinGW).
-- [ ] 4.3 Packaging (`xtask package`), README and VALIDATION updates.
+- [x] 4.2 Windows cross-build (x86_64-pc-windows-gnu, Zig as linker, SDL2 MinGW).
+- [x] 4.3 Packaging (`xtask package`), README and VALIDATION updates.
 - [ ] 4.4 Delete `src/`, the C++ tests, `Makefile`, `CMakeLists.txt` and the
   Python translator; golden traces remain the reference.
 
 ## M5 — lockstep and the first decompiled routine
 
-- [ ] 5.1 Stack low-water tracking and per-routine live-out register analysis.
-- [ ] 5.2 Lockstep mode in testkit; `Action::Routine`.
-- [ ] 5.3 Decompile the asset decoder routine into `game::decompiled::assets`;
+- [x] 5.1 Stack low-water tracking and per-routine live-out register analysis.
+- [x] 5.2 Lockstep mode in testkit; `Action::Routine`.
+- [x] 5.3 Decompile the asset decoder routine into `game::decompiled::assets`;
   lockstep passes on every scenario; release build uses it.

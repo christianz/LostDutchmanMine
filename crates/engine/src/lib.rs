@@ -7,12 +7,17 @@
 //! nothing of the game: a [`Program`] supplies its code and services.
 
 mod program;
+mod recent;
+mod replay;
 mod state;
 mod timer;
 
 pub use program::{InputKind, Program, Stop};
+pub use replay::{Replay, ReplayError};
 
-use machine::Machine;
+use machine::{Address, Machine};
+
+use crate::recent::Recent;
 
 /// PIT input clocks per second.
 pub const PIT_HZ: u64 = 1_193_182;
@@ -38,6 +43,8 @@ pub struct Engine<P> {
     pit_clocks: u64,
     inputs: Vec<InputKind>,
     speaker_hz: u32,
+    recent: Recent,
+    recording: Option<Vec<(u64, InputKind)>>,
 }
 
 /// The clocks falling in quantum `q`, distributing `hz` exactly over milliseconds.
@@ -48,12 +55,41 @@ const fn clocks_in(q: u64, hz: u64) -> u64 {
 impl<P: Program> Engine<P> {
     /// A session about to run its first quantum.
     pub fn new(machine: Machine, program: P) -> Self {
-        Engine { machine, program, quanta: 0, pit_clocks: 0, inputs: Vec::new(), speaker_hz: 0 }
+        Engine {
+            machine,
+            program,
+            quanta: 0,
+            pit_clocks: 0,
+            inputs: Vec::new(),
+            speaker_hz: 0,
+            recent: Recent::default(),
+            recording: None,
+        }
     }
 
     /// Queues an input for the next quantum.
     pub fn input(&mut self, input: InputKind) {
+        if let Some(recording) = &mut self.recording {
+            recording.push((self.quanta, input));
+        }
         self.inputs.push(input);
+    }
+
+    /// Records every input from now on, for [`Engine::replay`].
+    pub fn start_recording(&mut self) {
+        self.recording = Some(Vec::new());
+    }
+
+    /// The input recorded so far, without a header, if recording.
+    pub fn replay(&self) -> Option<Replay> {
+        let inputs = self.recording.clone()?;
+        Some(Replay { header: Vec::new(), inputs })
+    }
+
+    /// Where the last 64 translated steps began, oldest first, the timer
+    /// handler's included: what led up to a stop.
+    pub fn recent_steps(&self) -> Vec<Address> {
+        self.recent.oldest_first()
     }
 
     /// Runs one emulated millisecond.
@@ -69,7 +105,7 @@ impl<P: Program> Engine<P> {
         self.pit_clocks += clocks_in(q, PIT_HZ);
         while self.pit_clocks >= self.machine.pit.timer_period() {
             self.pit_clocks -= self.machine.pit.timer_period();
-            timer::interrupt(&mut self.machine, &mut self.program)?;
+            timer::interrupt(&mut self.machine, &mut self.program, &mut self.recent)?;
         }
         self.machine.opl.advance(clocks_in(q, OPL_HZ) as u32);
 
@@ -78,6 +114,7 @@ impl<P: Program> Engine<P> {
             if !self.program.running() {
                 break;
             }
+            self.recent.note(&self.machine);
             self.program.step(&mut self.machine)?;
             if self.program.waiting() {
                 break;

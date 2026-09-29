@@ -32,6 +32,7 @@ dependencies = [
  "desktop",
  "engine",
  "game",
+ "machine",
  "sdl2",
 ]
 

@@ -33,6 +33,13 @@ pub use frame::Frame;
 pub use report::Report;
 pub use routines::RoutineMode;
 
+/// This build: the port's version and the executable it translated. Replays
+/// and crash reports record it, since only the same build replays exactly.
+pub fn build_id() -> String {
+    let source = translated::SOURCE.unwrap_or("no translated game");
+    format!("{} (LDM.EXE {source})", env!("CARGO_PKG_VERSION"))
+}
+
 /// The game's state beside the machine: DOS, and what the port adds.
 #[derive(Debug)]
 pub struct Game {

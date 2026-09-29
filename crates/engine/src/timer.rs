@@ -2,6 +2,7 @@
 
 use machine::{Flag, Machine, RESERVED};
 
+use crate::recent::Recent;
 use crate::{Program, Stop};
 
 /// The BIOS segment; its own INT 08h handler lives at F000:0020.
@@ -17,7 +18,11 @@ const HANDLER_STEP_LIMIT: u64 = 1_000_000;
 /// # Errors
 ///
 /// [`Stop::TimerHandler`] if the handler never returns, or the program's stop.
-pub fn interrupt<P: Program>(m: &mut Machine, program: &mut P) -> Result<(), Stop> {
+pub fn interrupt<P: Program>(
+    m: &mut Machine,
+    program: &mut P,
+    recent: &mut Recent,
+) -> Result<(), Stop> {
     if !m.flag(Flag::Interrupt) {
         return Ok(());
     }
@@ -43,6 +48,7 @@ pub fn interrupt<P: Program>(m: &mut Machine, program: &mut P) -> Result<(), Sto
             m.regs.cs = m.pop();
             m.regs.flags = m.pop() | RESERVED;
         } else {
+            recent.note(m);
             program.step(m)?;
         }
     }

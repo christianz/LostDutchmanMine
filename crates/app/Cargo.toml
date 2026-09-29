@@ -18,5 +18,8 @@ engine.workspace = true
 game.workspace = true
 sdl2 = "0.38"
 
+[dev-dependencies]
+machine.workspace = true
+
 [lints]
 workspace = true

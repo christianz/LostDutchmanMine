@@ -7,6 +7,7 @@
 //! Pausing stops emulated time; it does not catch up afterwards.
 
 use std::collections::VecDeque;
+use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex, PoisonError};
 use std::thread::JoinHandle;
@@ -65,14 +66,20 @@ pub struct Simulation {
 }
 
 impl Simulation {
-    /// Starts `engine` on its own thread.
-    pub fn start(engine: Engine<Game>) -> Self {
+    /// Starts `engine` on its own thread, recording its input for a crash
+    /// report in `crashes`; `header` describes the session for its replay.
+    pub fn start(
+        mut engine: Engine<Game>,
+        crashes: PathBuf,
+        header: Vec<(String, String)>,
+    ) -> Self {
+        engine.start_recording();
         let shared = Arc::new(Shared::default());
         let thread = std::thread::Builder::new()
             .name("simulation".to_owned())
             .spawn({
                 let shared = Arc::clone(&shared);
-                move || run(engine, &shared)
+                move || run(engine, &shared, &Crashes { folder: crashes, header })
             })
             .expect("a thread for the simulation");
         Simulation { shared, thread: Some(thread) }
@@ -108,7 +115,13 @@ impl Drop for Simulation {
     }
 }
 
-fn run(mut engine: Engine<Game>, shared: &Shared) {
+/// Where crash reports go, and what their replays say about the session.
+struct Crashes {
+    folder: PathBuf,
+    header: Vec<(String, String)>,
+}
+
+fn run(mut engine: Engine<Game>, shared: &Shared, crashes: &Crashes) {
     let mut emulated = Duration::ZERO;
     let mut last = Instant::now();
     let mut published: Option<Instant> = None;
@@ -127,7 +140,14 @@ fn run(mut engine: Engine<Game>, shared: &Shared) {
             let behind = target.saturating_sub(engine.quanta());
             for _ in 0..behind.min(MAX_CATCH_UP) {
                 if let Err(stop) = engine.step() {
-                    error = Some(stop.to_string());
+                    let report =
+                        crate::crash::write(&crashes.folder, &engine, &stop, &crashes.header);
+                    error = Some(match report {
+                        Ok(folder) => {
+                            format!("{stop}\n\nA crash report is in {}", folder.display())
+                        }
+                        Err(failure) => format!("{stop}\n\n(no crash report: {failure})"),
+                    });
                     break;
                 }
                 let audio = engine.take_audio();

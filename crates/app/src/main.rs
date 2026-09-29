@@ -12,6 +12,7 @@
 )]
 #![windows_subsystem = "windows"]
 
+mod crash;
 mod presentation;
 mod simulation;
 mod sound;
@@ -41,6 +42,7 @@ const USAGE: &str = "usage: lost-dutchman-mine [--data DIR] [--saves DIR] [--con
 /// may end after a number of seconds with a screenshot of the window, so the
 /// whole presentation can be checked without a player.
 struct Options {
+    crashes: PathBuf,
     data: PathBuf,
     saves: PathBuf,
     config: PathBuf,
@@ -54,6 +56,7 @@ impl Options {
         let exe = std::env::current_exe().context("cannot find the executable")?;
         let app = exe.parent().map_or_else(|| PathBuf::from("."), Path::to_path_buf);
         let mut options = Options {
+            crashes: app.join("Crashes"),
             data: app.join("Game"),
             saves: app.join("Saves"),
             config: app.join("display.ini"),
@@ -117,7 +120,8 @@ fn run(options: &Options) -> Result<()> {
     let startup_menu = options.menu.unwrap_or(settings.startup);
     let (machine, mut game) =
         game::boot(options.data.clone(), options.saves.clone(), settings.qol)?;
-    game.dos.clock.base = local_clock_seconds();
+    let clock_base = local_clock_seconds();
+    game.dos.clock.base = clock_base;
     // Play runs the readable routines; lockstep proves them equal to the originals.
     game.set_routine_mode(game::RoutineMode::Readable);
 
@@ -142,7 +146,13 @@ fn run(options: &Options) -> Result<()> {
 
     let mut controller = Controller::new(options.config.clone(), settings, startup_menu);
     let speakers = Speakers::open(audio.as_ref());
-    let simulation = Simulation::start(Engine::new(machine, game));
+    let header = vec![
+        ("build".to_owned(), game::build_id()),
+        ("clock-base".to_owned(), clock_base.to_string()),
+        ("qol".to_owned(), u8::from(settings.qol).to_string()),
+        ("routines".to_owned(), "readable".to_owned()),
+    ];
+    let simulation = Simulation::start(Engine::new(machine, game), options.crashes.clone(), header);
     let mut events = sdl(context.event_pump())?;
     let mouse = context.mouse();
     let start = Instant::now();

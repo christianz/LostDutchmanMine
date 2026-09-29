@@ -58,8 +58,12 @@ pub const RETURN_Y: Global = Global(0x5b62);
 pub const LOADED_SCENE: Global = Global(0x5b86);
 
 // Which scene is showing: one flag each.
+/// The town.
+pub const SCENE_TOWN: Global = Global(0x5e04);
 /// The map.
 pub const SCENE_MAP: Global = Global(0x5e06);
+/// A river.
+pub const SCENE_RIVER: Global = Global(0x5e08);
 /// A cave.
 pub const SCENE_CAVE: Global = Global(0x5e0a);
 /// An encounter.
@@ -102,6 +106,22 @@ pub const fn inventory(slot: u16, row: u16) -> Global {
     Global(INVENTORY.0 + slot * 8 + row * 2)
 }
 
+// Saved games.
+/// A saved game's blocks of the data segment, in file order, as the original
+/// writes and reads them (0e5a:0140, 0e5a:0380): the start and the length in bytes.
+pub const SAVE_BLOCKS: [(Global, u16); 8] = [
+    (POSITION_X, 0x36),
+    (SCENE_TOWN, 0x20),
+    (Global(0x5314), 0x24),
+    (Global(0x53d4), 0x32),
+    (MULES_OWNED, 6),
+    (INVENTORY, 0x58),
+    (Global(0x5bd4), 0x58),
+    (Global(0x389c), 0x1650),
+];
+/// The size of a saved game: the blocks together.
+pub const SAVE_SIZE: usize = 6066;
+
 // Input.
 /// 1 while walking or aiming with the keyboard, 0 in hand-cursor mode.
 pub const MOUSE_MODE: Global = Global(0x5d62);
@@ -111,6 +131,12 @@ pub const PENDING_DIRECTION: Global = Global(0x5a1a);
 pub const JOYSTICK: Address = Address::new(0x72ba, 0x0001);
 
 // Encounters.
+/// Which fight an encounter is: drawn from 0 to 9 on arrival, or 10 for the
+/// wanted criminal a rare event sends (0000:07ea).
+pub const ENCOUNTER_KIND: Global = Global(0x5b64);
+/// Which of four backdrops a river or encounter shows: drawn at random on
+/// arrival (033f:0089, 040a:0235) unless a loaded game already set it.
+pub const SCENE_VARIANT: Global = Global(0x532c);
 /// Set once an encounter is won; its victory choices follow.
 pub const ENCOUNTER_WON: Global = Global(0x5302);
 /// How far above row 94 the encounter's aiming area ends.
