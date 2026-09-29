@@ -1,5 +1,9 @@
 # Lost Dutchman Mine — native port
 
+<p align="center">
+  <img src="docs/screenshots/title.png" alt="Lost Dutchman Mine title screen" width="640">
+</p>
+
 Development build of a faithful native port of the supplied 1989 DOS game.
 The native Linux build runs the original title, town, movement, menus, saved
 games and AdLib music. A Windows x64 executable is cross-compiled from the same
@@ -22,6 +26,43 @@ written to: its saved games stay intact and new saves go to a separate `Saves/`
 directory. Build outputs, generated game code and recovered proprietary data are
 ignored by Git. Do not commit or publish recovered game code or assets.
 
+## Screenshots
+
+<table>
+  <tr>
+    <td><img src="docs/screenshots/town.png" alt="Town street with the Mercantile and Assay Office" width="400"></td>
+    <td><img src="docs/screenshots/saloon.png" alt="Ordering at the saloon bar" width="400"></td>
+  </tr>
+  <tr>
+    <td align="center">Town, with QoL toolbar labels</td>
+    <td align="center">Saloon bar</td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/river.png" alt="River with Fish, Water, Pan and Exit" width="400"></td>
+    <td><img src="docs/screenshots/mine.png" alt="Prospector with a pick inside a mine" width="400"></td>
+  </tr>
+  <tr>
+    <td align="center">River: fish, fill water or pan for gold</td>
+    <td align="center">Inside a mine</td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/poker.png" alt="Poker hand against the gambler" width="400"></td>
+    <td><img src="docs/screenshots/combat.png" alt="Aiming the crosshair in a desert gunfight" width="400"></td>
+  </tr>
+  <tr>
+    <td align="center">Poker</td>
+    <td align="center">Gunfight in the desert</td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/mules.png" alt="Mule seller with one mule for sale and two sold out" width="400"></td>
+    <td><img src="docs/screenshots/assay.png" alt="Assay office pricing a bag of gold" width="400"></td>
+  </tr>
+  <tr>
+    <td align="center">Mules: with QoL, the cheapest is sold first</td>
+    <td align="center">Assay office</td>
+  </tr>
+</table>
+
 ## Play
 
 Build a playable bundle with `tools/package.py` (see [Build](#build)), copy the
@@ -30,6 +71,10 @@ complete Windows bundle to a writable folder and double-click
 desktop fullscreen, a centred 85% picture, soft edges and gentle colours.
 **F11** reopens the menu while pausing the game and music. Preferences are saved
 in `display.ini`; set **Show at startup** to No to go straight into the game.
+
+<p align="center">
+  <img src="docs/screenshots/settings.png" alt="Display and gameplay settings with a live preview of the town" width="640">
+</p>
 
 **Display** offers three window sizes and Fullscreen, Fullscreen 85% or
 Fullscreen 70%; the smaller fullscreen pictures leave a border on large monitors.
@@ -204,7 +249,10 @@ font is covered by `resources/FONT-LICENSE.txt`. SDL2 is linked, not vendored, a
 is distributed under the zlib license.
 
 Lost Dutchman Mine itself, including its executable, artwork, music and data, is
-not part of this repository and is not covered by this license.
+not part of this repository and is not covered by this license. The screenshots
+in `docs/screenshots/` show that original artwork, © 1989 Magnetic Images,
+running in this port; they are included for illustration only and are not
+covered by this license either.
 
 ## References
 
