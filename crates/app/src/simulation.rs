@@ -95,9 +95,10 @@ impl Simulation {
         self.shared.paused.store(paused, Ordering::Relaxed);
     }
 
-    /// The latest snapshot, once the first has been published.
-    pub fn latest(&self) -> Option<Snapshot> {
-        lock(&self.shared.latest).clone()
+    /// The snapshot published since the last call, if any: taken, not copied,
+    /// since a frame is a quarter of a megabyte and the window asks often.
+    pub fn take_snapshot(&self) -> Option<Snapshot> {
+        lock(&self.shared.latest).take()
     }
 
     /// Sound changes made since the last call.

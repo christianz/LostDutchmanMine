@@ -159,14 +159,14 @@ fn run(options: &Options) -> Result<()> {
     let mut next_frame = 0.0;
     let mut window_setting = settings.window;
     let mut frame: Box<Pixels> = desktop::pixels::filled(0xff00_0000);
+    let (mut video_mode, mut custom_cursor) = (3, false);
     let limit = options.seconds.map(|seconds| seconds as f64 * 1000.0);
     loop {
         let elapsed = start.elapsed().as_secs_f64() * 1000.0;
         if limit.is_some_and(|limit| elapsed >= limit) {
             break;
         }
-        let latest = simulation.latest();
-        if let Some(snapshot) = &latest {
+        if let Some(snapshot) = simulation.take_snapshot() {
             if let Some(error) = &snapshot.error {
                 bail!("{error}");
             }
@@ -174,8 +174,9 @@ fn run(options: &Options) -> Result<()> {
                 break;
             }
             frame.copy_from_slice(snapshot.frame.pixels());
+            (video_mode, custom_cursor) = (snapshot.video_mode, snapshot.custom_cursor);
         }
-        controller.tick(elapsed as u64, latest.as_ref().map_or(3, |snapshot| snapshot.video_mode));
+        controller.tick(elapsed as u64, video_mode);
         for event in events.poll_iter() {
             if matches!(event, Event::Quit { .. }) {
                 return Ok(());
@@ -194,7 +195,6 @@ fn run(options: &Options) -> Result<()> {
             view.resize(*controller.settings())?;
         }
         if elapsed >= next_frame {
-            let custom_cursor = latest.as_ref().is_some_and(|snapshot| snapshot.custom_cursor);
             mouse.show_cursor(controller.menu_open() || !custom_cursor);
             draw(&mut view, &controller, &frame)?;
             view.present();
