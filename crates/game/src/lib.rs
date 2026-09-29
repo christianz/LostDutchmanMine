@@ -14,6 +14,7 @@ mod boot;
 mod decompiled;
 mod frame;
 mod hooks;
+pub mod inspect;
 mod overlay;
 mod pixels;
 mod program;

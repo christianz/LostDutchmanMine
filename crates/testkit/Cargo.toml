@@ -8,6 +8,7 @@ rust-version.workspace = true
 
 [dependencies]
 desktop.workspace = true
+dos.workspace = true
 engine.workspace = true
 game.workspace = true
 machine.workspace = true

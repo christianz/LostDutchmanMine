@@ -625,6 +625,7 @@ name = "testkit"
 version = "0.1.0"
 dependencies = [
  "desktop",
+ "dos",
  "engine",
  "flate2",
  "game",
